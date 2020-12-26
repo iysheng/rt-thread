@@ -154,6 +154,7 @@
 /* samples: kernel and components samples */
 
 #define SOC_GD32103C
+#define BSP_USING_TCD1304
 #define BSP_USING_UART0
 
 #endif
