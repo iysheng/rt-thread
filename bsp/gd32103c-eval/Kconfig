@@ -21,10 +21,15 @@ config PKGS_DIR
 source "$RTT_DIR/Kconfig"
 source "$PKGS_DIR/Kconfig"
 
+config SOC_SERIES_GD32F1
+    bool
+    default y
+
 config SOC_GD32103C
     bool
     select RT_USING_COMPONENTS_INIT
     select RT_USING_USER_MAIN
+    select SOC_SERIES_GD32F1
     default y
 
 config BSP_USING_TCD1304
