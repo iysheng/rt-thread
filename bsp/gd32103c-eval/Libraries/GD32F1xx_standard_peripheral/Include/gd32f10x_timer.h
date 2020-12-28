@@ -37,7 +37,7 @@ typedef struct {
     uint32_t TIMER_Period;                          /*!< Value to be loaded into the active CARL at the next update event. */
     uint16_t TIMER_ClockDivision;                   /*!< Clock division ,
                                                          a value of @ref TIMER_Clock_Division_CDIV. */
-    uint8_t  TIMER_RepetitionCounter;               /*!< Repetition counter value , only valid in TIMER1/8. */
+    uint8_t  TIMER_RepetitionCounter;               /*!< Repetition counter value , only valid in TIMER0/7. */
 } TIMER_BaseInitPara;
 
 /**
@@ -59,10 +59,10 @@ typedef struct {
                                                          a value of @ref TIMER_Output_Compare_N_Polarity */
     uint16_t TIMER_OCIdleState;                     /*!< TIM Output Compare pin state during Idle state ,
                                                          a value of @ref TIMER_Output_Compare_Idle_State,
-                                                         valid only for TIMER1. */
+                                                         valid only for TIMER0. */
     uint16_t TIMER_OCNIdleState;                    /*!< TIM Complementary Output Compare pin state during Idle state.
                                                          a value of @ref TIMER_Output_Compare_N_Idle_State ,
-                                                         valid only for TIMER1. */
+                                                         valid only for TIMER0. */
 } TIMER_OCInitPara;
 
 /**

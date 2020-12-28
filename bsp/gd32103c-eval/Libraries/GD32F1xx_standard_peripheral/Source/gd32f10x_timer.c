@@ -50,9 +50,12 @@ static void TI4_Config(TIMER_TypeDef *TIMERx, uint16_t TIMER_ICPolarity, uint16_
   */
 void TIMER_DeInit(TIMER_TypeDef *TIMERx)
 {
-    if (TIMERx == TIMER1) {
-        RCC->APB2RCR |= RCC_APB2PERIPH_TIMER1RST;
-        RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER1;
+    if (TIMERx == TIMER0) {
+        RCC->APB2RCR |= RCC_APB2PERIPH_TIMER0RST;
+        RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER0;
+    } else if (TIMERx == TIMER1) {
+        RCC->APB1RCR |= RCC_APB1PERIPH_TIMER1RST;
+        RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER1;
     } else if (TIMERx == TIMER2) {
         RCC->APB1RCR |= RCC_APB1PERIPH_TIMER2RST;
         RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER2;
@@ -69,11 +72,11 @@ void TIMER_DeInit(TIMER_TypeDef *TIMERx)
         RCC->APB1RCR |= RCC_APB1PERIPH_TIMER6RST;
         RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER6;
     } else if (TIMERx == TIMER7) {
-        RCC->APB1RCR |= RCC_APB1PERIPH_TIMER7RST;
-        RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER7;
+        RCC->APB2RCR |= RCC_APB2PERIPH_TIMER7RST;
+        RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER7;
     } else if (TIMERx == TIMER8) {
-        RCC->APB2RCR |= RCC_APB2PERIPH_TIMER8RST;
-        RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER8;
+        RCC->APB1RCR |= RCC_APB2PERIPH_TIMER8RST;
+        RCC->APB1RCR &= ~RCC_APB2PERIPH_TIMER8;
     } else if (TIMERx == TIMER9) {
         RCC->APB2RCR |= RCC_APB2PERIPH_TIMER9RST;
         RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER9;
@@ -81,23 +84,20 @@ void TIMER_DeInit(TIMER_TypeDef *TIMERx)
         RCC->APB2RCR |= RCC_APB2PERIPH_TIMER10RST;
         RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER10;
     } else if (TIMERx == TIMER11) {
-        RCC->APB2RCR |= RCC_APB2PERIPH_TIMER11RST;
-        RCC->APB2RCR &= ~RCC_APB2PERIPH_TIMER11;
+        RCC->APB1RCR |= RCC_APB1PERIPH_TIMER11RST;
+        RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER11;
     } else if (TIMERx == TIMER12) {
         RCC->APB1RCR |= RCC_APB1PERIPH_TIMER12RST;
         RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER12;
     } else if (TIMERx == TIMER13) {
         RCC->APB1RCR |= RCC_APB1PERIPH_TIMER13RST;
         RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER13;
-    } else if (TIMERx == TIMER14) {
-        RCC->APB1RCR |= RCC_APB1PERIPH_TIMER14RST;
-        RCC->APB1RCR &= ~RCC_APB1PERIPH_TIMER14;
     }
 }
 
 /**
   * @brief  Initialize the specified Timer
-  * @param  TIMERx:  x ={ 1 -14 } .
+  * @param  TIMERx:  x ={ 0 - 13 } .
   * @param  TIMER_Init: pointer to a TIMER_BaseInitPara structure.
   * @retval None
   */
@@ -107,15 +107,15 @@ void TIMER_BaseInit(TIMER_TypeDef *TIMERx, TIMER_BaseInitPara *TIMER_Init)
 
     tmpctlr1 = TIMERx->CTLR1;
 
-    if ((TIMERx == TIMER1) || (TIMERx == TIMER8) || (TIMERx == TIMER2) || (TIMERx == TIMER3) ||
-            (TIMERx == TIMER4) || (TIMERx == TIMER5) || (TIMERx == TIMER9) || (TIMERx == TIMER10)
-            || (TIMERx == TIMER11) || (TIMERx == TIMER12) || (TIMERx == TIMER13) || (TIMERx == TIMER14)) {
+    if ((TIMERx == TIMER0) || (TIMERx == TIMER7) || (TIMERx == TIMER1) || (TIMERx == TIMER2) ||
+            (TIMERx == TIMER3) || (TIMERx == TIMER4) || (TIMERx == TIMER8) || (TIMERx == TIMER9)
+            || (TIMERx == TIMER10) || (TIMERx == TIMER11) || (TIMERx == TIMER12) || (TIMERx == TIMER13)) {
         /* Configure the Counter Mode */
         tmpctlr1 &= (uint16_t)(~((uint16_t)(TIMER_CTLR1_DIR | TIMER_CTLR1_CAM)));
         tmpctlr1 |= (uint32_t)TIMER_Init->TIMER_CounterMode;
     }
 
-    if ((TIMERx != TIMER6) && (TIMERx != TIMER7)) {
+    if ((TIMERx != TIMER5) && (TIMERx != TIMER6)) {
         /* Configure the clock division */
         tmpctlr1 &= (uint16_t)(~((uint16_t)TIMER_CTLR1_CDIV));
         tmpctlr1 |= (uint32_t)TIMER_Init->TIMER_ClockDivision;
@@ -129,8 +129,8 @@ void TIMER_BaseInit(TIMER_TypeDef *TIMERx, TIMER_BaseInitPara *TIMER_Init)
     /* Configure the Prescaler value */
     TIMERx->PSC = TIMER_Init->TIMER_Prescaler;
 
-    if ((TIMERx == TIMER1)  ||
-            (TIMERx == TIMER8)) {
+    if ((TIMERx == TIMER0)  ||
+            (TIMERx == TIMER7)) {
         /* Configure the Repetition Counter value */
         TIMERx->CREP = TIMER_Init->TIMER_RepetitionCounter;
     }
@@ -389,7 +389,7 @@ void TIMER_BKDTStructInit(TIMER_BKDTInitPara *TIMER_BKDTInit)
 }
 
 /**
-  * @brief  Enable or disable the TIMER ALL Outputs.
+  * @brief  Enable or disable the TIMER Pwm Outputs.
   * @param  TIMERx:  x ={ 1 , 8 } .
   * @param  NewValue: ENABLE or DISABLE .
   * @retval None
@@ -443,7 +443,7 @@ void TIMER_OC1_Init(TIMER_TypeDef *TIMERx, TIMER_OCInitPara *TIMER_OCInit)
     /* Set the Output State */
     tmpche |= TIMER_OCInit->TIMER_OutputState;
 
-    if ((TIMERx == TIMER1) || (TIMERx == TIMER8)) {
+    if ((TIMERx == TIMER0) || (TIMERx == TIMER7)) {
         /* Reset the Output complementary Polarity */
         tmpche &= (uint16_t)(~((uint16_t)TIMER_CHE_CH1NP));
 
@@ -518,7 +518,7 @@ void TIMER_OC2_Init(TIMER_TypeDef *TIMERx, TIMER_OCInitPara *TIMER_OCInit)
     /* Set the Output State */
     tmpche |= (uint16_t)(TIMER_OCInit->TIMER_OutputState << 4);
 
-    if ((TIMERx == TIMER1) || (TIMERx == TIMER8)) {
+    if ((TIMERx == TIMER0) || (TIMERx == TIMER7)) {
         /* Reset the Output complementary Polarity */
         tmpche &= (uint16_t)(~((uint16_t)TIMER_CHE_CH2NP));
 
@@ -593,7 +593,7 @@ void TIMER_OC3_Init(TIMER_TypeDef *TIMERx, TIMER_OCInitPara *TIMER_OCInit)
     /* Set the Output State */
     tmpche |= (uint16_t)(TIMER_OCInit->TIMER_OutputState << 8);
 
-    if ((TIMERx == TIMER1) || (TIMERx == TIMER8)) {
+    if ((TIMERx == TIMER0) || (TIMERx == TIMER7)) {
         /* Reset the Output complementary Polarity */
         tmpche &= (uint16_t)(~((uint16_t)TIMER_CHE_CH3NP));
 
@@ -667,7 +667,7 @@ void TIMER_OC4_Init(TIMER_TypeDef *TIMERx, TIMER_OCInitPara *TIMER_OCInit)
     /* Set the Output State */
     tmpche |= (uint16_t)(TIMER_OCInit->TIMER_OutputState << 12);
 
-    if ((TIMERx == TIMER1) || (TIMERx == TIMER8)) {
+    if ((TIMERx == TIMER0) || (TIMERx == TIMER7)) {
         /* Reset the Ouput Compare IDLE State */
         tmpctlr2 &= (uint16_t)(~((uint16_t)TIMER_CTLR2_ISO4));
 

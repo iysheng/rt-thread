@@ -1090,15 +1090,15 @@ typedef struct {
 #define APB2PERIPH_BASE       (PERIPH_BASE + 0x10000)
 #define AHBPERIPH_BASE        (PERIPH_BASE + 0x20000)
 
-#define TIMER2_BASE           (APB1PERIPH_BASE + 0x0000)
-#define TIMER3_BASE           (APB1PERIPH_BASE + 0x0400)
-#define TIMER4_BASE           (APB1PERIPH_BASE + 0x0800)
-#define TIMER5_BASE           (APB1PERIPH_BASE + 0x0C00)
-#define TIMER6_BASE           (APB1PERIPH_BASE + 0x1000)
-#define TIMER7_BASE           (APB1PERIPH_BASE + 0x1400)
-#define TIMER12_BASE          (APB1PERIPH_BASE + 0x1800)
-#define TIMER13_BASE          (APB1PERIPH_BASE + 0x1C00)
-#define TIMER14_BASE          (APB1PERIPH_BASE + 0x2000)
+#define TIMER1_BASE           (APB1PERIPH_BASE + 0x0000)
+#define TIMER2_BASE           (APB1PERIPH_BASE + 0x0400)
+#define TIMER3_BASE           (APB1PERIPH_BASE + 0x0800)
+#define TIMER4_BASE           (APB1PERIPH_BASE + 0x0C00)
+#define TIMER5_BASE           (APB1PERIPH_BASE + 0x1000)
+#define TIMER6_BASE           (APB1PERIPH_BASE + 0x1400)
+#define TIMER11_BASE          (APB1PERIPH_BASE + 0x1800)
+#define TIMER12_BASE          (APB1PERIPH_BASE + 0x1C00)
+#define TIMER13_BASE          (APB1PERIPH_BASE + 0x2000)
 #define RTC_BASE              (APB1PERIPH_BASE + 0x2800)
 #define WWDG_BASE             (APB1PERIPH_BASE + 0x2C00)
 #define IWDG_BASE             (APB1PERIPH_BASE + 0x3000)
@@ -1126,17 +1126,17 @@ typedef struct {
 #define GPIOG_BASE            (APB2PERIPH_BASE + 0x2000)
 #define ADC1_BASE             (APB2PERIPH_BASE + 0x2400)
 #define ADC2_BASE             (APB2PERIPH_BASE + 0x2800)
-#define TIMER1_BASE           (APB2PERIPH_BASE + 0x2C00)
+#define TIMER0_BASE           (APB2PERIPH_BASE + 0x2C00)
 #define SPI1_BASE             (APB2PERIPH_BASE + 0x3000)
-#define TIMER8_BASE           (APB2PERIPH_BASE + 0x3400)
+#define TIMER7_BASE           (APB2PERIPH_BASE + 0x3400)
 #define USART0_BASE           (APB2PERIPH_BASE + 0x3800)
 #define ADC3_BASE             (APB2PERIPH_BASE + 0x3C00)
-#define TIMER15_BASE          (APB2PERIPH_BASE + 0x4000)
-#define TIMER16_BASE          (APB2PERIPH_BASE + 0x4400)
-#define TIMER17_BASE          (APB2PERIPH_BASE + 0x4800)
-#define TIMER9_BASE           (APB2PERIPH_BASE + 0x4C00)
-#define TIMER10_BASE          (APB2PERIPH_BASE + 0x5000)
-#define TIMER11_BASE          (APB2PERIPH_BASE + 0x5400)
+#define TIMER14_BASE          (APB2PERIPH_BASE + 0x4000)
+#define TIMER15_BASE          (APB2PERIPH_BASE + 0x4400)
+#define TIMER16_BASE          (APB2PERIPH_BASE + 0x4800)
+#define TIMER8_BASE           (APB2PERIPH_BASE + 0x4C00)
+#define TIMER9_BASE           (APB2PERIPH_BASE + 0x5000)
+#define TIMER10_BASE          (APB2PERIPH_BASE + 0x5400)
 
 #define SDIO_BASE             (PERIPH_BASE + 0x18000)
 
@@ -1183,15 +1183,17 @@ typedef struct {
   * @{
   */
 
+#define TIMER0                ((TIMER_TypeDef *) TIMER0_BASE)
+#define TIMER1                ((TIMER_TypeDef *) TIMER1_BASE)
 #define TIMER2                ((TIMER_TypeDef *) TIMER2_BASE)
 #define TIMER3                ((TIMER_TypeDef *) TIMER3_BASE)
 #define TIMER4                ((TIMER_TypeDef *) TIMER4_BASE)
 #define TIMER5                ((TIMER_TypeDef *) TIMER5_BASE)
 #define TIMER6                ((TIMER_TypeDef *) TIMER6_BASE)
 #define TIMER7                ((TIMER_TypeDef *) TIMER7_BASE)
+#define TIMER11               ((TIMER_TypeDef *) TIMER11_BASE)
 #define TIMER12               ((TIMER_TypeDef *) TIMER12_BASE)
 #define TIMER13               ((TIMER_TypeDef *) TIMER13_BASE)
-#define TIMER14               ((TIMER_TypeDef *) TIMER14_BASE)
 #define RTC                   ((RTC_TypeDef *) RTC_BASE)
 #define WWDG                  ((WWDG_TypeDef *) WWDG_BASE)
 #define IWDG                  ((IWDG_TypeDef *) IWDG_BASE)
@@ -7050,26 +7052,26 @@ typedef struct {
 #define  RCC_APB2RCR_PGRST                          ((uint32_t)0x00000100)         /*!< GPIOF clock reset */
 #define  RCC_APB2RCR_ADC1RST                        ((uint32_t)0x00000200)         /*!< ADC1 clock reset */
 #define  RCC_APB2RCR_ADC2RST                        ((uint32_t)0x00000400)         /*!< ADC2 clock reset */
-#define  RCC_APB2RCR_TIMER1RST                      ((uint32_t)0x00000800)         /*!< TIMER1 clock reset */
+#define  RCC_APB2RCR_TIMER0RST                      ((uint32_t)0x00000800)         /*!< TIMER0 clock reset */
 #define  RCC_APB2RCR_SPI1RST                        ((uint32_t)0x00001000)         /*!< SPI1 clock reset */
-#define  RCC_APB2RCR_TIMER8RST                      ((uint32_t)0x00002000)         /*!< TIMER8 clock reset */
+#define  RCC_APB2RCR_TIMER7RST                      ((uint32_t)0x00002000)         /*!< TIMER7 clock reset */
 #define  RCC_APB2RCR_USART0RST                      ((uint32_t)0x00004000)         /*!< USART1 clock reset */
 #define  RCC_APB2RCR_ADC3RST                        ((uint32_t)0x00008000)         /*!< ADC3 clock reset */
-#define  RCC_APB2RCR_TIMER9RST                      ((uint32_t)0x00080000)         /*!< TIMER9 clock reset */
-#define  RCC_APB2RCR_TIMER10RST                     ((uint32_t)0x00100000)         /*!< TIMER10 clock reset */
-#define  RCC_APB2RCR_TIMER11RST                     ((uint32_t)0x00200000)         /*!< TIMER11 clock reset */
+#define  RCC_APB2RCR_TIMER8RST                      ((uint32_t)0x00080000)         /*!< TIMER8 clock reset */
+#define  RCC_APB2RCR_TIMER9RST                      ((uint32_t)0x00100000)         /*!< TIMER9 clock reset */
+#define  RCC_APB2RCR_TIMER10RST                     ((uint32_t)0x00200000)         /*!< TIMER10 clock reset */
 
 /*****************  Bit definition for RCC_APB1RCR register  *****************/
 
-#define  RCC_APB1RCR_TIMER2RST                      ((uint32_t)0x00000001)        /*!< TIMER2 clock reset */
-#define  RCC_APB1RCR_TIMER3RST                      ((uint32_t)0x00000002)        /*!< TIMER3 clock reset */
-#define  RCC_APB1RCR_TIMER4RST                      ((uint32_t)0x00000004)        /*!< TIMER4 clock reset */
-#define  RCC_APB1RCR_TIMER5RST                      ((uint32_t)0x00000008)        /*!< TIMER8 clock reset */
-#define  RCC_APB1RCR_TIMER6RST                      ((uint32_t)0x00000010)        /*!< TIMER6 clock reset */
-#define  RCC_APB1RCR_TIMER7RST                      ((uint32_t)0x00000020)        /*!< TIMER7 clock reset */
-#define  RCC_APB1RCR_TIMER12RST                     ((uint32_t)0x00000040)        /*!< TIMER12 clock reset */
-#define  RCC_APB1RCR_TIMER13RST                     ((uint32_t)0x00000080)        /*!< TIMER13 clock reset */
-#define  RCC_APB1RCR_TIMER14RST                     ((uint32_t)0x00000100)        /*!< TIMER14 clock reset */
+#define  RCC_APB1RCR_TIMER1RST                      ((uint32_t)0x00000001)        /*!< TIMER1 clock reset */
+#define  RCC_APB1RCR_TIMER2RST                      ((uint32_t)0x00000002)        /*!< TIMER2 clock reset */
+#define  RCC_APB1RCR_TIMER3RST                      ((uint32_t)0x00000004)        /*!< TIMER3 clock reset */
+#define  RCC_APB1RCR_TIMER4RST                      ((uint32_t)0x00000008)        /*!< TIMER4 clock reset */
+#define  RCC_APB1RCR_TIMER5RST                      ((uint32_t)0x00000010)        /*!< TIMER5 clock reset */
+#define  RCC_APB1RCR_TIMER6RST                      ((uint32_t)0x00000020)        /*!< TIMER6 clock reset */
+#define  RCC_APB1RCR_TIMER11RST                     ((uint32_t)0x00000040)        /*!< TIMER11 clock reset */
+#define  RCC_APB1RCR_TIMER12RST                     ((uint32_t)0x00000080)        /*!< TIMER12 clock reset */
+#define  RCC_APB1RCR_TIMER13RST                     ((uint32_t)0x00000100)        /*!< TIMER13 clock reset */
 #define  RCC_APB1RCR_WWDGRST                        ((uint32_t)0x00000800)        /*!< Window Watchdog clock reset */
 #define  RCC_APB1RCR_SPI2RST                        ((uint32_t)0x00004000)        /*!< SPI2 clock reset */
 #define  RCC_APB1RCR_SPI3RST                        ((uint32_t)0x00008000)        /*!< SPI3 clock reset */
@@ -7115,26 +7117,26 @@ typedef struct {
 #define  RCC_APB2CCR_PGEN                           ((uint32_t)0x00000100)         /*!< GPIOF clock enable */
 #define  RCC_APB2CCR_ADC1EN                         ((uint32_t)0x00000200)         /*!< ADC1 clock enable */
 #define  RCC_APB2CCR_ADC2EN                         ((uint32_t)0x00000400)         /*!< ADC2 clock enable */
-#define  RCC_APB2CCR_TIMER1EN                       ((uint32_t)0x00000800)         /*!< TIMER1 clock enable */
+#define  RCC_APB2CCR_TIMER0EN                       ((uint32_t)0x00000800)         /*!< TIMER0 clock enable */
 #define  RCC_APB2CCR_SPI1EN                         ((uint32_t)0x00001000)         /*!< SPI1 clock enable */
-#define  RCC_APB2CCR_TIMER8EN                       ((uint32_t)0x00002000)         /*!< TIMER8 clock enable */
+#define  RCC_APB2CCR_TIMER7EN                       ((uint32_t)0x00002000)         /*!< TIMER7 clock enable */
 #define  RCC_APB2CCR_USART1EN                       ((uint32_t)0x00004000)         /*!< USART1 clock enable */
 #define  RCC_APB2CCR_ADC3EN                         ((uint32_t)0x00008000)         /*!< ADC3 clock enable */
-#define  RCC_APB2CCR_TIMER9EN                       ((uint32_t)0x00080000)         /*!< TIMER9 clock enable */
-#define  RCC_APB2CCR_TIMER10EN                      ((uint32_t)0x00100000)         /*!< TIMER10 clock enable */
-#define  RCC_APB2CCR_TIMER11EN                      ((uint32_t)0x00200000)         /*!< TIMER11 clock enable */
+#define  RCC_APB2CCR_TIMER8EN                       ((uint32_t)0x00080000)         /*!< TIMER8 clock enable */
+#define  RCC_APB2CCR_TIMER9EN                       ((uint32_t)0x00100000)         /*!< TIMER9 clock enable */
+#define  RCC_APB2CCR_TIMER10EN                      ((uint32_t)0x00200000)         /*!< TIMER10 clock enable */
 
 /*****************  Bit definition for RCC_APB1CCR register  ******************/
 
-#define  RCC_APB1CCR_TIMER2EN                       ((uint32_t)0x00000001)        /*!< TIMER2 clock enable */
-#define  RCC_APB1CCR_TIMER3EN                       ((uint32_t)0x00000002)        /*!< TIMER3 clock enable */
-#define  RCC_APB1CCR_TIMER4EN                       ((uint32_t)0x00000004)        /*!< TIMER4 clock enable */
-#define  RCC_APB1CCR_TIMER5EN                       ((uint32_t)0x00000008)        /*!< TIMER8 clock enable */
-#define  RCC_APB1CCR_TIMER6EN                       ((uint32_t)0x00000010)        /*!< TIMER6 clock enable */
-#define  RCC_APB1CCR_TIMER7EN                       ((uint32_t)0x00000020)        /*!< TIMER7 clock enable */
-#define  RCC_APB1CCR_TIMER12EN                      ((uint32_t)0x00000040)        /*!< TIMER12 clock enable */
-#define  RCC_APB1CCR_TIMER13EN                      ((uint32_t)0x00000080)        /*!< TIMER13 clock enable */
-#define  RCC_APB1CCR_TIMER14EN                      ((uint32_t)0x00000100)        /*!< TIMER14 clock enable */
+#define  RCC_APB1CCR_TIMER1EN                       ((uint32_t)0x00000001)        /*!< TIMER1 clock enable */
+#define  RCC_APB1CCR_TIMER2EN                       ((uint32_t)0x00000002)        /*!< TIMER2 clock enable */
+#define  RCC_APB1CCR_TIMER3EN                       ((uint32_t)0x00000004)        /*!< TIMER3 clock enable */
+#define  RCC_APB1CCR_TIMER4EN                       ((uint32_t)0x00000008)        /*!< TIMER4 clock enable */
+#define  RCC_APB1CCR_TIMER5EN                       ((uint32_t)0x00000010)        /*!< TIMER5 clock enable */
+#define  RCC_APB1CCR_TIMER6EN                       ((uint32_t)0x00000020)        /*!< TIMER6 clock enable */
+#define  RCC_APB1CCR_TIMER11EN                      ((uint32_t)0x00000040)        /*!< TIMER11 clock enable */
+#define  RCC_APB1CCR_TIMER12EN                      ((uint32_t)0x00000080)        /*!< TIMER12 clock enable */
+#define  RCC_APB1CCR_TIMER13EN                      ((uint32_t)0x00000100)        /*!< TIMER13 clock enable */
 #define  RCC_APB1CCR_WWDGEN                         ((uint32_t)0x00000800)        /*!< Window Watchdog clock enable */
 #define  RCC_APB1CCR_SPI2EN                         ((uint32_t)0x00004000)        /*!< SPI2 clock enable */
 #define  RCC_APB1CCR_SPI3EN                         ((uint32_t)0x00008000)        /*!< SPI3 clock enable*/
