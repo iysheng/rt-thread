@@ -15,6 +15,8 @@
 #define DBG_LVL    DBG_INFO
 #include <rtdbg.h>
 
+#define CCD_FM_FREQ    100000
+
 /* test code */
 #if 1
 #define BEEP_PIN_NUM    GET_PIN(C, 0)
@@ -38,12 +40,18 @@ static int init_timer1_4fm(unsigned int fm_freq)
     TIMER_BaseInitPara TIMER_Init = {0};
     GPIO_InitPara GPIO_InitStructure = {0};
     TIMER_OCInitPara TIMER_OCInit = {0};
+    RCC_ClocksPara RCC_ClocksState = {0};
 
     LOG_I("init timer1 with fm");
 
+    RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER1);
-    TIMER_Init.TIMER_Period                = 31;
-    TIMER_Init.TIMER_Prescaler             = 1;
+    TIMER_Init.TIMER_Period                = \
+		(RCC_ClocksState.APB1_Frequency << 1) / fm_freq - 1;
+	LOG_I("apb1=%u", RCC_ClocksState.APB1_Frequency);
+	LOG_I("apb2=%u", RCC_ClocksState.APB2_Frequency);
+	LOG_I("ahb=%u", RCC_ClocksState.AHB_Frequency);
+    TIMER_Init.TIMER_Prescaler             = 0;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
     TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
@@ -58,10 +66,10 @@ static int init_timer1_4fm(unsigned int fm_freq)
 #if 1
     TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
-    //TIMER_OCInit.TIMER_OutputNState = TIMER_OUTPUTN_STATE_ENABLE;
-    TIMER_OCInit.TIMER_Pulse = 15;
+    TIMER_OCInit.TIMER_Pulse = \
+        RCC_ClocksState.APB1_Frequency / fm_freq - 1;
     TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
-    TIMER_OCInit.TIMER_OCNPolarity = TIMER_OCN_POLARITY_LOW;
+    TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
     TIMER_OC2_Init(TIMER1, &TIMER_OCInit);
 #endif
     TIMER_Enable(TIMER1, ENABLE);
@@ -72,7 +80,81 @@ static int init_timer1_4fm(unsigned int fm_freq)
 
     /* CHxCOMCTL bits to 3’b110 (PWM mode0) or to 3’b111(PWM mode1) */
 }
+
+static int init_timer2_4icg(unsigned int icg_freq)
+{
+    TIMER_BaseInitPara TIMER_Init = {0};
+    GPIO_InitPara GPIO_InitStructure = {0};
+    TIMER_OCInitPara TIMER_OCInit = {0};
+    RCC_ClocksPara RCC_ClocksState = {0};
+
+    LOG_I("init timer2 with icg");
+
+    RCC_GetClocksFreq(&RCC_ClocksState);
+    rcu_periph_clock_enable(RCU_TIMER2);
+    TIMER_Init.TIMER_Period                = icg_freq - 1;
+    TIMER_Init.TIMER_Prescaler             = \
+        RCC_ClocksState.APB2_Frequency / (CCD_FM_FREQ / 10) - 1;
+    TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
+    TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
+    TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
+    TIMER_BaseInit(TIMER2, &TIMER_Init);
+
+    /* 初始化 PA7 */
+    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
+    TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
+    TIMER_OCInit.TIMER_Pulse = \
+        (5 * CCD_FM_FREQ) / 1000000;
+    TIMER_OCInit.TIMER_Pulse = (icg_freq >> 1);
+    TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
+    TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
+    TIMER_OC2_Init(TIMER2, &TIMER_OCInit);
+    TIMER_Enable(TIMER2, ENABLE);
+    TIMER_CtrlPWMOutputs(TIMER2, ENABLE);
+}
+
+static int init_timer0_4sh(unsigned int sh_freq)
+{
+    TIMER_BaseInitPara TIMER_Init = {0};
+    GPIO_InitPara GPIO_InitStructure = {0};
+    TIMER_OCInitPara TIMER_OCInit = {0};
+    RCC_ClocksPara RCC_ClocksState = {0};
+
+    LOG_I("init timer0 with sh");
+
+    RCC_GetClocksFreq(&RCC_ClocksState);
+    rcu_periph_clock_enable(RCU_TIMER0);
+    TIMER_Init.TIMER_Prescaler             = \
+        RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
+    TIMER_Init.TIMER_Period                = sh_freq - 1;
+    TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
+    TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
+    TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
+    TIMER_BaseInit(TIMER0, &TIMER_Init);
+
+    /* 初始化 PA8 */
+    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_8;
+    GPIO_InitStructure.GPIO_Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
+    TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
+    TIMER_OCInit.TIMER_Pulse = \
+        (2 * CCD_FM_FREQ) / 1000000;
+    TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
+    TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
+    TIMER_OC1_Init(TIMER0, &TIMER_OCInit);
+    TIMER_Enable(TIMER0, ENABLE);
+    TIMER_CtrlPWMOutputs(TIMER0, ENABLE);
+}
 #endif
+
 /*
  * static int drv_tcd1304_init
  * TCD1304 CCD chip 初始化入口
@@ -83,8 +165,10 @@ static int init_timer1_4fm(unsigned int fm_freq)
 static int drv_tcd1304_init(void)
 {
     test_func();
-    /* 測試產生 2MHz 的波形 */
-    init_timer1_4fm(2000000);
+    /* 測試產生 1MHz 的波形 */
+    init_timer1_4fm(CCD_FM_FREQ);
+    init_timer0_4sh(20);
+    init_timer2_4icg(5000);
     LOG_I("hello red");
 }
 /* 降低加載的優先級可以正常調試打印 */
