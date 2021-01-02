@@ -217,7 +217,6 @@ void SystemInit(void)
     /* Configure the System clock frequency, AHB, APB2 and APB1 prescalers */
     /* Configure the Flash Latency cycles and enable prefetch buffer */
     SetSysClock();
-
 }
 
 /**

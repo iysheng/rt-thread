@@ -10,6 +10,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-01-05     Bernard      the first version
+ * 2021-01-02     iysheng      update for gd32f10x
  */
 
 #ifndef __USART_H__

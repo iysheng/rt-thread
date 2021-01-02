@@ -14,6 +14,7 @@
  * 2012-02-08     aozima       update for F4.
  * 2012-07-28     aozima       update for ART board.
  * 2016-05-28     armink       add DMA Rx mode
+ * 2021-01-02     iysheng      update for gd32f10x
  */
 
 #include <gd32f10x.h>

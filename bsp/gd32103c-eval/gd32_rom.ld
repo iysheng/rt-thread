@@ -1,6 +1,10 @@
 /*
- * linker script for GD32F4xx with GNU ld
- * bernard.xiong 2009-10-14
+ * linker script for GD32F1xx with GNU ld
+ *
+ * Change Logs:
+ * Date           Author           Notes
+ * 2009-10-14     bernard.xiong    first implementation
+ * 2021-01-02     iysheng          modify to suite gd32f103c
  */
 
 /* Program Entry, set to mark it as "used" and avoid gc */

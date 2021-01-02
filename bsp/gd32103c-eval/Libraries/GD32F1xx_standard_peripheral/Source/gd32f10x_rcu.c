@@ -7,6 +7,7 @@
     Copyright (C) 2017 GigaDevice
 
     2017-02-10, V1.0.1, firmware for GD32F30x
+    2021-01-02, firmware for GD32F10x
 */
 
 #include "gd32f10x_rcu.h"
