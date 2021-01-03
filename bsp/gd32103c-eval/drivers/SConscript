@@ -18,6 +18,9 @@ if GetDepend('RT_USING_SERIAL'):
 if GetDepend('RT_USING_PIN'):
     src += ['drv_gpio.c']
 
+if GetDepend('RT_USING_ADC'):
+    src += ['drv_adc.c']
+
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')

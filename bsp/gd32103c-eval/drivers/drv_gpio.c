@@ -14,14 +14,6 @@
 
 #ifdef RT_USING_PIN
 
-#define PIN_NUM(port, no) (((((port) & 0xFu) << 4) | ((no) & 0xFu)))
-#define PIN_PORT(pin) ((uint8_t)(((pin) >> 4) & 0xFu))
-#define PIN_NO(pin) ((uint8_t)((pin) & 0xFu))
-
-#define PIN_GDPORT(pin) ((GPIO_TypeDef *)(GPIOA_BASE + (0x400u * PIN_PORT(pin))))
-
-#define PIN_GDPIN(pin) ((uint16_t)(1u << PIN_NO(pin)))
-
 #if defined(GPIOG)
 #define __GD32_PORT_MAX 7u
 #elif defined(GPIOF)
