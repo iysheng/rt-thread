@@ -1,16 +1,11 @@
 /*
- * File      : usart.h
- * This file is part of RT-Thread RTOS
- * COPYRIGHT (C) 2009, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
- * The license and distribution terms for this file may be
- * found in the file LICENSE in this distribution or at
- * http://www.rt-thread.org/license/LICENSE
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
- * Date           Author       Notes
- * 2009-01-05     Bernard      the first version
- * 2021-01-02     iysheng      update for gd32f10x
+ * Date           Author            Notes
+ * 2021-01-04     iysheng           first version
  */
 
 #ifndef __USART_H__
@@ -19,9 +14,20 @@
 #include <rthw.h>
 #include <rtthread.h>
 
-#define UART_ENABLE_IRQ(n)            NVIC_EnableIRQ((n))
-#define UART_DISABLE_IRQ(n)           NVIC_DisableIRQ((n))
+/* GD32 uart driver */
+struct gd32_uart {
+    USART_TypeDef * uart_periph;
+    IRQn_Type irqn;
+    rcu_periph_enum per_clk;
+    rcu_periph_enum tx_gpio_clk;
+    rcu_periph_enum rx_gpio_clk;
+    GPIO_TypeDef * tx_port;
+    GPIO_TypeDef * rx_port;
+    uint16_t tx_pin;
+    uint16_t rx_pin;
 
-int gd32_hw_usart_init(void);
+    struct rt_serial_device *serial;
+    char *device_name;
+};
 
 #endif

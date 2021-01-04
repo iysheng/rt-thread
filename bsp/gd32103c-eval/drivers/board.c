@@ -1,16 +1,13 @@
 /*
- * File      : board.c
- * This file is part of RT-Thread RTOS
- * COPYRIGHT (C) 2009 RT-Thread Develop Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
- * The license and distribution terms for this file may be
- * found in the file LICENSE in this distribution or at
- * http://www.rt-thread.org/license/LICENSE
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
- * Date           Author       Notes
- * 2009-01-05     Bernard      first implementation
+ * Date           Author            Notes
+ * 2021-01-04     iysheng           first version
  */
+
 #include <stdint.h>
 #include <rthw.h>
 #include <rtthread.h>
@@ -19,31 +16,17 @@
 #include <board.h>
 #include <drv_usart.h>
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @param  None
-  * @retval None
-  */
-void Error_Handler(void)
-{
-    /* USER CODE BEGIN Error_Handler */
-    /* User can add his own implementation to report the HAL error return state */
-    while (1) {
-    }
-    /* USER CODE END Error_Handler */
-}
-
-/** System Clock Configuration
-*/
+/*
+ * System Clock Configuration
+ */
 void SystemClock_Config(void)
 {
     SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
     NVIC_SetPriority(SysTick_IRQn, 0);
 }
 
-/**
+/*
  * This is the timer interrupt service routine.
- *
  */
 void SysTick_Handler(void)
 {

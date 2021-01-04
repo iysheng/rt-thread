@@ -21,7 +21,7 @@
 #define ARRAY_SIZE(x)    (sizeof(x) / sizeof(x[0]))
 #endif
 
-#define BSP_USING_ADC0
+#define MAX_EXTERN_ADC_CHANNEL    16
 
 typedef struct {
     struct rt_adc_device adc_dev;
@@ -50,10 +50,10 @@ static gd32_adc_device g_gd32_devs[] = {
         {},
         "adc1",
         {
-            , , , ,
-            , , , ,
-            , , , ,
-            , , , ,
+            GET_PIN(A, 0), GET_PIN(A, 1), GET_PIN(A, 2), GET_PIN(A, 3),
+            GET_PIN(A, 4), GET_PIN(A, 5), GET_PIN(A, 6), GET_PIN(A, 7),
+            GET_PIN(B, 0), GET_PIN(B, 1), GET_PIN(C, 0), GET_PIN(C, 1),
+            GET_PIN(C, 2), GET_PIN(C, 3), GET_PIN(C, 4), GET_PIN(C, 5),
         },
         ADC1,
     },
@@ -83,14 +83,19 @@ static rt_err_t gd32_adc_enabled(struct rt_adc_device *device, rt_uint32_t chann
     ADC_InitPara ADC_InitParaStruct = {0};
     gd32_adc_device * gd32_adc = (gd32_adc_device *)device;
 
+    if (channel >= MAX_EXTERN_ADC_CHANNEL)
+    {
+        LOG_E("invalid channel");
+        return -E2BIG;
+    }
+
     ADCx = (ADC_TypeDef *)(device->parent.user_data);
 
     if (enabled == ENABLE)
     {
-        rt_kprintf("channel=%d\n", channel);
         init_pin4adc(gd32_adc->adc_pins[channel]);
         ADC_InitParaStruct.ADC_Trig_External = ADC_EXTERNAL_TRIGGER_MODE_NONE;
-        /* TODO check channel 1 ~ 16 */
+        /* 修正通道號適應固件庫函數  */
         ADC_InitParaStruct.ADC_Channel_Number = 1 + channel;
         ADC_InitParaStruct.ADC_Data_Align = ADC_DATAALIGN_RIGHT;
         ADC_InitParaStruct.ADC_Mode_Scan = DISABLE;

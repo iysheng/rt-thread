@@ -1,20 +1,11 @@
 /*
- * File      : usart.c
- * This file is part of RT-Thread RTOS
- * COPYRIGHT (C) 2009, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
- * The license and distribution terms for this file may be
- * found in the file LICENSE in this distribution or at
- * http://www.rt-thread.org/license/LICENSE
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
- * Date           Author       Notes
- * 2009-01-05     Bernard      the first version
- * 2010-03-29     Bernard      remove interrupt Tx and DMA Rx mode
- * 2012-02-08     aozima       update for F4.
- * 2012-07-28     aozima       update for ART board.
- * 2016-05-28     armink       add DMA Rx mode
- * 2021-01-02     iysheng      update for gd32f10x
+ * Date           Author            Notes
+ * 2021-01-04     iysheng           first version
  */
 
 #include <gd32f10x.h>
@@ -31,23 +22,6 @@
 #endif
 
 #include <rtdevice.h>
-
-/* GD32 uart driver */
-// Todo: compress uart info
-struct gd32_uart {
-    uint32_t uart_periph;           //Todo: 3bits
-    IRQn_Type irqn;                 //Todo: 7bits
-    rcu_periph_enum per_clk;        //Todo: 5bits
-    rcu_periph_enum tx_gpio_clk;    //Todo: 5bits
-    rcu_periph_enum rx_gpio_clk;    //Todo: 5bits
-    uint32_t tx_port;               //Todo: 4bits
-    uint16_t tx_pin;                //Todo: 4bits
-    uint32_t rx_port;               //Todo: 4bits
-    uint16_t rx_pin;                //Todo: 4bits
-
-    struct rt_serial_device *serial;
-    char *device_name;
-};
 
 static void uart_isr(struct rt_serial_device *serial);
 
@@ -133,11 +107,11 @@ void UART4_IRQHandler(void)
 static const struct gd32_uart uarts[] = {
 #ifdef BSP_USING_UART0
     {
-        USART0,                                 // uart peripheral index
-        USART0_IRQn,                            // uart iqrn
-        RCU_USART0, RCU_GPIOA, RCU_GPIOA,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOA, GPIO_PIN_9,           // tx port, tx alternate, tx pin
-        GPIOA, GPIO_PIN_10,          // rx port, rx alternate, rx pin
+        USART0,                             /* uart peripheral index */
+        USART0_IRQn,                        /* uart iqrn */
+        RCU_USART0, RCU_GPIOA, RCU_GPIOA,   /* periph clock, tx gpio clock, rt gpio clock */
+        GPIOA, GPIOA,                       /* tx port, tx alternate, tx pin */
+        GPIO_PIN_9, GPIO_PIN_10,            /* rx port, rx alternate, rx pin */
         &serial0,
         "uart0",
     },
@@ -145,11 +119,11 @@ static const struct gd32_uart uarts[] = {
 
 #ifdef BSP_USING_UART1
     {
-        USART1,                                 // uart peripheral index
-        USART1_IRQn,                            // uart iqrn
-        RCU_USART1, RCU_GPIOA, RCU_GPIOA,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOA, GPIO_PIN_2,           // tx port, tx alternate, tx pin
-        GPIOA, GPIO_PIN_3,           // rx port, rx alternate, rx pin
+        USART1,                             /* uart peripheral index */
+        USART1_IRQn,                        /* uart iqrn */
+        RCU_USART1, RCU_GPIOA, RCU_GPIOA,   /* periph clock, tx gpio clock, rt gpio clock */
+        GPIOA, GPIOA,                       /* tx port, tx alternate, tx pin */
+        GPIO_PIN_2, GPIO_PIN_3,             /* rx port, rx alternate, rx pin */
         &serial1,
         "uart1",
     },
@@ -157,11 +131,11 @@ static const struct gd32_uart uarts[] = {
 
 #ifdef BSP_USING_UART2
     {
-        USART2,                                 // uart peripheral index
-        USART2_IRQn,                            // uart iqrn
-        RCU_USART2, RCU_GPIOB, RCU_GPIOB,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOB, GPIO_PIN_10,          // tx port, tx alternate, tx pin
-        GPIOB, GPIO_PIN_11,          // rx port, rx alternate, rx pin
+        USART2,                             /* uart peripheral index */
+        USART2_IRQn,                        /* uart iqrn */
+        RCU_USART2, RCU_GPIOB, RCU_GPIOB,   /* periph clock, tx gpio clock, rt gpio clock */
+        GPIOB, GPIOB,                       /* tx port, tx alternate, tx pin */
+        GPIO_PIN_10, GPIO_PIN_11,           /* rx port, rx alternate, rx pin */
         &serial2,
         "uart2",
     },
@@ -169,11 +143,11 @@ static const struct gd32_uart uarts[] = {
 
 #ifdef BSP_USING_UART3
     {
-        UART3,                                 // uart peripheral index
-        UART3_IRQn,                            // uart iqrn
-        RCU_UART3, RCU_GPIOC, RCU_GPIOC,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOC, GPIO_AF_8, GPIO_PIN_10,         // tx port, tx alternate, tx pin
-        GPIOC, GPIO_AF_8, GPIO_PIN_11,         // rx port, rx alternate, rx pin
+        UART3,                              /* uart peripheral index */
+        UART3_IRQn,                         /* uart iqrn */
+        RCU_UART3, RCU_GPIOC, RCU_GPIOC,    /* periph clock, tx gpio clock, rt gpio clock */
+        GPIOC, GPIOC,                       /* tx port, tx alternate, tx pin */
+        GPIO_PIN_10, GPIO_PIN_11,           /* rx port, rx alternate, rx pin */
         &serial3,
         "uart3",
     },
@@ -181,11 +155,11 @@ static const struct gd32_uart uarts[] = {
 
 #ifdef BSP_USING_UART4
     {
-        UART4,                                 // uart peripheral index
-        UART4_IRQn,                            // uart iqrn
-        RCU_UART4, RCU_GPIOC, RCU_GPIOD,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOC, GPIO_AF_8, GPIO_PIN_12,         // tx port, tx alternate, tx pin
-        GPIOD, GPIO_AF_8, GPIO_PIN_2,          // rx port, rx alternate, rx pin
+        UART4,                              /* uart peripheral index */
+        UART4_IRQn,                         /* uart iqrn */
+        RCU_UART4, RCU_GPIOC, RCU_GPIOD,    /* periph clock, tx gpio clock, rt gpio clock */
+        GPIOC, GPIOD,                       /* tx port, tx alternate, tx pin */
+        GPIO_PIN_12, GPIO_PIN_2,            /* rx port, rx alternate, rx pin */
         &serial4,
         "uart4",
     },
@@ -346,7 +320,6 @@ static void uart_isr(struct rt_serial_device *serial)
 
     RT_ASSERT(uart != RT_NULL);
 
-    /* UART in mode Receiver -------------------------------------------------*/
     if ((USART_GetIntBitState((USART_TypeDef *)uart->uart_periph, USART_INT_RBNE) != RESET) &&
             (USART_GetBitState((USART_TypeDef *)uart->uart_periph, USART_FLAG_RBNE) != RESET)) {
         rt_hw_serial_isr(serial, RT_SERIAL_EVENT_RX_IND);
@@ -372,7 +345,7 @@ int gd32_hw_usart_init(void)
         uarts[i].serial->ops    = &gd32_uart_ops;
         uarts[i].serial->config = config;
 
-        /* register UART1 device */
+        /* register UART device */
         rt_hw_serial_register(uarts[i].serial,
                               uarts[i].device_name,
                               RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,

@@ -102,7 +102,7 @@
 /* ADC IDTRx registers offset */
 #define IDTR_OFFSET                     ((uint8_t)0x28)
 
-/* ADC1 RDTR register base address */
+/* ADC0 RDTR register base address */
 #define RDTR_ADDRESS                    ((uint32_t)0x4001244C)
 
 /**
@@ -121,23 +121,16 @@
   */
 void ADC_DeInit(ADC_TypeDef *ADCx, ADC_InitPara *ADC_InitParaStruct)
 {
-    if (ADCx == ADC1) {
+    if (ADCx == ADC0) {
+        /* Enable ADC0 reset state */
+        RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC0RST, ENABLE);
+        /* Release ADC0 from reset state */
+        RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC0RST, DISABLE);
+    } else if (ADCx == ADC1) {
         /* Enable ADC1 reset state */
         RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC1RST, ENABLE);
         /* Release ADC1 from reset state */
         RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC1RST, DISABLE);
-    } else if (ADCx == ADC2) {
-        /* Enable ADC2 reset state */
-        RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC2RST, ENABLE);
-        /* Release ADC2 from reset state */
-        RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC2RST, DISABLE);
-    } else {
-        if (ADCx == ADC3) {
-            /* Enable ADC3 reset state */
-            RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC3RST, ENABLE);
-            /* Release ADC3 from reset state */
-            RCC_APB2PeriphReset_Enable(RCC_APB2PERIPH_ADC3RST, DISABLE);
-        }
     }
     /* Initialize the ADC_Mode member,independent mode */
     ADC_InitParaStruct->ADC_Mode = ADC_MODE_INDEPENDENT;
@@ -223,7 +216,7 @@ void ADC_Enable(ADC_TypeDef *ADCx, TypeState NewValue)
 /**
   * @brief  Enable or disable the ADCx DMA request.
   * @param  ADCx: the ADC interface where x can be 1..3.
-  *   Note: ADC2 doesn't support DMA function.
+  *   Note: ADC1 doesn't support DMA function.
   * @param  NewValue: New state of ADCx DMA transfer.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
@@ -500,7 +493,7 @@ uint16_t ADC_GetConversionValue(ADC_TypeDef *ADCx)
 }
 
 /**
-  * @brief  Return the last ADC1 and ADC2 conversion result data in dual mode.
+  * @brief  Return the last ADC0 and ADC1 conversion result data in dual mode.
   * @retval The Data conversion value.
   */
 uint32_t ADC_GetDualModeConversionValue(void)
@@ -549,20 +542,20 @@ void ADC_InsertedDiscMode_Enable(ADC_TypeDef *ADCx, TypeState NewValue)
   * @param  ADCx: the ADC interface where x can be 1..3.
   * @param  ADC_ExternalTrigInsertConv: ADC inserted conversion trigger.
   *   This parameter can be as follows:
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T1_TRGO: Timer1 TRIG event (used in ADC1, ADC2 and ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T1_CC4: Timer1 capture compare4 (used in ADC1, ADC2 and ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T2_TRGO: Timer2 TRIG event (used in ADC1 and ADC2)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T2_CC1: Timer2 capture compare1 (used in ADC1 and ADC2)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T3_CC4: Timer3 capture compare4 (used in ADC1 and ADC2)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T4_TRGO: Timer4 TRIG event (used in ADC1 and ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T1_TRGO: Timer1 TRIG event (used in ADC0, ADC1 and ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T1_CC4: Timer1 capture compare4 (used in ADC0, ADC1 and ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T2_TRGO: Timer2 TRIG event (used in ADC0 and ADC1)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T2_CC1: Timer2 capture compare1 (used in ADC0 and ADC1)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T3_CC4: Timer3 capture compare4 (used in ADC0 and ADC1)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T4_TRGO: Timer4 TRIG event (used in ADC0 and ADC1)
   *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_EXT_IT15_T8_CC4: External interrupt line 15 or Timer8
-  *          capture compare4 (used in ADC1 and ADC2)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T4_CC3: Timer4 capture compare3 (used in ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T8_CC2: Timer8 capture compare2 (used in ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T8_CC4: Timer8 capture compare4 (used in ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T5_TRGO: Timer5 TRIG event (used in ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T5_CC4: Timer5 capture compare4 (used in ADC3)
-  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_NONE: Inserted conversion started by software (used in ADC1, ADC2 and ADC3)
+  *          capture compare4 (used in ADC0 and ADC1)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T4_CC3: Timer4 capture compare3 (used in ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T8_CC2: Timer8 capture compare2 (used in ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T8_CC4: Timer8 capture compare4 (used in ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T5_TRGO: Timer5 TRIG event (used in ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_T5_CC4: Timer5 capture compare4 (used in ADC2)
+  *     @arg ADC_EXTERNAL_TRIG_INSERTCONV_NONE: Inserted conversion started by software (used in ADC0, ADC1 and ADC2)
   * @retval None
   */
 void ADC_ExternalTrigInsertedConv_Config(ADC_TypeDef *ADCx, uint32_t ADC_ExternalTrigInsertConv)
@@ -876,10 +869,10 @@ void ADC_TempSensorVrefint_Enable(TypeState NewValue)
 {
     if (NewValue != DISABLE) {
         /* Enable the temperature sensor and Vrefint channel*/
-        ADC1->CTLR2 |= CTLR2_TSVREN_SET;
+        ADC0->CTLR2 |= CTLR2_TSVREN_SET;
     } else {
         /* Disable the temperature sensor and Vrefint channel*/
-        ADC1->CTLR2 &= ~CTLR2_TSVREN_SET;
+        ADC0->CTLR2 &= ~CTLR2_TSVREN_SET;
     }
 }
 
