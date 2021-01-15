@@ -2,7 +2,7 @@ import os
 
 # toolchains options
 ARCH='arm'
-CPU='cortex-m4'
+CPU='cortex-m3'
 CROSS_TOOL='keil'
 
 if os.getenv('RTT_CC'):
@@ -37,7 +37,7 @@ if PLATFORM == 'gcc':
     OBJDUMP = PREFIX + 'objdump'
     OBJCPY = PREFIX + 'objcopy'
 	
-    DEVICE = ' -mcpu=cortex-m4 -mthumb -ffunction-sections -fdata-sections'
+    DEVICE = ' -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections'
     CFLAGS = DEVICE + ' -Dgcc' # -D' + PART_TYPE
     AFLAGS = ' -c' + DEVICE + ' -x assembler-with-cpp -Wa,-mimplicit-it=thumb '
     LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=rtthread-gd32.map,-cref,-u,Reset_Handler -T gd32_rom.ld'
