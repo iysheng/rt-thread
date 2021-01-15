@@ -516,6 +516,7 @@ void TIMER_OC2_Init(TIMER_TypeDef *TIMERx, TIMER_OCInitPara *TIMER_OCInit)
     tmpche |= (uint16_t)(TIMER_OCInit->TIMER_OCPolarity << 4);
 
     /* Set the Output State */
+    /* 設置輸出狀態 */
     tmpche |= (uint16_t)(TIMER_OCInit->TIMER_OutputState << 4);
 
     if ((TIMERx == TIMER0) || (TIMERx == TIMER7)) {

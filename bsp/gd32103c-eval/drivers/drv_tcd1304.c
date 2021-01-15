@@ -21,7 +21,10 @@
 #if 1
 #define BEEP_PIN_NUM    GET_PIN(C, 0)
 
+#define LED4_PIN_NUM    GET_PIN(B, 1)
 #define LED3_PIN_NUM    GET_PIN(B, 2)
+#define LED2_PIN_NUM    GET_PIN(B, 10)
+#define LED1_PIN_NUM    GET_PIN(B, 11)
 
 #define FM_GND0         GET_PIN(A, 0)
 #define FM_GND1         GET_PIN(A, 2)
@@ -45,8 +48,16 @@ void test_func(void)
     rt_pin_write(ICG_GND0, PIN_LOW);
 
     /* 開啓補光 */
+    rt_pin_mode(LED4_PIN_NUM, PIN_MODE_OUTPUT);
     rt_pin_mode(LED3_PIN_NUM, PIN_MODE_OUTPUT);
-    rt_pin_write(LED3_PIN_NUM, PIN_HIGH);
+    rt_pin_mode(LED2_PIN_NUM, PIN_MODE_OUTPUT);
+    rt_pin_mode(LED1_PIN_NUM, PIN_MODE_OUTPUT);
+#if 0
+    rt_pin_write(LED4_PIN_NUM, PIN_LOW);
+#endif
+    rt_pin_write(LED3_PIN_NUM, PIN_LOW);
+    rt_pin_write(LED2_PIN_NUM, PIN_LOW);
+    rt_pin_write(LED1_PIN_NUM, PIN_LOW);
 }
 
 /*
@@ -67,15 +78,15 @@ static int init_timer1_4fm(unsigned int fm_freq)
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER1);
+    TIMER_InternalClockConfig(RCU_TIMER1);
     TIMER_Init.TIMER_Period                = \
-		(RCC_ClocksState.APB1_Frequency << 1) / fm_freq - 1;
+		(RCC_ClocksState.APB1_Frequency  << 1 ) / fm_freq - 1;
 	LOG_I("apb1=%u", RCC_ClocksState.APB1_Frequency);
 	LOG_I("apb2=%u", RCC_ClocksState.APB2_Frequency);
 	LOG_I("ahb=%u", RCC_ClocksState.AHB_Frequency);
     TIMER_Init.TIMER_Prescaler             = 0;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
-    TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
     TIMER_BaseInit(TIMER1, &TIMER_Init);
 
     /* 初始化 PA1 */
@@ -88,13 +99,14 @@ static int init_timer1_4fm(unsigned int fm_freq)
     TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
     TIMER_OCInit.TIMER_Pulse = \
-        RCC_ClocksState.APB1_Frequency / fm_freq - 1;
-    TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
-    TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
+        RCC_ClocksState.APB1_Frequency  / fm_freq;
     TIMER_OC2_Init(TIMER1, &TIMER_OCInit);
 #endif
+    /* 開啓計數 */
     TIMER_Enable(TIMER1, ENABLE);
+#if 0
     TIMER_CtrlPWMOutputs(TIMER1, ENABLE);
+#endif
     /* SMC[2:0]=3'b000 */
 
     /* 使用分頻 CEN=1  PSC 寄存器設置分頻 */
@@ -113,6 +125,7 @@ static int init_timer3_4icg(unsigned int icg_freq)
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER3);
+    TIMER_InternalClockConfig(RCU_TIMER3);
     TIMER_Init.TIMER_Period                = icg_freq - 1;
     TIMER_Init.TIMER_Prescaler             = \
         RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
@@ -137,11 +150,13 @@ static int init_timer3_4icg(unsigned int icg_freq)
     TIMER_OCInit.TIMER_Pulse = \
         ((10 * CCD_FM_FREQ) / 1000000);
 #endif
-    TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
     TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
     TIMER_OC3_Init(TIMER3, &TIMER_OCInit);
     TIMER_Enable(TIMER3, ENABLE);
+    TIMER_Enable(TIMER2, ENABLE);
+#if 0
     TIMER_CtrlPWMOutputs(TIMER3, ENABLE);
+#endif
 }
 
 static int init_timer2_4sh(unsigned int sh_freq)
@@ -155,6 +170,7 @@ static int init_timer2_4sh(unsigned int sh_freq)
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER2);
+    TIMER_InternalClockConfig(RCU_TIMER2);
     TIMER_Init.TIMER_Prescaler             = \
         RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
     TIMER_Init.TIMER_Period                = sh_freq - 1;
@@ -169,15 +185,16 @@ static int init_timer2_4sh(unsigned int sh_freq)
     GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
+    TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM2;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
-    TIMER_OCInit.TIMER_Pulse = \
-        sh_freq - 1 - (( 2 * CCD_FM_FREQ) / 1000000);
+    TIMER_OCInit.TIMER_Pulse = (3 * CCD_FM_FREQ) / 1000000;
     TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
     TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
     TIMER_OC2_Init(TIMER2, &TIMER_OCInit);
+#if 0
     TIMER_Enable(TIMER2, ENABLE);
     TIMER_CtrlPWMOutputs(TIMER2, ENABLE);
+#endif
 }
 #endif
 
@@ -191,10 +208,10 @@ static int init_timer2_4sh(unsigned int sh_freq)
 static int drv_tcd1304_init(void)
 {
     test_func();
-    /* 測試產生 1MHz 的波形 */
+    /* 測試產生 2MHz 的波形 */
     init_timer1_4fm(CCD_FM_FREQ);
-    init_timer2_4sh(20);
-    init_timer3_4icg(15000);
+    init_timer2_4sh(30);
+    init_timer3_4icg(12000);
     LOG_I("hello red");
 }
 /* 降低加載的優先級可以正常調試打印 */
