@@ -15,7 +15,7 @@
 #define DBG_LVL    DBG_INFO
 #include <rtdbg.h>
 
-#define CCD_FM_FREQ    2000000
+#define CCD_FM_FREQ    1000000
 
 /* test code */
 #if 1
@@ -52,12 +52,12 @@ void test_func(void)
     rt_pin_mode(LED3_PIN_NUM, PIN_MODE_OUTPUT);
     rt_pin_mode(LED2_PIN_NUM, PIN_MODE_OUTPUT);
     rt_pin_mode(LED1_PIN_NUM, PIN_MODE_OUTPUT);
-#if 0
+#if 1
     rt_pin_write(LED4_PIN_NUM, PIN_LOW);
-#endif
     rt_pin_write(LED3_PIN_NUM, PIN_LOW);
-    rt_pin_write(LED2_PIN_NUM, PIN_LOW);
-    rt_pin_write(LED1_PIN_NUM, PIN_LOW);
+    rt_pin_write(LED2_PIN_NUM, PIN_HIGH);
+    rt_pin_write(LED1_PIN_NUM, PIN_HIGH);
+#endif
 }
 
 /*
@@ -210,8 +210,10 @@ static int drv_tcd1304_init(void)
     test_func();
     /* 測試產生 2MHz 的波形 */
     init_timer1_4fm(CCD_FM_FREQ);
-    init_timer2_4sh(30);
-    init_timer3_4icg(12000);
+	/* 2M/30 = 66kHz  */
+    init_timer2_4sh(10);
+	/* 2M/12000 = 166Hz  */
+    init_timer3_4icg(36900);
     LOG_I("hello red");
 }
 /* 降低加載的優先級可以正常調試打印 */
