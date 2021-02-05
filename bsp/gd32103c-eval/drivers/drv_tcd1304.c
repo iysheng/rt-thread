@@ -60,6 +60,66 @@ void test_func(void)
 #endif
 }
 
+#ifdef RT_USING_FINSH
+
+#include "finsh.h"
+
+/*
+ * static int do_with_tcd_light
+ * 控制補光相關的命令
+ * 
+ * @ int light_num: 
+ * @ int light_status: 
+ * return: errno/Linux
+ */
+static int do_with_tcd_light(int light_num, int light_status)
+{
+    int ret = 0;
+
+    switch (light_num)
+    {
+        case 0:
+            rt_pin_write(LED2_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
+            rt_pin_write(LED1_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
+            break;
+        case 1:
+            rt_pin_write(LED4_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
+            rt_pin_write(LED3_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
+            break;
+        default:
+            rt_kprintf("invalid light_num index=%d\n", light_num);
+            ret = -EINVAL;
+            break;
+    }
+
+    return ret;
+}
+
+long tcd_light(int argc, char * argv[])
+{
+    /* light_num: 0 白光 1 紅光
+     * light_status: 0 關閉 1 開啓
+     * */
+    int light_num, light_status;
+    rt_kprintf("Hello TCD1304 light!\n");
+
+    if (argc > 2)
+    {
+        light_num = atoi(argv[1]);
+        light_status = atoi(argv[2]);
+        do_with_tcd_light(light_num, light_status);
+    }
+    else
+    {
+        rt_kprintf("usage: tcd_light [0:1] [0:1]\n");
+        return 0;
+    }
+
+    return 0;
+}
+MSH_CMD_EXPORT(tcd_light, control light 4 tcd1304);
+#endif
+
 /*
  * static int init_timer1_4fm
  * 配置 TIM1 時鍾產生指定頻率的 PWM 波形
