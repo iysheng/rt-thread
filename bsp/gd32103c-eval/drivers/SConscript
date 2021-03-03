@@ -20,6 +20,7 @@ if GetDepend('RT_USING_PIN'):
 
 if GetDepend('BSP_USING_TCD1304'):
     src += ['drv_tcd1304.c']
+    src += ['drv_led_pwm.c']
 
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = CPPPATH)
 

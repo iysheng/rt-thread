@@ -17,15 +17,6 @@
 
 #define CCD_FM_FREQ    1000000
 
-/* test code */
-#if 1
-#define BEEP_PIN_NUM    GET_PIN(C, 0)
-
-#define LED4_PIN_NUM    GET_PIN(B, 1)
-#define LED3_PIN_NUM    GET_PIN(B, 2)
-#define LED2_PIN_NUM    GET_PIN(B, 10)
-#define LED1_PIN_NUM    GET_PIN(B, 11)
-
 #define FM_GND0         GET_PIN(A, 0)
 #define FM_GND1         GET_PIN(A, 2)
 #define SH_GND0         GET_PIN(A, 6)
@@ -46,99 +37,27 @@ void test_func(void)
     rt_pin_write(SH_GND0, PIN_LOW);
     rt_pin_write(SH_GND1, PIN_LOW);
     rt_pin_write(ICG_GND0, PIN_LOW);
-
-    /* 開啓補光 */
-    rt_pin_mode(LED4_PIN_NUM, PIN_MODE_OUTPUT);
-    rt_pin_mode(LED3_PIN_NUM, PIN_MODE_OUTPUT);
-    rt_pin_mode(LED2_PIN_NUM, PIN_MODE_OUTPUT);
-    rt_pin_mode(LED1_PIN_NUM, PIN_MODE_OUTPUT);
-#if 1
-    rt_pin_write(LED4_PIN_NUM, PIN_LOW);
-    rt_pin_write(LED3_PIN_NUM, PIN_LOW);
-    rt_pin_write(LED2_PIN_NUM, PIN_HIGH);
-    rt_pin_write(LED1_PIN_NUM, PIN_HIGH);
-#endif
 }
-
-#ifdef RT_USING_FINSH
-
-#include "finsh.h"
 
 /*
- * static int do_with_tcd_light
- * 控制補光相關的命令
- * 
- * @ int light_num: 
- * @ int light_status: 
- * return: errno/Linux
- */
-static int do_with_tcd_light(int light_num, int light_status)
-{
-    int ret = 0;
-
-    switch (light_num)
-    {
-        case 0:
-            rt_pin_write(LED2_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
-            rt_pin_write(LED1_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
-            break;
-        case 1:
-            rt_pin_write(LED4_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
-            rt_pin_write(LED3_PIN_NUM, light_status ? PIN_LOW : PIN_HIGH);
-            break;
-        default:
-            rt_kprintf("invalid light_num index=%d\n", light_num);
-            ret = -EINVAL;
-            break;
-    }
-
-    return ret;
-}
-
-long tcd_light(int argc, char * argv[])
-{
-    /* light_num: 0 白光 1 紅光
-     * light_status: 0 關閉 1 開啓
-     * */
-    int light_num, light_status;
-    rt_kprintf("Hello TCD1304 light!\n");
-
-    if (argc > 2)
-    {
-        light_num = atoi(argv[1]);
-        light_status = atoi(argv[2]);
-        do_with_tcd_light(light_num, light_status);
-    }
-    else
-    {
-        rt_kprintf("usage: tcd_light [0:1] [0:1]\n");
-        return 0;
-    }
-
-    return 0;
-}
-MSH_CMD_EXPORT(tcd_light, control light 4 tcd1304);
-#endif
-
-/*
- * static int init_timer1_4fm
+ * static int init_timer4_4fm
  * 配置 TIM1 時鍾產生指定頻率的 PWM 波形
  *
  * @ unsigned int fm_freq:
  * return: errno/Linux
  */
-static int init_timer1_4fm(unsigned int fm_freq)
+static int init_timer4_4fm(unsigned int fm_freq)
 {
     TIMER_BaseInitPara TIMER_Init = {0};
     GPIO_InitPara GPIO_InitStructure = {0};
     TIMER_OCInitPara TIMER_OCInit = {0};
     RCC_ClocksPara RCC_ClocksState = {0};
 
-    LOG_I("init timer1 with fm");
+    LOG_I("init timer4 with fm");
 
     RCC_GetClocksFreq(&RCC_ClocksState);
-    rcu_periph_clock_enable(RCU_TIMER1);
-    TIMER_InternalClockConfig(RCU_TIMER1);
+    rcu_periph_clock_enable(RCU_TIMER4);
+    TIMER_InternalClockConfig(TIMER4);
     TIMER_Init.TIMER_Period                = \
 		(RCC_ClocksState.APB1_Frequency  << 1 ) / fm_freq - 1;
 	LOG_I("apb1=%u", RCC_ClocksState.APB1_Frequency);
@@ -147,7 +66,7 @@ static int init_timer1_4fm(unsigned int fm_freq)
     TIMER_Init.TIMER_Prescaler             = 0;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
-    TIMER_BaseInit(TIMER1, &TIMER_Init);
+    TIMER_BaseInit(TIMER4, &TIMER_Init);
 
     /* 初始化 PA1 */
     GPIO_InitStructure.GPIO_Pin = GPIO_PIN_1;
@@ -160,12 +79,12 @@ static int init_timer1_4fm(unsigned int fm_freq)
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
     TIMER_OCInit.TIMER_Pulse = \
         RCC_ClocksState.APB1_Frequency  / fm_freq;
-    TIMER_OC2_Init(TIMER1, &TIMER_OCInit);
+    TIMER_OC2_Init(TIMER4, &TIMER_OCInit);
 #endif
     /* 開啓計數 */
-    TIMER_Enable(TIMER1, ENABLE);
+    TIMER_Enable(TIMER4, ENABLE);
 #if 0
-    TIMER_CtrlPWMOutputs(TIMER1, ENABLE);
+    TIMER_CtrlPWMOutputs(TIMER4, ENABLE);
 #endif
     /* SMC[2:0]=3'b000 */
 
@@ -185,7 +104,7 @@ static int init_timer3_4icg(unsigned int icg_freq)
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER3);
-    TIMER_InternalClockConfig(RCU_TIMER3);
+    TIMER_InternalClockConfig(TIMER3);
     TIMER_Init.TIMER_Period                = icg_freq - 1;
     TIMER_Init.TIMER_Prescaler             = \
         RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
@@ -230,7 +149,7 @@ static int init_timer2_4sh(unsigned int sh_freq)
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER2);
-    TIMER_InternalClockConfig(RCU_TIMER2);
+    TIMER_InternalClockConfig(TIMER2);
     TIMER_Init.TIMER_Prescaler             = \
         RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
     TIMER_Init.TIMER_Period                = sh_freq - 1;
@@ -256,7 +175,6 @@ static int init_timer2_4sh(unsigned int sh_freq)
     TIMER_CtrlPWMOutputs(TIMER2, ENABLE);
 #endif
 }
-#endif
 
 /*
  * static int drv_tcd1304_init
@@ -269,10 +187,10 @@ static int drv_tcd1304_init(void)
 {
     test_func();
     /* 測試產生 2MHz 的波形 */
-    init_timer1_4fm(CCD_FM_FREQ);
-	/* 2M/30 = 66kHz  */
+    init_timer4_4fm(CCD_FM_FREQ);
+    /* 2M/30 = 66kHz  */
     init_timer2_4sh(10);
-	/* 2M/12000 = 166Hz  */
+    /* 2M/12000 = 166Hz  */
     init_timer3_4icg(36900);
     LOG_I("hello red");
 }
