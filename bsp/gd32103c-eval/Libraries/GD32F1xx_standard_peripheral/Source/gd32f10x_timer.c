@@ -390,7 +390,7 @@ void TIMER_BKDTStructInit(TIMER_BKDTInitPara *TIMER_BKDTInit)
 
 /**
   * @brief  Enable or disable the TIMER Pwm Outputs.
-  * @param  TIMERx:  x ={ 1 , 8 } .
+  * @param  TIMERx:  x ={ 0 , 7 } .
   * @param  NewValue: ENABLE or DISABLE .
   * @retval None
   */

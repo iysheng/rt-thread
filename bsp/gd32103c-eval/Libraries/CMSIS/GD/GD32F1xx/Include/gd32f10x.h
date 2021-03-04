@@ -158,16 +158,16 @@ typedef enum IRQn {
     EXTI2_IRQn                  = 8,      /*!< EXTI Line2 Interrupt                                 */
     EXTI3_IRQn                  = 9,      /*!< EXTI Line3 Interrupt                                 */
     EXTI4_IRQn                  = 10,     /*!< EXTI Line4 Interrupt                                 */
-    DMA1_Channel1_IRQn          = 11,     /*!< DMA1 Channel 1 global Interrupt                      */
-    DMA1_Channel2_IRQn          = 12,     /*!< DMA1 Channel 2 global Interrupt                      */
-    DMA1_Channel3_IRQn          = 13,     /*!< DMA1 Channel 3 global Interrupt                      */
-    DMA1_Channel4_IRQn          = 14,     /*!< DMA1 Channel 4 global Interrupt                      */
-    DMA1_Channel5_IRQn          = 15,     /*!< DMA1 Channel 5 global Interrupt                      */
-    DMA1_Channel6_IRQn          = 16,     /*!< DMA1 Channel 6 global Interrupt                      */
-    DMA1_Channel7_IRQn          = 17,     /*!< DMA1 Channel 7 global Interrupt                      */
+    DMA0_Channel1_IRQn          = 11,     /*!< DMA0 Channel 1 global Interrupt                      */
+    DMA0_Channel2_IRQn          = 12,     /*!< DMA0 Channel 2 global Interrupt                      */
+    DMA0_Channel3_IRQn          = 13,     /*!< DMA0 Channel 3 global Interrupt                      */
+    DMA0_Channel4_IRQn          = 14,     /*!< DMA0 Channel 4 global Interrupt                      */
+    DMA0_Channel5_IRQn          = 15,     /*!< DMA0 Channel 5 global Interrupt                      */
+    DMA0_Channel6_IRQn          = 16,     /*!< DMA0 Channel 6 global Interrupt                      */
+    DMA0_Channel7_IRQn          = 17,     /*!< DMA0 Channel 7 global Interrupt                      */
 
 #ifdef GD32F10X_MD
-    ADC1_2_IRQn                 = 18,     /*!< ADC1 and ADC2 global Interrupt                       */
+    ADC0_1_IRQn                 = 18,     /*!< ADC0 and ADC1 global Interrupt                       */
     USB_HP_CAN1_TX_IRQn         = 19,     /*!< USB Device High Priority or CAN1 TX Interrupts       */
     USB_LP_CAN1_RX0_IRQn        = 20,     /*!< USB Device Low Priority or CAN1 RX0 Interrupts       */
     CAN1_RX1_IRQn               = 21,     /*!< CAN1 RX1 Interrupt                                   */
@@ -196,7 +196,7 @@ typedef enum IRQn {
 #endif /* GD32F10X_MD */
 
 #ifdef GD32F10X_HD
-                                  ADC1_2_IRQn                 = 18,     /*!< ADC1 and ADC2 global Interrupt                       */
+                                  ADC0_1_IRQn                 = 18,     /*!< ADC0 and ADC1 global Interrupt                       */
                                   USB_HP_CAN1_TX_IRQn         = 19,     /*!< USB Device High Priority or CAN1 TX Interrupts       */
                                   USB_LP_CAN1_RX0_IRQn        = 20,     /*!< USB Device Low Priority or CAN1 RX0 Interrupts       */
                                   CAN1_RX1_IRQn               = 21,     /*!< CAN1 RX1 Interrupt                                   */
@@ -225,7 +225,7 @@ typedef enum IRQn {
                                   TIMER7_UP_IRQn              = 44,     /*!< TIMER7 Update Interrupt                              */
                                   TIMER7_TRG_COM_IRQn         = 45,     /*!< TIMER7 Trigger and Commutation Interrupt             */
                                   TIMER7_CC_IRQn              = 46,     /*!< TIMER7 Capture Compare Interrupt                     */
-                                  ADC3_IRQn                   = 47,     /*!< ADC3 global Interrupt                                */
+                                  ADC2_IRQn                   = 47,     /*!< ADC2 global Interrupt                                */
                                   EXMC_IRQn                   = 48,     /*!< EXMC global Interrupt                                */
                                   SDIO_IRQn                   = 49,     /*!< SDIO global Interrupt                                */
                                   TIMER4_IRQn                 = 50,     /*!< TIMER4 global Interrupt                              */
@@ -234,14 +234,14 @@ typedef enum IRQn {
                                   UART4_IRQn                  = 53,     /*!< UART5 global Interrupt                               */
                                   TIMER5_IRQn                 = 54,     /*!< TIMER5 global Interrupt                              */
                                   TIMER6_IRQn                 = 55,     /*!< TIMER6 global Interrupt                              */
-                                  DMA2_Channel1_IRQn          = 56,     /*!< DMA2 Channel 1 global Interrupt                      */
-                                  DMA2_Channel2_IRQn          = 57,     /*!< DMA2 Channel 2 global Interrupt                      */
-                                  DMA2_Channel3_IRQn          = 58,     /*!< DMA2 Channel 3 global Interrupt                      */
-                                  DMA2_Channel4_5_IRQn        = 59      /*!< DMA2 Channel 4 and Channel 5 global Interrupt        */
+                                  DMA1_Channel1_IRQn          = 56,     /*!< DMA1 Channel 1 global Interrupt                      */
+                                  DMA1_Channel2_IRQn          = 57,     /*!< DMA1 Channel 2 global Interrupt                      */
+                                  DMA1_Channel3_IRQn          = 58,     /*!< DMA1 Channel 3 global Interrupt                      */
+                                  DMA1_Channel4_5_IRQn        = 59      /*!< DMA1 Channel 4 and Channel 5 global Interrupt        */
 #endif /* GD32F10X_HD */
 
 #ifdef GD32F10X_XD
-                                          ADC1_2_IRQn                 = 18,     /*!< ADC1 and ADC2 global Interrupt                       */
+                                          ADC0_1_IRQn                 = 18,     /*!< ADC0 and ADC1 global Interrupt                       */
                                           USB_HP_CAN1_TX_IRQn         = 19,     /*!< USB Device High Priority or CAN1 TX Interrupts       */
                                           USB_LP_CAN1_RX0_IRQn        = 20,     /*!< USB Device Low Priority or CAN1 RX0 Interrupts       */
                                           CAN1_RX1_IRQn               = 21,     /*!< CAN1 RX1 Interrupt                                   */
@@ -270,7 +270,7 @@ typedef enum IRQn {
                                           TIMER7_UP_TIMER12_IRQn      = 44,     /*!< TIMER7 Update Interrupt and TIMER12 global Interrupt */
                                           TIMER7_TRG_COM_TIMER13_IRQn = 45,     /*!< TIMER7 Trigger and Commutation Interrupt and TIMER13 global interrupt */
                                           TIMER7_CC_IRQn              = 46,     /*!< TIMER7 Capture Compare Interrupt                     */
-                                          ADC3_IRQn                   = 47,     /*!< ADC3 global Interrupt                                */
+                                          ADC2_IRQn                   = 47,     /*!< ADC2 global Interrupt                                */
                                           EXMC_IRQn                   = 48,     /*!< EXMC global Interrupt                                */
                                           SDIO_IRQn                   = 49,     /*!< SDIO global Interrupt                                */
                                           TIMER4_IRQn                 = 50,     /*!< TIMER4 global Interrupt                              */
@@ -279,14 +279,14 @@ typedef enum IRQn {
                                           UART5_IRQn                  = 53,     /*!< UART5 global Interrupt                               */
                                           TIMER5_IRQn                 = 54,     /*!< TIMER5 global Interrupt                              */
                                           TIMER6_IRQn                 = 55,     /*!< TIMER6 global Interrupt                              */
-                                          DMA2_Channel1_IRQn          = 56,     /*!< DMA2 Channel 1 global Interrupt                      */
-                                          DMA2_Channel2_IRQn          = 57,     /*!< DMA2 Channel 2 global Interrupt                      */
-                                          DMA2_Channel3_IRQn          = 58,     /*!< DMA2 Channel 3 global Interrupt                      */
-                                          DMA2_Channel4_5_IRQn        = 59      /*!< DMA2 Channel 4 and Channel 5 global Interrupt        */
+                                          DMA1_Channel1_IRQn          = 56,     /*!< DMA1 Channel 1 global Interrupt                      */
+                                          DMA1_Channel2_IRQn          = 57,     /*!< DMA1 Channel 2 global Interrupt                      */
+                                          DMA1_Channel3_IRQn          = 58,     /*!< DMA1 Channel 3 global Interrupt                      */
+                                          DMA1_Channel4_5_IRQn        = 59      /*!< DMA1 Channel 4 and Channel 5 global Interrupt        */
 #endif /* GD32F10X_XD */
 
 #ifdef GD32F10X_CL
-                                                  ADC1_2_IRQn                 = 18,     /*!< ADC1 and ADC2 global Interrupt                       */
+                                                  ADC0_1_IRQn                 = 18,     /*!< ADC0 and ADC1 global Interrupt                       */
                                                   CAN1_TX_IRQn                = 19,     /*!< CAN1 TX Interrupts                                   */
                                                   CAN1_RX0_IRQn               = 20,     /*!< CAN1 RX0 Interrupts                                  */
                                                   CAN1_RX1_IRQn               = 21,     /*!< CAN1 RX1 Interrupt                                   */
@@ -315,7 +315,7 @@ typedef enum IRQn {
                                                   TIMER7_UP_TIMER12_IRQn      = 44,     /*!< TIMER7 Update Interrupt and TIMER12 global Interrupt */
                                                   TIMER7_TRG_COM_TIMER13_IRQn = 45,     /*!< TIMER7 Trigger and Commutation Interrupt and TIMER13 global interrupt */
                                                   TIMER7_CC_IRQn              = 46,     /*!< TIMER7 Capture Compare Interrupt                     */
-                                                  ADC3_IRQn                   = 47,     /*!< ADC3 global Interrupt                                */
+                                                  ADC2_IRQn                   = 47,     /*!< ADC2 global Interrupt                                */
                                                   EXMC_IRQn                   = 48,     /*!< EXMC global Interrupt                                */
                                                   TIMER4_IRQn                 = 50,     /*!< TIMER4 global Interrupt                              */
                                                   SPI3_IRQn                   = 51,     /*!< SPI3 global Interrupt                                */
@@ -323,11 +323,11 @@ typedef enum IRQn {
                                                   UART5_IRQn                  = 53,     /*!< UART5 global Interrupt                               */
                                                   TIMER5_IRQn                 = 54,     /*!< TIMER5 global Interrupt                              */
                                                   TIMER6_IRQn                 = 55,     /*!< TIMER6 global Interrupt                              */
-                                                  DMA2_Channel1_IRQn          = 56,     /*!< DMA2 Channel 1 global Interrupt                      */
-                                                  DMA2_Channel2_IRQn          = 57,     /*!< DMA2 Channel 2 global Interrupt                      */
-                                                  DMA2_Channel3_IRQn          = 58,     /*!< DMA2 Channel 3 global Interrupt                      */
-                                                  DMA2_Channel4_IRQn          = 59,     /*!< DMA2 Channel 4 global Interrupt                      */
-                                                  DMA2_Channel5_IRQn          = 60,     /*!< DMA2 Channel 5 global Interrupt                      */
+                                                  DMA1_Channel1_IRQn          = 56,     /*!< DMA1 Channel 1 global Interrupt                      */
+                                                  DMA1_Channel2_IRQn          = 57,     /*!< DMA1 Channel 2 global Interrupt                      */
+                                                  DMA1_Channel3_IRQn          = 58,     /*!< DMA1 Channel 3 global Interrupt                      */
+                                                  DMA1_Channel4_IRQn          = 59,     /*!< DMA1 Channel 4 global Interrupt                      */
+                                                  DMA1_Channel5_IRQn          = 60,     /*!< DMA1 Channel 5 global Interrupt                      */
                                                   ETH_IRQn                    = 61,     /*!< Ethernet global Interrupt                            */
                                                   ETH_WKUP_IRQn               = 62,     /*!< Ethernet Wakeup through EXTI line Interrupt          */
                                                   CAN2_TX_IRQn                = 63,     /*!< CAN2 TX Interrupt                                    */
@@ -1124,13 +1124,13 @@ typedef struct {
 #define GPIOE_BASE            (APB2PERIPH_BASE + 0x1800)
 #define GPIOF_BASE            (APB2PERIPH_BASE + 0x1C00)
 #define GPIOG_BASE            (APB2PERIPH_BASE + 0x2000)
-#define ADC1_BASE             (APB2PERIPH_BASE + 0x2400)
-#define ADC2_BASE             (APB2PERIPH_BASE + 0x2800)
+#define ADC0_BASE             (APB2PERIPH_BASE + 0x2400)
+#define ADC1_BASE             (APB2PERIPH_BASE + 0x2800)
 #define TIMER0_BASE           (APB2PERIPH_BASE + 0x2C00)
 #define SPI1_BASE             (APB2PERIPH_BASE + 0x3000)
 #define TIMER7_BASE           (APB2PERIPH_BASE + 0x3400)
 #define USART0_BASE           (APB2PERIPH_BASE + 0x3800)
-#define ADC3_BASE             (APB2PERIPH_BASE + 0x3C00)
+#define ADC2_BASE             (APB2PERIPH_BASE + 0x3C00)
 #define TIMER14_BASE          (APB2PERIPH_BASE + 0x4000)
 #define TIMER15_BASE          (APB2PERIPH_BASE + 0x4400)
 #define TIMER16_BASE          (APB2PERIPH_BASE + 0x4800)
@@ -1140,20 +1140,20 @@ typedef struct {
 
 #define SDIO_BASE             (PERIPH_BASE + 0x18000)
 
-#define DMA1_BASE             (AHBPERIPH_BASE + 0x0000)
-#define DMA1_CHANNEL1_BASE    (AHBPERIPH_BASE + 0x0008)
-#define DMA1_CHANNEL2_BASE    (AHBPERIPH_BASE + 0x001C)
-#define DMA1_CHANNEL3_BASE    (AHBPERIPH_BASE + 0x0030)
-#define DMA1_CHANNEL4_BASE    (AHBPERIPH_BASE + 0x0044)
-#define DMA1_CHANNEL5_BASE    (AHBPERIPH_BASE + 0x0058)
-#define DMA1_CHANNEL6_BASE    (AHBPERIPH_BASE + 0x006C)
-#define DMA1_CHANNEL7_BASE    (AHBPERIPH_BASE + 0x0080)
-#define DMA2_BASE             (AHBPERIPH_BASE + 0x0400)
-#define DMA2_CHANNEL1_BASE    (AHBPERIPH_BASE + 0x0408)
-#define DMA2_CHANNEL2_BASE    (AHBPERIPH_BASE + 0x041C)
-#define DMA2_CHANNEL3_BASE    (AHBPERIPH_BASE + 0x0430)
-#define DMA2_CHANNEL4_BASE    (AHBPERIPH_BASE + 0x0444)
-#define DMA2_CHANNEL5_BASE    (AHBPERIPH_BASE + 0x0458)
+#define DMA0_BASE             (AHBPERIPH_BASE + 0x0000)
+#define DMA0_CHANNEL1_BASE    (AHBPERIPH_BASE + 0x0008)
+#define DMA0_CHANNEL2_BASE    (AHBPERIPH_BASE + 0x001C)
+#define DMA0_CHANNEL3_BASE    (AHBPERIPH_BASE + 0x0030)
+#define DMA0_CHANNEL4_BASE    (AHBPERIPH_BASE + 0x0044)
+#define DMA0_CHANNEL5_BASE    (AHBPERIPH_BASE + 0x0058)
+#define DMA0_CHANNEL6_BASE    (AHBPERIPH_BASE + 0x006C)
+#define DMA0_CHANNEL7_BASE    (AHBPERIPH_BASE + 0x0080)
+#define DMA1_BASE             (AHBPERIPH_BASE + 0x0400)
+#define DMA1_CHANNEL1_BASE    (AHBPERIPH_BASE + 0x0408)
+#define DMA1_CHANNEL2_BASE    (AHBPERIPH_BASE + 0x041C)
+#define DMA1_CHANNEL3_BASE    (AHBPERIPH_BASE + 0x0430)
+#define DMA1_CHANNEL4_BASE    (AHBPERIPH_BASE + 0x0444)
+#define DMA1_CHANNEL5_BASE    (AHBPERIPH_BASE + 0x0458)
 #define RCC_BASE              (AHBPERIPH_BASE + 0x1000)
 #define RCU_BASE              (AHBPERIPH_BASE + 0x1000)
 #define CRC_BASE              (AHBPERIPH_BASE + 0x3000)
@@ -1220,14 +1220,14 @@ typedef struct {
 #define GPIOE                 ((GPIO_TypeDef *) GPIOE_BASE)
 #define GPIOF                 ((GPIO_TypeDef *) GPIOF_BASE)
 #define GPIOG                 ((GPIO_TypeDef *) GPIOG_BASE)
+#define ADC0                  ((ADC_TypeDef *) ADC0_BASE)
 #define ADC1                  ((ADC_TypeDef *) ADC1_BASE)
-#define ADC2                  ((ADC_TypeDef *) ADC2_BASE)
 #define TIMER1                ((TIMER_TypeDef *) TIMER1_BASE)
 #define SPI1                  ((SPI_TypeDef *) SPI1_BASE)
 #define TIMER8                ((TIMER_TypeDef *) TIMER8_BASE)
 #define USART0                ((USART_TypeDef *) USART0_BASE)
 #define USART1                ((USART_TypeDef *) USART1_BASE)
-#define ADC3                  ((ADC_TypeDef *) ADC3_BASE)
+#define ADC2                  ((ADC_TypeDef *) ADC2_BASE)
 #define TIMER15               ((TIMER_TypeDef *) TIMER15_BASE)
 #define TIMER16               ((TIMER_TypeDef *) TIMER16_BASE)
 #define TIMER17               ((TIMER_TypeDef *) TIMER17_BASE)
@@ -1235,20 +1235,20 @@ typedef struct {
 #define TIMER10               ((TIMER_TypeDef *) TIMER10_BASE)
 #define TIMER11               ((TIMER_TypeDef *) TIMER11_BASE)
 #define SDIO                  ((SDIO_TypeDef *) SDIO_BASE)
+#define DMA0                  ((DMA_TypeDef *) DMA0_BASE)
 #define DMA1                  ((DMA_TypeDef *) DMA1_BASE)
-#define DMA2                  ((DMA_TypeDef *) DMA2_BASE)
+#define DMA0_CHANNEL1         ((DMA_Channel_TypeDef *) DMA0_CHANNEL1_BASE)
+#define DMA0_CHANNEL2         ((DMA_Channel_TypeDef *) DMA0_CHANNEL2_BASE)
+#define DMA0_CHANNEL3         ((DMA_Channel_TypeDef *) DMA0_CHANNEL3_BASE)
+#define DMA0_CHANNEL4         ((DMA_Channel_TypeDef *) DMA0_CHANNEL4_BASE)
+#define DMA0_CHANNEL5         ((DMA_Channel_TypeDef *) DMA0_CHANNEL5_BASE)
+#define DMA0_CHANNEL6         ((DMA_Channel_TypeDef *) DMA0_CHANNEL6_BASE)
+#define DMA0_CHANNEL7         ((DMA_Channel_TypeDef *) DMA0_CHANNEL7_BASE)
 #define DMA1_CHANNEL1         ((DMA_Channel_TypeDef *) DMA1_CHANNEL1_BASE)
 #define DMA1_CHANNEL2         ((DMA_Channel_TypeDef *) DMA1_CHANNEL2_BASE)
 #define DMA1_CHANNEL3         ((DMA_Channel_TypeDef *) DMA1_CHANNEL3_BASE)
 #define DMA1_CHANNEL4         ((DMA_Channel_TypeDef *) DMA1_CHANNEL4_BASE)
 #define DMA1_CHANNEL5         ((DMA_Channel_TypeDef *) DMA1_CHANNEL5_BASE)
-#define DMA1_CHANNEL6         ((DMA_Channel_TypeDef *) DMA1_CHANNEL6_BASE)
-#define DMA1_CHANNEL7         ((DMA_Channel_TypeDef *) DMA1_CHANNEL7_BASE)
-#define DMA2_CHANNEL1         ((DMA_Channel_TypeDef *) DMA2_CHANNEL1_BASE)
-#define DMA2_CHANNEL2         ((DMA_Channel_TypeDef *) DMA2_CHANNEL2_BASE)
-#define DMA2_CHANNEL3         ((DMA_Channel_TypeDef *) DMA2_CHANNEL3_BASE)
-#define DMA2_CHANNEL4         ((DMA_Channel_TypeDef *) DMA2_CHANNEL4_BASE)
-#define DMA2_CHANNEL5         ((DMA_Channel_TypeDef *) DMA2_CHANNEL5_BASE)
 #define RCC                   ((RCC_TypeDef *) RCC_BASE)
 #define CRC                   ((CRC_TypeDef *) CRC_BASE)
 #define FMC                   ((FMC_TypeDef *) FMC_R_BASE)
@@ -6377,10 +6377,10 @@ typedef struct {
 
 #define  AFIO_PCFR1_PD01_REMAP                      ((uint32_t)0x00008000)        /*!< Port D0/Port D1 mapping on OSC_IN/OSC_OUT */
 #define  AFIO_PCFR1_TIM5CH4_IREMAP                  ((uint32_t)0x00010000)        /*!< TIM5 Channel4 Internal Remap */
-#define  AFIO_PCFR1_ADC1_ETRGINJ_REMAP              ((uint32_t)0x00020000)        /*!< ADC 1 External Trigger Injected Conversion remapping */
-#define  AFIO_PCFR1_ADC1_ETRGREG_REMAP              ((uint32_t)0x00040000)        /*!< ADC 1 External Trigger Regular Conversion remapping */
-#define  AFIO_PCFR1_ADC2_ETRGINJ_REMAP              ((uint32_t)0x00080000)        /*!< ADC 2 External Trigger Injected Conversion remapping */
-#define  AFIO_PCFR1_ADC2_ETRGREG_REMAP              ((uint32_t)0x00100000)        /*!< ADC 2 External Trigger Regular Conversion remapping */
+#define  AFIO_PCFR1_ADC0_ETRGINJ_REMAP              ((uint32_t)0x00020000)        /*!< ADC 0 External Trigger Injected Conversion remapping */
+#define  AFIO_PCFR1_ADC0_ETRGREG_REMAP              ((uint32_t)0x00040000)        /*!< ADC 0 External Trigger Regular Conversion remapping */
+#define  AFIO_PCFR1_ADC1_ETRGINJ_REMAP              ((uint32_t)0x00080000)        /*!< ADC 1 External Trigger Injected Conversion remapping */
+#define  AFIO_PCFR1_ADC1_ETRGREG_REMAP              ((uint32_t)0x00100000)        /*!< ADC 1 External Trigger Regular Conversion remapping */
 
 /*!< SWJ_CFG configuration */
 #define  AFIO_PCFR1_SWJ_CFG                         ((uint32_t)0x07000000)        /*!< SWJ_CFG[2:0] bits (Serial Wire JTAG configuration) */
@@ -7050,13 +7050,13 @@ typedef struct {
 #define  RCC_APB2RCR_PERST                          ((uint32_t)0x00000040)         /*!< GPIOE clock reset */
 #define  RCC_APB2RCR_PFRST                          ((uint32_t)0x00000080)         /*!< GPIOF clock reset */
 #define  RCC_APB2RCR_PGRST                          ((uint32_t)0x00000100)         /*!< GPIOF clock reset */
-#define  RCC_APB2RCR_ADC1RST                        ((uint32_t)0x00000200)         /*!< ADC1 clock reset */
-#define  RCC_APB2RCR_ADC2RST                        ((uint32_t)0x00000400)         /*!< ADC2 clock reset */
+#define  RCC_APB2RCR_ADC0RST                        ((uint32_t)0x00000200)         /*!< ADC0 clock reset */
+#define  RCC_APB2RCR_ADC1RST                        ((uint32_t)0x00000400)         /*!< ADC1 clock reset */
 #define  RCC_APB2RCR_TIMER0RST                      ((uint32_t)0x00000800)         /*!< TIMER0 clock reset */
 #define  RCC_APB2RCR_SPI1RST                        ((uint32_t)0x00001000)         /*!< SPI1 clock reset */
 #define  RCC_APB2RCR_TIMER7RST                      ((uint32_t)0x00002000)         /*!< TIMER7 clock reset */
 #define  RCC_APB2RCR_USART0RST                      ((uint32_t)0x00004000)         /*!< USART1 clock reset */
-#define  RCC_APB2RCR_ADC3RST                        ((uint32_t)0x00008000)         /*!< ADC3 clock reset */
+#define  RCC_APB2RCR_ADC2RST                        ((uint32_t)0x00008000)         /*!< ADC2 clock reset */
 #define  RCC_APB2RCR_TIMER8RST                      ((uint32_t)0x00080000)         /*!< TIMER8 clock reset */
 #define  RCC_APB2RCR_TIMER9RST                      ((uint32_t)0x00100000)         /*!< TIMER9 clock reset */
 #define  RCC_APB2RCR_TIMER10RST                     ((uint32_t)0x00200000)         /*!< TIMER10 clock reset */
@@ -7089,8 +7089,8 @@ typedef struct {
 #define  RCC_APB1RCR_DACRST                         ((uint32_t)0x20000000)        /*!< DAC clock reset */
 
 /******************  Bit definition for RCC_AHBCCR register  ******************/
-#define  RCC_AHBCCR_DMA1EN                          ((uint32_t)0x00000001)        /*!< DMA1 clock enable */
-#define  RCC_AHBCCR_DMA2EN                          ((uint32_t)0x00000002)        /*!< DMA2 clock enable */
+#define  RCC_AHBCCR_DMA0EN                          ((uint32_t)0x00000001)        /*!< DMA0 clock enable */
+#define  RCC_AHBCCR_DMA1EN                          ((uint32_t)0x00000002)        /*!< DMA1 clock enable */
 #define  RCC_AHBCCR_SRAMEN                          ((uint32_t)0x00000004)        /*!< SRAM interface clock enable */
 #define  RCC_AHBCCR_FMCEN                           ((uint32_t)0x00000010)        /*!< FMC clock enable */
 #define  RCC_AHBCCR_CRCEN                           ((uint32_t)0x00000040)        /*!< CRC clock enable */
@@ -7115,13 +7115,13 @@ typedef struct {
 #define  RCC_APB2CCR_PEEN                           ((uint32_t)0x00000040)         /*!< GPIOE clock enable */
 #define  RCC_APB2CCR_PFEN                           ((uint32_t)0x00000080)         /*!< GPIOF clock enable */
 #define  RCC_APB2CCR_PGEN                           ((uint32_t)0x00000100)         /*!< GPIOF clock enable */
-#define  RCC_APB2CCR_ADC1EN                         ((uint32_t)0x00000200)         /*!< ADC1 clock enable */
-#define  RCC_APB2CCR_ADC2EN                         ((uint32_t)0x00000400)         /*!< ADC2 clock enable */
+#define  RCC_APB2CCR_ADC0EN                         ((uint32_t)0x00000200)         /*!< ADC0 clock enable */
+#define  RCC_APB2CCR_ADC1EN                         ((uint32_t)0x00000400)         /*!< ADC1 clock enable */
 #define  RCC_APB2CCR_TIMER0EN                       ((uint32_t)0x00000800)         /*!< TIMER0 clock enable */
 #define  RCC_APB2CCR_SPI1EN                         ((uint32_t)0x00001000)         /*!< SPI1 clock enable */
 #define  RCC_APB2CCR_TIMER7EN                       ((uint32_t)0x00002000)         /*!< TIMER7 clock enable */
 #define  RCC_APB2CCR_USART1EN                       ((uint32_t)0x00004000)         /*!< USART1 clock enable */
-#define  RCC_APB2CCR_ADC3EN                         ((uint32_t)0x00008000)         /*!< ADC3 clock enable */
+#define  RCC_APB2CCR_ADC2EN                         ((uint32_t)0x00008000)         /*!< ADC2 clock enable */
 #define  RCC_APB2CCR_TIMER8EN                       ((uint32_t)0x00080000)         /*!< TIMER8 clock enable */
 #define  RCC_APB2CCR_TIMER9EN                       ((uint32_t)0x00100000)         /*!< TIMER9 clock enable */
 #define  RCC_APB2CCR_TIMER10EN                      ((uint32_t)0x00200000)         /*!< TIMER10 clock enable */

@@ -3,7 +3,7 @@ import os
 # toolchains options
 ARCH='arm'
 CPU='cortex-m3'
-CROSS_TOOL='keil'
+CROSS_TOOL='gcc'
 
 if os.getenv('RTT_CC'):
     CROSS_TOOL = os.getenv('RTT_CC')
@@ -12,7 +12,7 @@ if os.getenv('RTT_CC'):
 # EXEC_PATH is the compiler execute path, for example, CodeSourcery, Keil MDK, IAR
 if  CROSS_TOOL == 'gcc':
     PLATFORM    = 'gcc'
-    EXEC_PATH   = r'/opt/arm_tools/gcc-arm-none-eabi-6_2-2016q4/bin'
+    EXEC_PATH   = r'/opt/arm_tools/gcc-arm-none-eabi-6_2-2016q4/bin/'
 elif CROSS_TOOL == 'keil':
     PLATFORM 	= 'armcc'
     EXEC_PATH 	= r'C:/Keil_v5'
