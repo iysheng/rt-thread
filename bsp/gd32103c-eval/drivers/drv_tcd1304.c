@@ -212,10 +212,6 @@ static int init_timer0_4adc(unsigned int freq)
     GPIO_InitStructure.GPIO_Mode = GPIO_MODE_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_13;
-    GPIO_InitStructure.GPIO_Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
 #else
     rcu_periph_clock_enable(RCU_AF);
     rcu_periph_clock_enable(RCU_GPIOE);
@@ -244,7 +240,9 @@ void DMA0_Channel0_IRQHandler(void)
     /* enter interrupt */
     rt_interrupt_enter();
 
-    rt_kprintf("DMA handler catch.\n");
+    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[0]);
+    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[1]);
+    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[2]);
 
     /* leave interrupt */
     rt_interrupt_leave();
@@ -271,7 +269,7 @@ static int init_adc_4tcd(unsigned int freq)
         return ret;
     }
 
-#if 0
+#if 1
     /* DMA 配置 */
     rcu_periph_clock_enable(RCU_DMA0);
     DMA_InitParaStruct.DMA_PeripheralBaseAddr = (uint32_t)&ADC0->RDTR;
