@@ -445,6 +445,13 @@ typedef struct {
 #define CANWAKEUPFAILED             CAN_WAKEUP_FAILED
 #define CANWAKEUPOK                 CAN_WAKEUP_OK
 
+/* CAN TMIR_StdId masks */
+#define CAN_TMIR_StdId_Mask               ((uint32_t)0x000007FF)
+
+/* CAN TMIR_ExtId masks */
+#define CAN_TMIR_ExtId_Mask               ((uint32_t)0x1FFFFFFF)
+
+#define CAN_MSR_ERRI                      ((uint32_t)1 << 2)/*!< Error Interrupt */
 /**
   * @}
   */
@@ -471,7 +478,7 @@ uint8_t CAN_TransmitState(CAN_TypeDef *CANx, uint8_t TransmitMailbox);
 void CAN_StopTransmit(CAN_TypeDef *CANx, uint8_t Mailbox);
 
 /* Receive functions */
-void CAN_Receive(CAN_TypeDef *CANx, uint8_t FIFONumber, CanRxMessage *RxMessage);
+uint8_t CAN_Receive(CAN_TypeDef *CANx, uint8_t FIFONumber, CanRxMessage *RxMessage);
 void CAN_FIFODequeue(CAN_TypeDef *CANx, uint8_t FIFONumber);
 uint8_t CAN_MessageLength(CAN_TypeDef *CANx, uint8_t FIFONumber);
 

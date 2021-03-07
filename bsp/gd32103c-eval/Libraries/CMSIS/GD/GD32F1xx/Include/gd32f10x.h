@@ -1839,6 +1839,10 @@ typedef struct {
 #define  CAN_TMD0R1_DB1                             ((uint32_t)0x0000FF00)        /*!< Data byte 1 */
 #define  CAN_TMD0R1_DB2                             ((uint32_t)0x00FF0000)        /*!< Data byte 2 */
 #define  CAN_TMD0R1_DB3                             ((uint32_t)0xFF000000)        /*!< Data byte 3 */
+#define  CAN_TMIR_FT_POS                            (1U)
+#define  CAN_TMIR_FF_POS                            (2U)
+#define  CAN_TMIR_STID_POS                          (21U)
+#define  CAN_TMIR_EXTID_POS                         (3U)
 
 /******************  Bit definition for CAN_TMD1R1 register  *******************/
 #define  CAN_TMD1R1_DB4                             ((uint32_t)0x000000FF)        /*!< Data byte 4 */

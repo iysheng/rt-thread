@@ -512,8 +512,27 @@ void CAN_StopTransmit(CAN_TypeDef *CANx, uint8_t Mailbox)
   *                    CAN Id, CAN DLC, CAN datas and FI number.
   * @retval None.
   */
-void CAN_Receive(CAN_TypeDef *CANx, uint8_t FIFONumber, CanRxMessage *RxMessage)
+uint8_t CAN_Receive(CAN_TypeDef *CANx, uint8_t FIFONumber, CanRxMessage *RxMessage)
 {
+    uint8_t len = 0;
+
+    if (FIFONumber == CAN_FIFO0)
+    {
+        len = CANx->RFR0 & 0x3;
+    }
+    else if (FIFONumber == CAN_FIFO1)
+    {
+        len = CANx->RFR1 & 0x3;
+    }
+    else
+    {
+        goto over;
+    }
+
+    if (!len)
+    {
+        goto over;
+    }
     /* Get the frame identifier */
     RxMessage->FF = (uint8_t)0x04 & CANx->FIFOMailBox[FIFONumber].RFMIR;
     if (RxMessage->FF == CAN_FF_STANDARD) {
@@ -545,6 +564,8 @@ void CAN_Receive(CAN_TypeDef *CANx, uint8_t FIFONumber, CanRxMessage *RxMessage)
     else {
         CANx->RFR1 |= CAN_RFR1_RFD1;
     }
+over:
+    return len;
 }
 
 /**

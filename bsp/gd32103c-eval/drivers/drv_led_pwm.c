@@ -157,4 +157,12 @@ static long tcd_pwm_light(int argc, char * argv[])
     return 0;
 }
 MSH_CMD_EXPORT(tcd_pwm_light, control light 4 tcd1304);
+
+static long reboot(int argc, char * argv[])
+{
+
+    rt_hw_cpu_reset();
+    return 0;
+}
+MSH_CMD_EXPORT(reboot, reboot);
 #endif
