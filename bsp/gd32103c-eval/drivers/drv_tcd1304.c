@@ -96,6 +96,58 @@ static int init_timer4_4fm(unsigned int fm_freq)
     /* CHxCOMCTL bits to 3’b110 (PWM mode0) or to 3’b111(PWM mode1) */
 }
 
+typedef struct {
+    int should_scan;
+} drv_tcd1304_data_t;
+
+static drv_tcd1304_data_t g_tcd1304_device_data = {
+	.should_scan = 0,
+};
+
+/*
+ * int set_tcd1304_device_data
+ * 设置 tcd1304 设备的控制数据
+ *
+ * @ data:
+ * return: errno/Linux
+ */
+int set_tcd1304_device_data(int data)
+{
+	g_tcd1304_device_data.should_scan = data;
+	return 0;
+}
+
+/*
+ * int get_tcd1304_device_data
+ * 获取 1304 设备的控制数据
+ *
+ * @ void:
+ * return: errno/Linux
+ */
+int get_tcd1304_device_data(void)
+{
+	return g_tcd1304_device_data.should_scan;
+}
+
+void TIMER3_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
+	if (g_tcd1304_device_data.should_scan)
+	{
+		rt_kprintf("scan now.\n");
+        TIMER_Enable(TIMER0, ENABLE);
+		g_tcd1304_device_data.should_scan--;
+	}
+	else
+	{
+#if 1
+        TIMER_Enable(TIMER0, DISABLE);
+#endif
+	}
+    rt_interrupt_leave();
+}
+
 static int init_timer3_4icg(unsigned int icg_freq)
 {
     TIMER_BaseInitPara TIMER_Init = {0};
@@ -136,7 +188,11 @@ static int init_timer3_4icg(unsigned int icg_freq)
     TIMER_OC3_Init(TIMER3, &TIMER_OCInit);
     TIMER_Enable(TIMER3, ENABLE);
     TIMER_Enable(TIMER2, ENABLE);
+    /* TODO 开启定时器的更新中断，在中断处理函数中需要做一些事情 */
+    TIMER_INTConfig(TIMER3, TIMER_INT_UPDATE, ENABLE);
+    NVIC_SetPriority(TIMER3_IRQn, 0);
 #if 0
+    NVIC_EnableIRQ(TIMER3_IRQn);
     TIMER_CtrlPWMOutputs(TIMER3, ENABLE);
 #endif
 }
@@ -227,8 +283,10 @@ static int init_timer0_4adc(unsigned int freq)
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
     TIMER_OCInit.TIMER_Pulse = TIMER_Init.TIMER_Period >> 1;
     TIMER_OC1_Init(TIMER0, &TIMER_OCInit);
+#if 0
     /* 開啓計數 */
     TIMER_Enable(TIMER0, ENABLE);
+#endif
     /* 高级定时器 0 和定时器 7 需要开启这个才会输出 PWM */
     TIMER_CtrlPWMOutputs(TIMER0, ENABLE);
 
@@ -239,11 +297,10 @@ void DMA0_Channel0_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
-
-    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[0]);
-    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[1]);
-    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[2]);
-
+    DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_HT1 | DMA1_INT_ERR1 );
+    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[50]);
+    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[51]);
+    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[52]);
     /* leave interrupt */
     rt_interrupt_leave();
 }
