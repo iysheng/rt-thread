@@ -44,10 +44,6 @@ static int test_sync(int argc, char **argv)
 	/* TODO 设置全局标志位，开始采样 */
     set_tcd1304_device_data(1);
     NVIC_EnableIRQ(TIMER3_IRQn);
-	rt_thread_mdelay(1000);
-	while (get_tcd1304_device_data());
-    TIMER_Enable(TIMER0, DISABLE);
-    NVIC_DisableIRQ(TIMER3_IRQn);
 	LOG_I("test sync end");
 }
 MSH_CMD_EXPORT(test_sync, "test sync mode")

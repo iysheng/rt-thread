@@ -133,17 +133,11 @@ void TIMER3_IRQHandler(void)
 {
     rt_interrupt_enter();
     TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
-	if (g_tcd1304_device_data.should_scan)
+	if (g_tcd1304_device_data.should_scan > 0)
 	{
-		rt_kprintf("scan now.\n");
+        DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
         TIMER_Enable(TIMER0, ENABLE);
 		g_tcd1304_device_data.should_scan--;
-	}
-	else
-	{
-#if 1
-        TIMER_Enable(TIMER0, DISABLE);
-#endif
 	}
     rt_interrupt_leave();
 }
@@ -297,10 +291,11 @@ void DMA0_Channel0_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
-    DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_HT1 | DMA1_INT_ERR1 );
-    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[50]);
-    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[51]);
-    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[52]);
+    TIMER_Enable(TIMER0, DISABLE);
+    DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1 );
+    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[10]);
+    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[11]);
+    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[12]);
     /* leave interrupt */
     rt_interrupt_leave();
 }
@@ -342,7 +337,7 @@ static int init_adc_4tcd(unsigned int freq)
     DMA_InitParaStruct.DMA_MTOM = DMA_MEMTOMEM_DISABLE;
     /* 使用 DMA0 的通道1 */
     DMA_Init(DMA0_CHANNEL1, &DMA_InitParaStruct);
-    DMA_INTConfig(DMA0_CHANNEL1, DMA_INT_TC | DMA_INT_HT | DMA_INT_ERR, ENABLE);
+    DMA_INTConfig(DMA0_CHANNEL1, DMA_INT_TC | DMA_INT_ERR, ENABLE);
     NVIC_SetPriority(DMA0_Channel1_IRQn, 0);
     NVIC_EnableIRQ(DMA0_Channel1_IRQn);
     DMA_Enable(DMA0_CHANNEL1, ENABLE);
@@ -363,7 +358,7 @@ static int init_adc_4tcd(unsigned int freq)
     ADC_InitParaStruct.ADC_Mode_Continuous = DISABLE;
     ADC_Init(ADC0, &ADC_InitParaStruct);
     ADC_Enable(ADC0, ENABLE);
-    ADC_RegularChannel_Config(ADC0, ADC_CHANNEL_15, 1, ADC_SAMPLETIME_55POINT5);
+    ADC_RegularChannel_Config(ADC0, ADC_CHANNEL_15, 1, ADC_SAMPLETIME_1POINT5);
     ADC_ExternalTrigConv_Enable(ADC0, ENABLE);
     LOG_I("enable external clock for adc.");
 
