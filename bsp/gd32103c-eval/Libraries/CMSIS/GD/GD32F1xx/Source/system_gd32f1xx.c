@@ -978,6 +978,7 @@ static void SetSysClockTo108(void)
         /* Select PLL as system clock source */
         RCC->GCFGR &= (uint32_t)((uint32_t)~(RCC_GCFGR_SCS));
         RCC->GCFGR |= (uint32_t)RCC_GCFGR_SCS_PLL;
+        RCC->GCFGR |= (uint32_t)(3 << 14);
 
         /* Wait till PLL is used as system clock source */
         while ((RCC->GCFGR & (uint32_t)RCC_GCFGR_SCSS) != (uint32_t)0x08) {

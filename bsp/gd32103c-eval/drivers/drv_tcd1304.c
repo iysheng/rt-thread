@@ -287,15 +287,26 @@ static int init_timer0_4adc(unsigned int freq)
     return 0;
 }
 
+static void show_voltage(uint16_t * adc_value, int counts)
+{
+	int i = 0;
+
+    rt_kprintf("show voltage begin\n");
+	for (; i < counts; i++)
+	{
+		rt_kprintf("%d\t%u\n", i, adc_value[i]);
+	}
+    rt_kprintf("show voltage end\n");
+}
+
 void DMA0_Channel0_IRQHandler(void)
 {
+    unsigned int voltage = 0;
     /* enter interrupt */
     rt_interrupt_enter();
     TIMER_Enable(TIMER0, DISABLE);
-    DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1 );
-    rt_kprintf("DMA handler catch ad_value[0]=%d.\n", 0xfff & g_tcd_convert_data[10]);
-    rt_kprintf("DMA handler catch ad_value[1]=%d.\n", 0xfff & g_tcd_convert_data[11]);
-    rt_kprintf("DMA handler catch ad_value[2]=%d.\n", 0xfff & g_tcd_convert_data[12]);
+    DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
+    show_voltage(g_tcd_convert_data, CCD_DATA_LEN);
     /* leave interrupt */
     rt_interrupt_leave();
 }
@@ -331,7 +342,7 @@ static int init_adc_4tcd(unsigned int freq)
     DMA_InitParaStruct.DMA_PeripheralInc = DMA_PERIPHERALINC_DISABLE;
     DMA_InitParaStruct.DMA_MemoryInc = DMA_MEMORYINC_ENABLE;
     DMA_InitParaStruct.DMA_PeripheralDataSize = DMA_PERIPHERALDATASIZE_HALFWORD;
-    DMA_InitParaStruct.DMA_MemoryDataSize = DMA_PERIPHERALDATASIZE_HALFWORD;
+    DMA_InitParaStruct.DMA_MemoryDataSize = DMA_MEMORYDATASIZE_HALFWORD;
     DMA_InitParaStruct.DMA_Mode = DMA_MODE_CIRCULAR;
     DMA_InitParaStruct.DMA_Priority = DMA_PRIORITY_HIGH;
     DMA_InitParaStruct.DMA_MTOM = DMA_MEMTOMEM_DISABLE;
@@ -358,6 +369,8 @@ static int init_adc_4tcd(unsigned int freq)
     ADC_InitParaStruct.ADC_Mode_Continuous = DISABLE;
     ADC_Init(ADC0, &ADC_InitParaStruct);
     ADC_Enable(ADC0, ENABLE);
+
+    ADC_Calibration(ADC0);
     ADC_RegularChannel_Config(ADC0, ADC_CHANNEL_15, 1, ADC_SAMPLETIME_1POINT5);
     ADC_ExternalTrigConv_Enable(ADC0, ENABLE);
     LOG_I("enable external clock for adc.");
