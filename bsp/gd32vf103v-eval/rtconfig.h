@@ -41,7 +41,7 @@
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE 128
 #define RT_CONSOLE_DEVICE_NAME "uart0"
-#define RT_VER_NUM 0x40002
+#define RT_VER_NUM 0x40003
 
 /* RT-Thread Components */
 
@@ -78,13 +78,14 @@
 #define RT_PIPE_BUFSZ 512
 #define RT_USING_SERIAL
 #define RT_SERIAL_RB_BUFSZ 64
+#define RT_USING_PIN
 
 /* Using USB */
 
 
 /* POSIX layer and C standard library */
 
-#define RT_USING_LIBC
+#define RT_LIBC_USING_TIME
 
 /* Network */
 
@@ -156,10 +157,12 @@
 
 /* On-chip Peripheral Drivers */
 
+#define BSP_USING_GPIO
 #define BSP_USING_UART
 #define BSP_USING_UART0
 
 /* Board extended module Drivers */
 
+#define SOC_GD32VF103
 
 #endif
