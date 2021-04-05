@@ -14,6 +14,9 @@ if GetDepend('RT_USING_PIN'):
 if GetDepend('RT_USING_I2C'):
     src += ['drv_i2c.c']
 
+if GetDepend('BSP_USING_SEG'):
+    src += ['drv_seg.c']
+
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')

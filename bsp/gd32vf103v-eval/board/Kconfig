@@ -21,6 +21,10 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_PIN
         default y
 
+    config BSP_USING_SEG
+        bool "Enable SEG"
+        default n
+
     menuconfig BSP_USING_UART
         bool "Enable USART"
         default y
