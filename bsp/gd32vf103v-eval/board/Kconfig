@@ -25,6 +25,10 @@ menu "On-chip Peripheral Drivers"
         bool "Enable SEG"
         default n
 
+    config BSP_USING_INFRA
+        bool "Enable INFRA"
+        default n
+
     menuconfig BSP_USING_UART
         bool "Enable USART"
         default y

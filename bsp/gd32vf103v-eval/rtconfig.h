@@ -159,6 +159,7 @@
 
 #define BSP_USING_GPIO
 #define BSP_USING_SEG
+#define BSP_USING_INFRA
 #define BSP_USING_UART
 #define BSP_USING_UART0
 
