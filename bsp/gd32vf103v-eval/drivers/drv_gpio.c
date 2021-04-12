@@ -551,6 +551,7 @@ void EXTI10_15_IRQHandler(void)
 }
 /* IRQHandler end */
 
+extern void eclic_global_interrupt_enable(void);
 int rt_hw_pin_init(void)
 {
     /* enable the global interrupt */

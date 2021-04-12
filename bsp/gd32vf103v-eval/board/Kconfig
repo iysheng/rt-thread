@@ -25,9 +25,14 @@ menu "On-chip Peripheral Drivers"
         bool "Enable SEG"
         default n
 
-    config BSP_USING_INFRA
+    menuconfig BSP_USING_INFRA
         bool "Enable INFRA"
         default n
+        if BSP_USING_INFRA
+            config INFRA_SEND_DEVICE
+            bool "infra send device"
+            default y
+        endif
 
     menuconfig BSP_USING_UART
         bool "Enable USART"

@@ -766,8 +766,10 @@ static void system_clock_108m_hxtal(void) {
     /* AHB = SYSCLK */
     RCU_CFG0 |= RCU_AHB_CKSYS_DIV1;
     /* APB2 = AHB/1 */
+    /* APB2 1 分频 108MHz */
     RCU_CFG0 |= RCU_APB2_CKAHB_DIV1;
     /* APB1 = AHB/2 */
+    /* APB2 2 分频 54MHz */
     RCU_CFG0 |= RCU_APB1_CKAHB_DIV2;
 
     /* CK_PLL = (CK_PREDIV0) * 27 = 108 MHz */
