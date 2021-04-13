@@ -16,7 +16,8 @@
 #define DRV_TAG    "drv.infra"
 #include <rtdbg.h>
 
-#define INFRA_CHANNEL_MAX 16
+#define INFRA_CHANNEL_MAX  16
+#define INFRA_SCAN_CYCLE   50 /* ms */
 
 static struct rt_device g_infra_device;
 static int sg_infra_channel;
@@ -41,17 +42,13 @@ void TIMER2_IRQHandler(void)
     rt_interrupt_enter();
 
 #ifdef INFRA_SEND_DEVICE
-    static int timer2_irq_counts;
     if (timer_interrupt_flag_get(TIMER2, TIMER_INT_FLAG_UP))
     {
         timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_UP);
-        if (++timer2_irq_counts % 2 == 0)
+        _set_pin_channel(sg_infra_channel++);
+        if (sg_infra_channel == INFRA_CHANNEL_MAX)
         {
-            _set_pin_channel(sg_infra_channel++);
-            if (sg_infra_channel == INFRA_CHANNEL_MAX)
-            {
-                sg_infra_channel = 0;
-            }
+            sg_infra_channel = 0;
         }
     }
 #else
@@ -124,7 +121,7 @@ static rt_err_t  infra_dev_init(rt_device_t dev)
         .prescaler = (10800 - 1), /* APB1 clk = 54MHz Cycle = 10KHz */
         .alignedmode = TIMER_COUNTER_EDGE,
         .counterdirection = TIMER_COUNTER_UP,
-        .period = 10, /* Cycle 10KHz / 10 = 1Khz */
+        .period = INFRA_SCAN_CYCLE - 1, /* Cycle 10KHz / INFRA_SCAN_CYCLE */
         .clockdivision = TIMER_CKDIV_DIV1,
         .repetitioncounter = 0,
     };
@@ -143,7 +140,7 @@ static rt_err_t  infra_dev_init(rt_device_t dev)
     timer_internal_clock_config(TIMER2);
     timer_channel_output_config(TIMER2, TIMER_CH_3, &ocpara);
     timer_channel_output_mode_config(TIMER2, TIMER_CH_3, TIMER_OC_MODE_PWM0);
-    timer_channel_output_pulse_value_config(TIMER2, TIMER_CH_3, 5);
+    timer_channel_output_pulse_value_config(TIMER2, TIMER_CH_3, INFRA_SCAN_CYCLE / 2 - 1);
     /* remap pin PB1 as timer2_ch3 output */
     gpio_init(GPIOB, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
 
@@ -164,9 +161,10 @@ static rt_err_t  infra_dev_init(rt_device_t dev)
     rt_pin_irq_enable(17, PIN_IRQ_ENABLE);
 #else
     timer_parameter_struct para = {
-        .prescaler = (216 - 1), /* APB1 clk = 54MHz Cycle = 0.5MHz */
+        .prescaler = (108 - 1), /* APB1 clk = 54MHz Cycle = 0.5MHz */
         .alignedmode = TIMER_COUNTER_EDGE,
         .counterdirection = TIMER_COUNTER_UP,
+        /* TODO calculate max cycle */
         .period = 65535, /* Max cycle 1 / 0.5MHz * 65535 ~ 120ms */
         .clockdivision = TIMER_CKDIV_DIV1,
         .repetitioncounter = 0,

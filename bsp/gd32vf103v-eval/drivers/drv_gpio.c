@@ -372,7 +372,9 @@ static rt_err_t gd32vf_pin_irq_enable(struct rt_device *device, rt_base_t pin,
 
         /* enable and set EXTI interrupt to the lowest priority */
         eclic_irq_enable(irqmap->irqno, 1, 1);
+#if 0
         gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);
+#endif
         /* Configure GPIO_InitStructure */
         switch (pin_irq_hdr_tab[irqindex].mode)
         {
