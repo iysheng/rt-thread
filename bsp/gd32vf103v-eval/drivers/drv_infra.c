@@ -12,7 +12,7 @@
 #include "drv_gpio.h"
 #include "drv_infra.h"
 
-#define DRV_DEBUG
+#define DBG_LEVEL   DBG_INFO
 #define DRV_TAG    "drv.infra"
 #include <rtdbg.h>
 
@@ -26,9 +26,6 @@ static int _set_pin_channel(int channel)
 {
     if (channel == INFRA_CHANNEL_MAX)
     {
-#if 0
-        LOG_E("invalid channel");
-#endif
         return -E2BIG;
     }
 
@@ -39,32 +36,66 @@ static int _set_pin_channel(int channel)
     return 0;
 }
 
-#ifdef INFRA_SEND_DEVICE
 void TIMER2_IRQHandler(void)
 {
     rt_interrupt_enter();
 
-    /* check whether update flag */
+#ifdef INFRA_SEND_DEVICE
+    static int timer2_irq_counts;
     if (timer_interrupt_flag_get(TIMER2, TIMER_INT_FLAG_UP))
     {
         timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_UP);
-        _set_pin_channel(sg_infra_channel++);
+        if (++timer2_irq_counts % 2 == 0)
+        {
+            _set_pin_channel(sg_infra_channel++);
+            if (sg_infra_channel == INFRA_CHANNEL_MAX)
+            {
+                sg_infra_channel = 0;
+            }
+        }
+    }
+#else
+    if (timer_interrupt_flag_get(TIMER2, TIMER_INT_FLAG_CH3))
+    {
+        timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_CH3);
+        _set_pin_channel(sg_infra_channel);
+#if 1 /* test code */
+		static int aa;
+        gpio_bit_write(GPIOC, GPIO_PIN_9, (aa++ % 2) ? RESET : SET);
+#endif
+        if (PIN_HIGH == gpio_input_bit_get(GPIOA, GPIO_PIN_6))
+        {
+            /* get channel num */
+            sg_target_channel = sg_infra_channel;
+        }
+        else if (sg_target_channel == sg_infra_channel)
+        {
+            /* mark the channel is invalid */
+            sg_target_channel = 0xff;
+        }
+        else if ((sg_target_channel != 0xff) && \
+            (sg_target_channel != sg_infra_channel))
+        {
+            /* not in a cycle just ignore */
+        }
+
+        sg_infra_channel++;
         if (sg_infra_channel == INFRA_CHANNEL_MAX)
         {
             sg_infra_channel = 0;
         }
     }
+#endif
 
     rt_interrupt_leave();
 }
-#else
+#if 0
 static void infra4recv_handler(void *args)
 {
     _set_pin_channel(sg_infra_channel);
-    if (PIN_HIGH == rt_pin_read(6))
+    if (PIN_HIGH == gpio_input_bit_get(GPIOA, GPIO_PIN_6))
     {
         /* get channel num */
-        LOG_I("this is the target channel:%d", sg_infra_channel);
         sg_target_channel = sg_infra_channel;
     }
     else if (sg_target_channel == sg_infra_channel)
@@ -120,15 +151,45 @@ static rt_err_t  infra_dev_init(rt_device_t dev)
     gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
     gpio_bit_write(GPIOA, GPIO_PIN_6, RESET);
 
-    timer_enable(TIMER2);
     eclic_irq_enable(TIMER2_IRQn, 0, 0);
     timer_interrupt_enable(TIMER2, TIMER_INT_UP);
 #else /* receive device */
     /* gpio init of PA6 as input */
     gpio_init(GPIOA, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
-    gpio_init(GPIOB, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+#if 0
+    gpio_init(GPIOB, GPIO_MODE_IN_FLOATING/*GPIO_MODE_IPD*/, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+    gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOB, GPIO_PIN_SOURCE_1);
     /* band PB1 interrupt */
-    rt_pin_attach_irq(16, PIN_IRQ_MODE_RISING, void (*hdr)(void *args), void *args);
+    rt_pin_attach_irq(17, PIN_IRQ_MODE_RISING, infra4recv_handler, RT_NULL);
+    rt_pin_irq_enable(17, PIN_IRQ_ENABLE);
+#else
+    timer_parameter_struct para = {
+        .prescaler = (216 - 1), /* APB1 clk = 54MHz Cycle = 0.5MHz */
+        .alignedmode = TIMER_COUNTER_EDGE,
+        .counterdirection = TIMER_COUNTER_UP,
+        .period = 65535, /* Max cycle 1 / 0.5MHz * 65535 ~ 120ms */
+        .clockdivision = TIMER_CKDIV_DIV1,
+        .repetitioncounter = 0,
+    };
+    timer_ic_parameter_struct icpara = {
+    };
+
+    rcu_periph_clock_enable(RCU_TIMER2);
+    /* TODO init timer2 */
+    timer_init(TIMER2, &para);
+    timer_channel_input_struct_para_init(&icpara);
+    icpara.icpolarity  = TIMER_IC_POLARITY_FALLING;
+    icpara.icfilter = 0;
+    timer_input_capture_config(TIMER2, TIMER_CH_3, &icpara);
+    timer_auto_reload_shadow_enable(TIMER2);
+    /* remap pin PB1 as timer2_ch3 channel */
+    gpio_init(GPIOB, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+
+    timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_CH3);
+    eclic_irq_enable(TIMER2_IRQn, 0, 0);
+    timer_interrupt_enable(TIMER2, TIMER_INT_CH3);
+    timer_enable(TIMER2);
+#endif
 #endif
     /* init PA7 as port select control pin */
     gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_7);
@@ -158,7 +219,7 @@ static rt_err_t infra_dev_control(rt_device_t dev, int cmd, void *args)
         if (sg_target_channel != 0xff)
         {
             *(unsigned char *)args = sg_target_channel;
-            ret = sizeof sg_target_channel;
+            ret = 0;
         }
         else
         {

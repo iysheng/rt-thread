@@ -123,6 +123,10 @@ int main(int argc, char *argv[])
     rt_pin_write(INFRA_RELAY0_PIN, PIN_LOW);
     rt_pin_mode(INFRA_RELAY1_PIN, PIN_MODE_OUTPUT);
     rt_pin_write(INFRA_RELAY1_PIN, PIN_LOW);
+#else
+    /* wait for recv */
+    rt_thread_mdelay(3000);
+    timer_enable(TIMER2);
 #endif
 
     while(1)
@@ -130,7 +134,7 @@ int main(int argc, char *argv[])
         blink_test();
         rt_thread_mdelay(50);
 #ifndef INFRA_SEND_DEVICE
-        /* TODO read channel num */
+        /* read channel num */
         if (!rt_device_control(infra_dev_ptr, RED_INFRA_GET_CHANNEL, &channel))
         {
             rt_pin_write(INFRA_RELAY0_PIN, PIN_HIGH);
