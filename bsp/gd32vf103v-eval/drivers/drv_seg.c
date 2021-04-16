@@ -11,24 +11,26 @@
 #include "board.h"
 
 static struct rt_device g_seg_device;
+#define SEG8_MAP_COUNTS    17
 
-static unsigned char gs_seg8_data_map[16] ={
+static unsigned char gs_seg8_data_map[SEG8_MAP_COUNTS] ={
     0x3f,
     0x30,
     0x5b,
     0x4f,
-	0x66,
-	0x6d,
-	0x7d,
-	0x07,
-	0x7f,
-	0x6f,
-	0x77,
-	0x7c,
-	0x39,
-	0x5e,
-	0x79,
-	0x71,
+    0x66,
+    0x6d,
+    0x7d,
+    0x07,
+    0x7f,
+    0x6f,
+    0x77,
+    0x7c,
+    0x39,
+    0x5e,
+    0x79,
+    0x71,
+    0x80,
 };
 
 
@@ -37,7 +39,7 @@ static rt_size_t seg_dev_write  (rt_device_t dev, rt_off_t pos, const void *buff
     unsigned char data = *(unsigned char *)buffer;
     /* TODO check data valid */
     GPIO_OCTL(GPIOC) &= ~(uint32_t) 0xff;
-    GPIO_OCTL(GPIOC) |= (uint32_t) gs_seg8_data_map[data % 16];
+    GPIO_OCTL(GPIOC) |= (uint32_t) gs_seg8_data_map[data % SEG8_MAP_COUNTS];
 
     return size;
 }

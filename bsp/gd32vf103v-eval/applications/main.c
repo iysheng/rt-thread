@@ -39,7 +39,7 @@ static void blink_test(void)
         gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, \
             GPIO_PIN_9);
     }
-    gpio_bit_write(GPIOC, GPIO_PIN_9, led_status % 2);
+//    gpio_bit_write(GPIOC, GPIO_PIN_9, led_status % 2);
 }
 
 /*
@@ -143,6 +143,8 @@ int main(int argc, char *argv[])
         else
         {
             rt_pin_write(INFRA_RELAY0_PIN, PIN_LOW);
+            channel = 16;
+            rt_device_write(gs_seg_dev_ptr, 0, &channel, sizeof channel);
         }
 #endif
     }

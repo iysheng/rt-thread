@@ -451,11 +451,13 @@ void EXTI0_IRQHandler(void)
 }
 void EXTI1_IRQHandler(void)
 {
+    rt_interrupt_enter();
     if(EXTI_PD & (uint32_t) EXTI_1)
     {
         exti_interrupt_flag_clear(EXTI_1);
         pin_irq_hdr(bit2bitno(GPIO_PIN_1));
     }
+    rt_interrupt_leave();
 }
 void EXTI2_IRQHandler(void)
 {
