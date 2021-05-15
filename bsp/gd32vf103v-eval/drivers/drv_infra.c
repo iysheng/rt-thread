@@ -25,6 +25,7 @@ static unsigned char sg_target_channel = 0xff;
 
 static int _set_pin_channel(int channel)
 {
+    unsigned char channel4recv = 0;
     if (channel == INFRA_CHANNEL_MAX)
     {
         return -E2BIG;
@@ -32,7 +33,15 @@ static int _set_pin_channel(int channel)
 
     /* BIT[12:15] */
     GPIO_OCTL(GPIOB) &= ~(uint32_t)0xf000;
+#ifndef INFRA_SEND_DEVICE
+    channel4recv = channel << 3 & 0x08;
+    channel4recv |= channel >> 1 << 2 & 0x04;
+    channel4recv |= channel >> 2 << 1 & 0x02;
+    channel4recv |= channel >> 3 & 0x01;
+    GPIO_OCTL(GPIOB) |= (uint32_t)(channel4recv << 12);
+#else
     GPIO_OCTL(GPIOB) |= (uint32_t)(channel << 12);
+#endif
 
     return 0;
 }
@@ -56,9 +65,9 @@ void TIMER2_IRQHandler(void)
     {
         timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_CH3);
         _set_pin_channel(sg_infra_channel);
-#if 1 /* test code */
-		static int aa;
-        gpio_bit_write(GPIOC, GPIO_PIN_9, (aa++ % 2) ? RESET : SET);
+#if 0 /* test code */
+        static int aa;
+        gpio_bit_write(GPIOB, GPIO_PIN_4, (aa++ % 2) ? RESET : SET);
 #endif
         if (PIN_HIGH == gpio_input_bit_get(GPIOA, GPIO_PIN_6))
         {

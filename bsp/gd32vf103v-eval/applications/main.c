@@ -13,12 +13,12 @@
 #include "board.h"
 #include "drivers/drv_infra.h"
 
-#define DRV_DEBUG
+#define DBG_LEVEL DBG_INFO
 #define DRV_TAG    "drv.infra"
 #include <rtdbg.h>
 
-#define INFRA_RELAY0_PIN     4
-#define INFRA_RELAY1_PIN     2
+#define INFRA_RELAY0_PIN     46
+#define INFRA_RELAY1_PIN     47
 
 #ifndef INFRA_SEND_DEVICE
 static rt_device_t gs_seg_dev_ptr;
@@ -36,10 +36,21 @@ static void blink_test(void)
 
     if (!led_status)
     {
+#ifndef INFRA_SEND_DEVICE
+        gpio_init(GPIOB, GPIO_MODE_OUT_PP, GPIO_OSPEED_2MHZ, \
+            GPIO_PIN_4);
+        gpio_pin_remap_config(GPIO_SWJ_NONJTRST_REMAP, ENABLE);
+        gpio_bit_write(GPIOB, GPIO_PIN_4, RESET);
+#else
         gpio_init(GPIOC, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, \
             GPIO_PIN_9);
+#endif
     }
-//    gpio_bit_write(GPIOC, GPIO_PIN_9, led_status % 2);
+#ifndef INFRA_SEND_DEVICE
+    gpio_bit_write(GPIOB, GPIO_PIN_4, led_status++ % 2);
+#else
+    gpio_bit_write(GPIOC, GPIO_PIN_9, led_status++ % 2);
+#endif
 }
 
 /*
@@ -131,14 +142,15 @@ int main(int argc, char *argv[])
 
     while(1)
     {
-        blink_test();
         rt_thread_mdelay(50);
+        blink_test();
 #ifndef INFRA_SEND_DEVICE
         /* read channel num */
         if (!rt_device_control(infra_dev_ptr, RED_INFRA_GET_CHANNEL, &channel))
         {
             rt_pin_write(INFRA_RELAY0_PIN, PIN_HIGH);
             rt_device_write(gs_seg_dev_ptr, 0, &channel, sizeof channel);
+            LOG_I("channel = %u", channel);
         }
         else
         {

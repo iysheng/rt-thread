@@ -13,6 +13,7 @@
 static struct rt_device g_seg_device;
 #define SEG8_MAP_COUNTS    17
 
+#if 0
 static unsigned char gs_seg8_data_map[SEG8_MAP_COUNTS] ={
     0x3f,
     0x30,
@@ -32,6 +33,27 @@ static unsigned char gs_seg8_data_map[SEG8_MAP_COUNTS] ={
     0x71,
     0x80,
 };
+#else
+static unsigned char gs_seg8_data_map[SEG8_MAP_COUNTS] ={
+    0xdb,
+    0x50,
+    0x1f,
+    0x5d,
+    0xd4,
+    0xcd,
+    0xcf,
+    0x58,
+    0xdf,
+    0xdd,
+    0xde,
+    0xc7,
+    0x8b,
+    0x57,
+    0x8f,
+    0x8e,
+    0x20,
+};
+#endif
 
 
 static rt_size_t seg_dev_write  (rt_device_t dev, rt_off_t pos, const void *buffer, rt_size_t size)
@@ -90,3 +112,14 @@ int rt_seg_init(void)
     rt_device_register(&g_seg_device, "redSeg", RT_DEVICE_FLAG_WRONLY);
 }
 INIT_BOARD_EXPORT(rt_seg_init);
+
+#include <stdlib.h>
+static void test_seg(int argc, char *argv[])
+{
+    if (argc > 1)
+    {
+        GPIO_OCTL(GPIOC) &= ~(uint32_t) 0xff;
+        GPIO_OCTL(GPIOC) |= (uint32_t) gs_seg8_data_map[atoi(argv[1]) % SEG8_MAP_COUNTS];
+    }
+}
+MSH_CMD_EXPORT(test_seg, test seg command)
