@@ -13,6 +13,7 @@ void _init() {
 void _fini() {
 }
 
+/* 时钟初始化 */
 void riscv_clock_init(void) {
     SystemInit();
 
