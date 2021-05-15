@@ -35,6 +35,9 @@ config SOC_GD32103C
 config BSP_USING_TCD1304
     bool "using ccd tcd1304"
     default n
+config RT_USING_CAN0
+    bool "using can0 device"
+    default n
 config BSP_USING_UART0
     bool "using uart0"
     select RT_USING_SERIAL

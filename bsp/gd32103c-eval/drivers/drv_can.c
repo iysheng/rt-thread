@@ -24,16 +24,22 @@
 #define DBG_TAG               "drv.CAN"
 #include <rtdbg.h>
 
+/*
+ *  开启对应中断号的中断
+ */
+void nvic_irq_enable(IRQn_Type irqn, uint32_t priority_pad, uint32_t priority)
+{
+    NVIC_SetPriority(irqn, priority);
+    NVIC_EnableIRQ(irqn);
+}
 /* attention !!! baud calculation example: Tclk / ((ss + bs1 + bs2) * brp)
  * 54 / ((1 + 9 + 8) * 30) = 100kHz */
-#if defined (SOC_GD32F103)/* APB1 54MHz(max) */
 static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
 {
     {CAN100kBaud, (BAUD_DATA_SET(CAN_SJW_1TQ, SJW) \
         | BAUD_DATA_SET(CAN_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BS2_8TQ, BS2) \
         | 30)},
 };
-#endif
 
 #ifdef RT_USING_CAN0
 static struct gd32_can drv_can0 =
@@ -258,9 +264,8 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
     case RT_CAN_CMD_SET_FILTER:
         if (RT_NULL == arg)
         {
-            drv_can->CanFilter.CAN_FilterWork = ENABLE;
             /* default filter config */
-            CAN_FilterInit(drv_can->CanHandle, &drv_can->CanFilter);
+            CAN_FilterInit(&drv_can->CanFilter);
         }
         else
         {
@@ -269,10 +274,10 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
             for (int i = 0; i < filter_cfg->count; i++)
             {
                 drv_can->CanFilter.CAN_FilterNumber = filter_cfg->items[i].hdr;
-                drv_can->CanFilter.CAN_FilterFIFOAssociation = \
-                    filter_cfg->items[i].associate;
+                drv_can->CanFilter.CAN_FilterFIFOAssociation = 0;
                 drv_can->CanFilter.CAN_FilterMode = filter_cfg->items[i].mode;
-                drv_can->CanFilter.CAN_FilterScale = filter_cfg->items[i].scale;
+                /* just use 32bit filter */
+                drv_can->CanFilter.CAN_FilterScale = CAN_FILTERSCALE_32BIT;
 
                 if (drv_can->CanFilter.CAN_FilterFIFOAssociation == 1)
                 {
@@ -322,7 +327,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 }
                 drv_can->CanFilter.CAN_FilterWork = ENABLE;
                 /* Filter conf */
-                CAN_FilterInit(drv_can->CanHandle, &drv_can->CanFilter);
+                CAN_FilterInit(&drv_can->CanFilter);
             }
         }
         break;
@@ -865,6 +870,19 @@ void CAN1_EWMC_IRQHandler(void)
 int rt_hw_can_init(void)
 {
     struct can_configure config = CANDEFAULTCONFIG;
+    GPIO_InitPara GPIO_InitStruct = {0};
+    CAN_FilterInitPara can_filter_default = {
+        .CAN_FilterListHigh = 0x00,
+        .CAN_FilterListLow = 0x00,
+        .CAN_FilterMaskListHigh = 0x00,
+        .CAN_FilterMaskListLow = 0x00,
+        .CAN_FilterFIFOAssociation = CAN_FILTER_FIFO0,
+        .CAN_FilterNumber = 0,
+        .CAN_FilterMode = CAN_FILTERMODE_MASK,
+        .CAN_FilterScale = CAN_FILTERSCALE_32BIT,
+        .CAN_FilterWork = ENABLE,
+    };
+
     config.baud_rate = CAN100kBaud;
     config.privmode = RT_CAN_MODE_NOPRIV;
     config.ticks = 50;
@@ -874,22 +892,30 @@ int rt_hw_can_init(void)
     config.maxhdr = 28;
 #endif
 #endif
-    /* TODO pin config */
+    /* pin config */
     rcu_periph_clock_enable(RCU_CAN0);
-    rcu_periph_clock_enable(RCU_GPIOD);
+    rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_AF);
 
-    /* CAN0_TX(PD1), CAM0_RX(PD0) GPIO pin configuration */
-    gpio_init(GPIOD, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, GPIO_PIN_0);
-    gpio_init(GPIOD, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+    /* CAN0_TX(PA12), CAM0_RX(PA11) GPIO pin configuration */
+    GPIO_InitStruct.GPIO_Pin  = GPIO_PIN_11;
+    GPIO_InitStruct.GPIO_Speed = GPIO_SPEED_50MHZ;
+    GPIO_InitStruct.GPIO_Mode = GPIO_MODE_IPU;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin  = GPIO_PIN_12;
+    GPIO_InitStruct.GPIO_Speed = GPIO_SPEED_50MHZ;
+    GPIO_InitStruct.GPIO_Mode = GPIO_MODE_AF_PP;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+#if 0
+    gpio_init(GPIOA, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, GPIO_PIN_11);
+    gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_12);
     //gpio_init(GPIOD, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_0);
-
-    /* 修改 can_remap 为 PD0 和 PD1 */
-    WRITE_REG(AFIO->AFIO_PCFR1, READ_REG(AFIO->AFIO_PCFR1) | 0x3 << 13);
+#endif
 
     /* TODO config default filter */
 
 #ifdef RT_USING_CAN0
+    drv_can0.CanFilter = can_filter_default;
     drv_can0.device.config = config;
     /* register CAN0 device */
     rt_hw_can_register(&drv_can0.device,
@@ -900,6 +926,7 @@ int rt_hw_can_init(void)
 
 #ifdef RT_USING_CAN1
     drv_can1.device.config = config;
+    drv_can0.CanFilter = can_filter_default;
     /* register CAN1 device */
     rt_hw_can_register(&drv_can1.device,
                        drv_can1.name,
