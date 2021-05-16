@@ -15,7 +15,7 @@
 #define DBG_LVL    DBG_INFO
 #include <rtdbg.h>
 
-#define CCD_FM_FREQ    1000000
+#define CCD_FM_FREQ    2000000
 #define CCD_DATA_LEN    3694
 
 #define FM_GND0         GET_PIN(A, 0)
@@ -156,7 +156,7 @@ static int init_timer3_4icg(unsigned int icg_freq)
     TIMER_InternalClockConfig(TIMER3);
     TIMER_Init.TIMER_Period                = icg_freq - 1;
     TIMER_Init.TIMER_Prescaler             = \
-        RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
+        (RCC_ClocksState.APB1_Frequency << 1) / CCD_FM_FREQ - 1;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
     TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
@@ -174,7 +174,6 @@ static int init_timer3_4icg(unsigned int icg_freq)
         (5 * CCD_FM_FREQ) / 1000000;
 #if 0
     TIMER_OCInit.TIMER_Pulse = (icg_freq >> 1);
-#else
     TIMER_OCInit.TIMER_Pulse = \
         ((10 * CCD_FM_FREQ) / 1000000);
 #endif
@@ -204,7 +203,7 @@ static int init_timer2_4sh(unsigned int sh_freq)
     rcu_periph_clock_enable(RCU_TIMER2);
     TIMER_InternalClockConfig(TIMER2);
     TIMER_Init.TIMER_Prescaler             = \
-        RCC_ClocksState.APB2_Frequency / CCD_FM_FREQ - 1;
+        (RCC_ClocksState.APB1_Frequency << 1)/ CCD_FM_FREQ - 1;
     TIMER_Init.TIMER_Period                = sh_freq - 1;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
@@ -395,7 +394,7 @@ static int drv_tcd1304_init(void)
     /* 2M/30 = 66kHz  */
     init_timer2_4sh(10);
     /* 2M/12000 = 166Hz  */
-    init_timer3_4icg(36900);
+    init_timer3_4icg(36940);
     /* init_timer0_4adc */
     init_adc_4tcd(CCD_FM_FREQ / 4);
     LOG_I("hello red");
