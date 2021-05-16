@@ -202,9 +202,12 @@ static int init_timer2_4sh(unsigned int sh_freq)
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER2);
     TIMER_InternalClockConfig(TIMER2);
+    /* make the scale to 1/2 * 1/CCD_FM_FREQ
+     * when CCD_FM_FREQ == 2Mhz
+     * then = 0.5us / 2 = 0.25us  */
     TIMER_Init.TIMER_Prescaler             = \
-        (RCC_ClocksState.APB1_Frequency << 1)/ CCD_FM_FREQ - 1;
-    TIMER_Init.TIMER_Period                = sh_freq - 1;
+        (RCC_ClocksState.APB1_Frequency << 1) / CCD_FM_FREQ / 2 - 1;
+    TIMER_Init.TIMER_Period                = sh_freq * 2 - 1;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
     TIMER_Init.TIMER_RepetitionCounter     = 0x0000;
@@ -218,7 +221,8 @@ static int init_timer2_4sh(unsigned int sh_freq)
 
     TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM2;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
-    TIMER_OCInit.TIMER_Pulse = (3 * CCD_FM_FREQ) / 1000000;
+    /* 0.25 * 6 us */
+    TIMER_OCInit.TIMER_Pulse = 5;
     TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
     TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
     TIMER_OC2_Init(TIMER2, &TIMER_OCInit);
@@ -391,10 +395,10 @@ static int drv_tcd1304_init(void)
     test_func();
     /* 測試產生 2MHz 的波形 */
     init_timer4_4fm(CCD_FM_FREQ);
-    /* 2M/30 = 66kHz  */
-    init_timer2_4sh(10);
-    /* 2M/12000 = 166Hz  */
-    init_timer3_4icg(36940);
+    /* 2M/4 = 500kHz  */
+    init_timer2_4sh(4);
+    /* 2M/4/3694 = 135Hz  */
+    init_timer3_4icg(4*3694);
     /* init_timer0_4adc */
     init_adc_4tcd(CCD_FM_FREQ / 4);
     LOG_I("hello red");
