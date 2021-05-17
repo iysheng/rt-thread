@@ -25,6 +25,7 @@
 #define ICG_GND0        GET_PIN(B, 9)
 
 static uint16_t g_tcd_convert_data[CCD_DATA_LEN];
+static uint16_t g_tcd_convert_data_filter[CCD_DATA_LEN];
 
 void test_func(void)
 {
@@ -290,16 +291,40 @@ static int init_timer0_4adc(unsigned int freq)
     return 0;
 }
 
-static void show_voltage(uint16_t * adc_value, int counts)
+static void show_voltage(char * title, uint16_t * adc_value, int counts)
 {
 	int i = 0;
 
-    rt_kprintf("show voltage begin\n");
+    rt_kprintf("%s begin\n",title);
 	for (; i < counts; i++)
 	{
 		rt_kprintf("%d\t%u\n", i, adc_value[i]);
 	}
-    rt_kprintf("show voltage end\n");
+    rt_kprintf("%s end\n", title);
+}
+
+/**
+  * @brief 
+  * 
+  * @param uint16_t * src: 
+  * @param uint16_t *dst: 
+  * @param int len: 
+  * @param float alpha: 
+  * retval .
+  */
+void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
+{
+    int i = 1;
+    float tmp_data_raw, tmp_data_filter;
+
+    dst[0] = src[0];
+    for (; i < len; i++)
+    {
+        tmp_data_filter = dst[i - 1];
+        tmp_data_raw = src[i];
+        tmp_data_filter = tmp_data_filter + (alpha * (tmp_data_raw - tmp_data_filter));
+        dst[i] = tmp_data_filter;
+    }
 }
 
 void DMA0_Channel0_IRQHandler(void)
@@ -309,7 +334,9 @@ void DMA0_Channel0_IRQHandler(void)
     rt_interrupt_enter();
     TIMER_Enable(TIMER0, DISABLE);
     DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
-    show_voltage(g_tcd_convert_data, CCD_DATA_LEN);
+    show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
+    do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, CCD_DATA_LEN, 0.1);
+    show_voltage("filter", g_tcd_convert_data_filter, CCD_DATA_LEN);
     /* leave interrupt */
     rt_interrupt_leave();
 }
