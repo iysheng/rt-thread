@@ -10,6 +10,7 @@
 #include <board.h>
 #include <rtthread.h>
 #include <rtdevice.h>
+#include <math.h>
 
 #define DBG_TAG    "drv.CCD"
 #define DBG_LVL    DBG_INFO
@@ -17,6 +18,7 @@
 
 #define CCD_FM_FREQ    2000000
 #define CCD_DATA_LEN    3694
+#define VALID_CCD_DATA_LEN    3648  /* valid data is [33, 3680] */
 
 #define FM_GND0         GET_PIN(A, 0)
 #define FM_GND1         GET_PIN(A, 2)
@@ -25,7 +27,90 @@
 #define ICG_GND0        GET_PIN(B, 9)
 
 static uint16_t g_tcd_convert_data[CCD_DATA_LEN];
-static uint16_t g_tcd_convert_data_filter[CCD_DATA_LEN];
+static uint16_t g_tcd_convert_data_filter[VALID_CCD_DATA_LEN];
+static uint16_t g_tcd_convert_data_filter4mark[VALID_CCD_DATA_LEN];
+static uint16_t g_tcd_convert_data_filter4cmp[VALID_CCD_DATA_LEN];
+
+typedef struct {
+    uint16_t ans_zone0; /* [0...1000) */
+    uint16_t ans_zone1; /* [1000...2647] */
+    uint16_t ans_zone2; /* (2647,3647] */
+} drv_tcd1304_target_ans_t;
+
+/* 存储标记的区域像素信息 */
+drv_tcd1304_target_ans_t gs_tcd_mark_target_ans;
+/* 存储标记的区域像素信息 */
+static drv_tcd1304_target_ans_t gs_tcd_cmp_target_ans;
+
+static uint16_t _get_stand_value(uint16_t *data, int data_len)
+{
+    /* 初始化参考的标准值 */
+    double stand_value = 0;
+    double value_counts = 0, value4tmp = 0;
+    int i = 0;
+
+    for (; i < data_len; i++)
+    {
+        value4tmp = (double)data[i];
+        value_counts += value4tmp * value4tmp;
+    }
+    value_counts /= data_len;
+    stand_value = (uint16_t)sqrt(value_counts);
+
+    return stand_value;
+}
+
+static int do_format_data(uint16_t *data, int data_len)
+{
+    int i = 0;
+    uint16_t stand_value = _get_stand_value(data, data_len);
+    rt_kprintf("stand=%d", stand_value);
+
+    for (; i < data_len; i++)
+    {
+        data[i] = (data[i] > stand_value) ? 1 : 0;
+    }
+
+    return 0;
+}
+
+static int do_xor_with_data(uint16_t *target, uint16_t *data, int data_len)
+{
+    int i = 0;
+
+    for (; i < data_len; i++)
+    {
+        target[i] ^= data[i];
+    }
+
+    return 0;
+}
+
+/* 统计 0 / 1 数量 */
+static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_ans_t *ans_data)
+{
+    int i = 0;
+    static const int cmp_index_array[2] = {1000, 2647};
+
+    for (; i < data_len; i++)
+    {
+        if (i < cmp_index_array[0])
+        {
+            ans_data->ans_zone0 += !!target[i];
+        }
+        else if (i < cmp_index_array[1])
+        {
+            ans_data->ans_zone1 += !!target[i];
+        }
+        else
+        {
+            ans_data->ans_zone2 += !!target[i];
+        }
+    }
+
+    rt_kprintf("target_ans=[%u,%u,%u]\n", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
+    return 0;
+}
 
 void test_func(void)
 {
@@ -99,10 +184,12 @@ static int init_timer4_4fm(unsigned int fm_freq)
 
 typedef struct {
     int should_scan;
+    int mark_times;
 } drv_tcd1304_data_t;
 
 static drv_tcd1304_data_t g_tcd1304_device_data = {
-	.should_scan = 0,
+    .should_scan = 0,
+    .mark_times = 0, /* 默认标定的时候采样次数为 0 */
 };
 
 /*
@@ -114,8 +201,26 @@ static drv_tcd1304_data_t g_tcd1304_device_data = {
  */
 int set_tcd1304_device_data(int data)
 {
-	g_tcd1304_device_data.should_scan = data;
-	return 0;
+    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, VALID_CCD_DATA_LEN);
+    g_tcd1304_device_data.should_scan = data;
+    return 0;
+}
+
+/*
+ * int set_tcd1304_device_marktimes
+ * 设置 tcd1304 设备的控制数据
+ *
+ * @ data:
+ * return: errno/Linux
+ */
+int set_tcd1304_device_marktimes(int data)
+{
+    rt_memset(&g_tcd_convert_data_filter4mark[0], 0, VALID_CCD_DATA_LEN);
+    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, VALID_CCD_DATA_LEN);
+    g_tcd1304_device_data.mark_times = data;
+    g_tcd1304_device_data.should_scan = data;
+
+    return 0;
 }
 
 /*
@@ -134,12 +239,17 @@ void TIMER3_IRQHandler(void)
 {
     rt_interrupt_enter();
     TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
-	if (g_tcd1304_device_data.should_scan > 0)
-	{
-        DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
-        TIMER_Enable(TIMER0, ENABLE);
-		g_tcd1304_device_data.should_scan--;
-	}
+    /* 如果需要对采样的数据 AD 转换 */
+    if (g_tcd1304_device_data.should_scan > 0)
+    {
+        rt_kprintf("should_scan=%d\n", g_tcd1304_device_data.should_scan);
+        if ((g_tcd1304_device_data.mark_times != 0 && g_tcd1304_device_data.should_scan == g_tcd1304_device_data.mark_times) || g_tcd1304_device_data.mark_times == 0)
+        {
+            g_tcd1304_device_data.should_scan--;
+            DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
+            TIMER_Enable(TIMER0, ENABLE);
+        }
+    }
     rt_interrupt_leave();
 }
 
@@ -317,6 +427,9 @@ void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
     int i = 1;
     float tmp_data_raw, tmp_data_filter;
 
+    /* 提取有效的数据 [33...3680]*/
+    rt_memmove(src + 33, src, len);
+
     dst[0] = src[0];
     for (; i < len; i++)
     {
@@ -327,6 +440,42 @@ void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
     }
 }
 
+static int check_whether_match_target(drv_tcd1304_target_ans_t *mark, drv_tcd1304_target_ans_t *cmp)
+{
+    int match = 0;
+
+	if (mark->ans_zone0 > cmp->ans_zone0)
+	{
+		match += (mark->ans_zone0 - cmp->ans_zone0 > 100);
+	}
+	else
+	{
+		match += (cmp->ans_zone0 - mark->ans_zone0 > 100);
+	}
+
+	if (mark->ans_zone1 > cmp->ans_zone1)
+	{
+		match += (mark->ans_zone1 - cmp->ans_zone1 > 100);
+	}
+	else
+	{
+		match += (cmp->ans_zone1 - mark->ans_zone1 > 100);
+	}
+
+	if (mark->ans_zone2 > cmp->ans_zone2)
+	{
+		match += (mark->ans_zone2 - cmp->ans_zone2 > 100);
+	}
+	else
+	{
+		match += (cmp->ans_zone2 - mark->ans_zone2 > 100);
+	}
+
+	rt_kprintf(">--------------match=%d.", match);
+
+    return match;
+}
+
 void DMA0_Channel0_IRQHandler(void)
 {
     unsigned int voltage = 0;
@@ -334,9 +483,43 @@ void DMA0_Channel0_IRQHandler(void)
     rt_interrupt_enter();
     TIMER_Enable(TIMER0, DISABLE);
     DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
+#if 1
     show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
-    do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, CCD_DATA_LEN, 0.1);
+#endif
+    do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
+    do_format_data(g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+    rt_kprintf("counts=%d %d\n", g_tcd1304_device_data.should_scan, g_tcd1304_device_data.mark_times);
+    /* TODO check whether use filtered data mark stand */
+    if (g_tcd1304_device_data.mark_times > 0)
+    {
+        do_xor_with_data(g_tcd_convert_data_filter4mark, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+        if (--g_tcd1304_device_data.mark_times == 0)
+        {
+            rt_memset(&gs_tcd_mark_target_ans, 0, sizeof(gs_tcd_mark_target_ans));
+            do_get_target_ans(g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN, &gs_tcd_mark_target_ans);
+        }
+    }
+    else
+    {
+        do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+        if (g_tcd1304_device_data.should_scan == 0)
+        {
+            rt_memset(&gs_tcd_cmp_target_ans, 0, sizeof(gs_tcd_cmp_target_ans));
+            do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
+            /* check whether match */
+            if (check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans))
+            {
+                rt_kprintf("no match");
+            }
+            else
+            {
+                rt_kprintf("match to alarm");
+            }
+        }
+    }
+#if 0
     show_voltage("filter", g_tcd_convert_data_filter, CCD_DATA_LEN);
+#endif
     /* leave interrupt */
     rt_interrupt_leave();
 }

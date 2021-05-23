@@ -8,12 +8,12 @@
  * 2021-01-04     iysheng           first version
  */
 
+#include <stdlib.h>
 #include <board.h>
 #include <drivers/adc.h>
 #include <rtdbg.h>
 #include <stdio.h>
 #include <rtthread.h>
-#include "board.h"
 
 int main(void)
 {
@@ -35,6 +35,7 @@ int main(void)
     return 0;
 }
 
+extern int set_tcd1304_device_marktimes(int data);
 extern int set_tcd1304_device_data(int data);
 extern int get_tcd1304_device_data(void);
 
@@ -47,7 +48,59 @@ static int test_sync(int argc, char **argv)
 	LOG_I("test sync end");
 }
 MSH_CMD_EXPORT(test_sync, "test sync mode")
-#if 0
+
+typedef struct {
+    uint16_t ans_zone0; /* [0...1000) */
+    uint16_t ans_zone1; /* [1000...2647] */
+    uint16_t ans_zone2; /* (2647,3647] */
+} drv_tcd1304_target_ans_t;
+/* 触发标记过程 */
+static int mark_stand(int argc, char **argv)
+{
+    int mark_times = 1;
+
+    LOG_I("mark stand begin");
+    /* TODO 设置全局标志位，开始采样
+     * 如果带有采样次数这个参数,那么修改默认的采样次数
+     * */
+    if (argc > 1)
+    {
+        mark_times = atoi(argv[1]);
+        set_tcd1304_device_marktimes(mark_times);
+        NVIC_EnableIRQ(TIMER3_IRQn);
+    }
+	else
+	{
+extern drv_tcd1304_target_ans_t gs_tcd_mark_target_ans;
+		LOG_I("mark_stand[%u,%u,%u]", gs_tcd_mark_target_ans.ans_zone0, gs_tcd_mark_target_ans.ans_zone1, gs_tcd_mark_target_ans.ans_zone2);
+	}
+    LOG_I("mark stand end, mark_times=%d", mark_times);
+
+    return 0;
+}
+MSH_CMD_EXPORT(mark_stand, "test sync mode")
+
+/* 触发对比过程 */
+static int triger_cmp(int argc, char **argv)
+{
+    int cmp_times = 1;
+
+    LOG_I("triger cmp begin");
+    /* TODO 设置全局标志位，开始采样
+     * 如果带有采样次数这个参数,那么修改默认的采样次数
+     * */
+    if (argc > 1)
+    {
+        cmp_times = atoi(argv[1]);
+    }
+    set_tcd1304_device_data(cmp_times);
+    NVIC_EnableIRQ(TIMER3_IRQn);
+    LOG_I("triger cmp end, cmp_times=%d", cmp_times);
+
+    return 0;
+}
+MSH_CMD_EXPORT(triger_cmp, "triger cmp mode")
+#if 1
 /*
  * File      : can_thread.c
  * This file is part of RT-Thread RTOS
@@ -65,8 +118,9 @@ MSH_CMD_EXPORT(test_sync, "test sync mode")
 #include <board.h>
 #include "drv_can.h"
 
-#define DBG_TAG               "thread.CAN"
-#define DBG_LVL               LOG_LVL_DBG
+#define DBG_LVL               DBG_INFO
+#undef LOG_TAG
+#define LOG_TAG               "app.CAN"
 #include <rtdbg.h>
 
 #define CAN_DEV_NAME       "can0"      /* CAN 设备名称 */
@@ -92,7 +146,7 @@ int can_thread_entry(void)
 
     ret = rt_device_open(g_can_dev, \
         RT_DEVICE_FLAG_INT_RX | RT_DEVICE_FLAG_INT_TX);
-#define CAN_BAUD CAN500kBaud
+#define CAN_BAUD CAN100kBaud
     /* 设置 CAN 通信的波特率为 100kbit/s*/
     ret = rt_device_control(g_can_dev, RT_CAN_CMD_SET_BAUD, \
         (void *)CAN_BAUD);
@@ -112,7 +166,6 @@ int can_thread_entry(void)
     rcu_periph_clock_disable(RCU_USART0);
 #endif
 
-
 int i = 0;
     msg.id = 0x78;              /* ID 为 0x78 */
     msg.ide = RT_CAN_STDID;     /* 标准格式 */
@@ -131,6 +184,7 @@ int i = 0;
     size = rt_device_write(g_can_dev, 0, &msg, sizeof(msg));
 	LOG_I("send %d time.", i);
 	rt_thread_mdelay(500);
+    return 0;
     while (1)
     {
         rt_memset(&msg, 0, sizeof msg);
@@ -159,16 +213,15 @@ int i = 0;
     msg.data[7] = 0x77;
     /* 发送一帧 CAN 数据 */
     size = rt_device_write(g_can_dev, 0, &msg, sizeof(msg));
-		LOG_I("send %d time.", i);
-	rt_thread_mdelay(500);
-	if (i++ > 100)
-	{
-		break;
-	}
-	}
+        LOG_I("send %d time.", i);
+    rt_thread_mdelay(500);
+    if (i++ > 100)
+    {
+        break;
+    }
+    }
 
     return 0;
 }
-
 INIT_APP_EXPORT(can_thread_entry);
 #endif
