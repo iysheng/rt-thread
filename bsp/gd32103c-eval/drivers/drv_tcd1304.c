@@ -64,7 +64,9 @@ static int do_format_data(uint16_t *data, int data_len)
 {
     int i = 0;
     uint16_t stand_value = _get_stand_value(data, data_len);
+#if 0
     rt_kprintf("stand=%d", stand_value);
+#endif
 
     for (; i < data_len; i++)
     {
@@ -108,7 +110,7 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
         }
     }
 
-    rt_kprintf("target_ans=[%u,%u,%u]\n", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
+    LOG_I("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
     return 0;
 }
 
@@ -201,7 +203,7 @@ static drv_tcd1304_data_t g_tcd1304_device_data = {
  */
 int set_tcd1304_device_data(int data)
 {
-    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, VALID_CCD_DATA_LEN);
+    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, sizeof(uint16_t) * VALID_CCD_DATA_LEN);
     g_tcd1304_device_data.should_scan = data;
     return 0;
 }
@@ -215,8 +217,8 @@ int set_tcd1304_device_data(int data)
  */
 int set_tcd1304_device_marktimes(int data)
 {
-    rt_memset(&g_tcd_convert_data_filter4mark[0], 0, VALID_CCD_DATA_LEN);
-    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, VALID_CCD_DATA_LEN);
+    rt_memset(&g_tcd_convert_data_filter4mark[0], 0, sizeof(uint16_t) * VALID_CCD_DATA_LEN);
+    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, sizeof(uint16_t) * VALID_CCD_DATA_LEN);
     g_tcd1304_device_data.mark_times = data;
     g_tcd1304_device_data.should_scan = data;
 
@@ -242,13 +244,17 @@ void TIMER3_IRQHandler(void)
     /* 如果需要对采样的数据 AD 转换 */
     if (g_tcd1304_device_data.should_scan > 0)
     {
+#if 0
         rt_kprintf("should_scan=%d\n", g_tcd1304_device_data.should_scan);
         if ((g_tcd1304_device_data.mark_times != 0 && g_tcd1304_device_data.should_scan == g_tcd1304_device_data.mark_times) || g_tcd1304_device_data.mark_times == 0)
         {
+#endif
             g_tcd1304_device_data.should_scan--;
             DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
             TIMER_Enable(TIMER0, ENABLE);
+#if 0
         }
+#endif
     }
     rt_interrupt_leave();
 }
@@ -428,7 +434,7 @@ void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
     float tmp_data_raw, tmp_data_filter;
 
     /* 提取有效的数据 [33...3680]*/
-    rt_memmove(src + 33, src, len);
+    rt_memmove(src, src + 33, len);
 
     dst[0] = src[0];
     for (; i < len; i++)
@@ -442,36 +448,37 @@ void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
 
 static int check_whether_match_target(drv_tcd1304_target_ans_t *mark, drv_tcd1304_target_ans_t *cmp)
 {
+#define COMPARE_THREOLD    150
     int match = 0;
 
 	if (mark->ans_zone0 > cmp->ans_zone0)
 	{
-		match += (mark->ans_zone0 - cmp->ans_zone0 > 100);
+		match += (mark->ans_zone0 - cmp->ans_zone0 > COMPARE_THREOLD);
 	}
 	else
 	{
-		match += (cmp->ans_zone0 - mark->ans_zone0 > 100);
+		match += (cmp->ans_zone0 - mark->ans_zone0 > COMPARE_THREOLD);
 	}
 
 	if (mark->ans_zone1 > cmp->ans_zone1)
 	{
-		match += (mark->ans_zone1 - cmp->ans_zone1 > 100);
+		match += (mark->ans_zone1 - cmp->ans_zone1 > COMPARE_THREOLD);
 	}
 	else
 	{
-		match += (cmp->ans_zone1 - mark->ans_zone1 > 100);
+		match += (cmp->ans_zone1 - mark->ans_zone1 > COMPARE_THREOLD);
 	}
 
 	if (mark->ans_zone2 > cmp->ans_zone2)
 	{
-		match += (mark->ans_zone2 - cmp->ans_zone2 > 100);
+		match += (mark->ans_zone2 - cmp->ans_zone2 > COMPARE_THREOLD);
 	}
 	else
 	{
-		match += (cmp->ans_zone2 - mark->ans_zone2 > 100);
+		match += (cmp->ans_zone2 - mark->ans_zone2 > COMPARE_THREOLD);
 	}
 
-	rt_kprintf(">--------------match=%d.", match);
+	LOG_I(">--------------no match counts=%d.", match);
 
     return match;
 }
@@ -483,12 +490,15 @@ void DMA0_Channel0_IRQHandler(void)
     rt_interrupt_enter();
     TIMER_Enable(TIMER0, DISABLE);
     DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
-#if 1
+#if 0
     show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
 #endif
     do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
+#if 0
+    show_voltage("filter", g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+#endif
     do_format_data(g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
-    rt_kprintf("counts=%d %d\n", g_tcd1304_device_data.should_scan, g_tcd1304_device_data.mark_times);
+#if 1
     /* TODO check whether use filtered data mark stand */
     if (g_tcd1304_device_data.mark_times > 0)
     {
@@ -509,14 +519,15 @@ void DMA0_Channel0_IRQHandler(void)
             /* check whether match */
             if (check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans))
             {
-                rt_kprintf("no match");
+                LOG_I("no match");
             }
             else
             {
-                rt_kprintf("match to alarm");
+                LOG_W("match to alarm");
             }
         }
     }
+#endif
 #if 0
     show_voltage("filter", g_tcd_convert_data_filter, CCD_DATA_LEN);
 #endif
