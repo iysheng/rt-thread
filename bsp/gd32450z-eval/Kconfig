@@ -59,3 +59,8 @@ config BSP_USING_LPUART1
     bool "using lpuart1"
     select RT_USING_SERIAL
     default n
+
+config BSP_USING_GPIO
+    bool "using gpio"
+    select RT_USING_PIN
+    default n

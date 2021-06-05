@@ -163,5 +163,6 @@
 
 #define SOC_GD32450Z
 #define BSP_USING_UART0
+#define BSP_USING_GPIO
 
 #endif

@@ -185,8 +185,9 @@ typedef enum IRQn
 /* enum definitions */
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} EventStatus, ControlStatus;
 typedef enum {FALSE = 0, TRUE = !FALSE} bool;
-typedef enum {RESET = 0, SET = !RESET} FlagStatus;
+typedef enum {RESET = 0, SET = !RESET} FlagStatus, BitState;
 typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrStatus;
+
 
 /* bit operations */
 #define REG32(addr)                  (*(volatile uint32_t *)(uint32_t)(addr))

@@ -27,7 +27,6 @@ if os.getenv('RTT_EXEC_PATH'):
 BUILD = 'debug'
 
 if PLATFORM == 'gcc':
-    print('hello gcc')
     # tool-chains
     PREFIX = 'arm-none-eabi-'
     CC = PREFIX + 'gcc'
