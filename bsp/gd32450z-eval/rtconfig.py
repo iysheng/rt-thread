@@ -3,7 +3,7 @@ import os
 # toolchains options
 ARCH='arm'
 CPU='cortex-m4'
-CROSS_TOOL='keil'
+CROSS_TOOL='gcc'
 
 if os.getenv('RTT_CC'):
     CROSS_TOOL = os.getenv('RTT_CC')
@@ -13,7 +13,7 @@ if os.getenv('RTT_ROOT'):
 # cross_tool provides the cross compiler
 if  CROSS_TOOL == 'gcc':
     PLATFORM    = 'gcc'
-    EXEC_PATH   = r'D:/toolchain/gnu_tools_arm_embedded/5.4_2016q3/bin'
+    EXEC_PATH   = r'/opt/arm_tools/gcc-arm-none-eabi-6_2-2016q4/bin/'
 elif CROSS_TOOL == 'keil':
     PLATFORM 	= 'armcc'
     EXEC_PATH 	= r'C:/Keil_v5'
@@ -27,6 +27,7 @@ if os.getenv('RTT_EXEC_PATH'):
 BUILD = 'debug'
 
 if PLATFORM == 'gcc':
+    print('hello gcc')
     # tool-chains
     PREFIX = 'arm-none-eabi-'
     CC = PREFIX + 'gcc'

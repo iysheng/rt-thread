@@ -182,9 +182,9 @@ static const struct gd32_uart uarts[] = {
     {
         USART0,                                 // uart peripheral index
         USART0_IRQn,                            // uart iqrn
-        RCU_USART0, RCU_GPIOA, RCU_GPIOA,       // periph clock, tx gpio clock, rt gpio clock
-        GPIOA, GPIO_AF_7, GPIO_PIN_9,           // tx port, tx alternate, tx pin
-        GPIOA, GPIO_AF_7, GPIO_PIN_10,          // rx port, rx alternate, rx pin
+        RCU_USART0, RCU_GPIOB, RCU_GPIOB,       // periph clock, tx gpio clock, rt gpio clock
+        GPIOB, GPIO_AF_7, GPIO_PIN_6,           // tx port, tx alternate, tx pin
+        GPIOB, GPIO_AF_7, GPIO_PIN_7,          // rx port, rx alternate, rx pin
         &serial0,
         "uart0",
     },
