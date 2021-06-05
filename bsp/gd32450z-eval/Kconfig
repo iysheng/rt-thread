@@ -64,3 +64,13 @@ config BSP_USING_GPIO
     bool "using gpio"
     select RT_USING_PIN
     default n
+
+menuconfig BSP_USING_CAN
+    bool "using can"
+    default n
+    select RT_USING_CAN
+    if BSP_USING_CAN
+        config RT_USING_CAN0
+        bool "using can0 device"
+        default n
+    endif

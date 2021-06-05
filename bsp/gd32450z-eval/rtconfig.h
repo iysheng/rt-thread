@@ -88,6 +88,7 @@
 #define RT_USING_SERIAL
 #define RT_SERIAL_USING_DMA
 #define RT_SERIAL_RB_BUFSZ 64
+#define RT_USING_CAN
 #define RT_USING_PIN
 
 /* Using USB */
@@ -164,5 +165,7 @@
 #define SOC_GD32450Z
 #define BSP_USING_UART0
 #define BSP_USING_GPIO
+#define BSP_USING_CAN
+#define RT_USING_CAN0
 
 #endif
