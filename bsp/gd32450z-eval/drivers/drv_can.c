@@ -15,7 +15,7 @@
 #ifdef RT_USING_CAN
 
 #include <rtdevice.h>
-
+#define RT_CAN_DEBUG
 #ifdef RT_CAN_DEBUG
 #define DBG_LVL               DBG_LOG
 #else
@@ -29,8 +29,8 @@
 static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
 {
     {CAN100kBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
-        | BAUD_DATA_SET(CAN_BT_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
-        | 30)},
+        | BAUD_DATA_SET(CAN_BT_BS1_11TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
+        | 25)},
 };
 
 #ifdef RT_USING_CAN0
@@ -67,6 +67,7 @@ static rt_err_t _can_config(struct rt_can_device *can, struct can_configure *cfg
 {
     struct gd32_can *drv_can;
     rt_uint32_t baud_index;
+    int ret = 0;
 
     RT_ASSERT(can);
     RT_ASSERT(cfg);
@@ -104,9 +105,11 @@ static rt_err_t _can_config(struct rt_can_device *can, struct can_configure *cfg
     drv_can->CanParam.time_segment_2 = BAUD_DATA(BS2, baud_index);
 
     /* init can */
-    if (can_init(drv_can->CanHandle, &drv_can->CanParam) != \
+    ret = can_init(drv_can->CanHandle, &drv_can->CanParam);
+    if (ret != \
         SUCCESS)
     {
+        LOG_I("failed init can, ret=%d", ret);
         return -RT_ERROR;
     }
 
@@ -198,19 +201,14 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
 
             if (CAN0 == drv_can->CanHandle)
             {
-#ifdef GD32F10X_HD
-                nvic_irq_enable(USB_LP_CAN1_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
-#elif defined(GD32F10X_CL)
-                nvic_irq_enable(CAN1_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
-#endif
+                nvic_irq_enable(CAN0_RX0_IRQn, 1, 0);
+                nvic_irq_enable(CAN0_RX1_IRQn, 1, 0);
             }
 #ifdef RT_USING_CAN1
             if (CAN1 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN2_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN2_RX1_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_RX0_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
             }
 #endif
         }
@@ -220,16 +218,12 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
 
             if (CAN0 == drv_can->CanHandle)
             {
-#ifdef GD32F10X_HD
-                nvic_irq_enable(USB_HP_CAN1_TX_IRQn, 1, 0);
-#elif defined(GD32F10X_CL)
-                nvic_irq_enable(CAN1_TX_IRQn, 1, 0);
-#endif
+                nvic_irq_enable(CAN0_TX_IRQn, 1, 0);
             }
 #ifdef RT_USING_CAN1
             if (CAN1 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN2_TX_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_TX_IRQn, 1, 0);
             }
 #endif
         }
@@ -452,6 +446,7 @@ static int _can_sendmsg(struct rt_can_device *can, const void *buf, rt_uint32_t 
         txheader.tx_ft = CAN_RTR_REMOTE;
     }
     txheader.tx_dlen = pmsg->len;
+    LOG_I("len=%d\n", txheader.tx_dlen);
     rt_memcpy(txheader.tx_data, pmsg->data, txheader.tx_dlen);
     can_message_transmit(hcan, &txheader);
 
@@ -535,7 +530,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
     {
     case CAN_RX_FIFO0:
         /* Check Overrun flag for FIFO0 */
-        if (CAN_RFIFOMI0(hcan) & CAN_RFIFO0_RFO0)
+        if (CAN_RFIFO0(hcan) & CAN_RFIFO0_RFO0)
         {
             /* Clear FIFO0 Overrun Flag */
             can_flag_clear(hcan, CAN_FLAG_RFO0);
@@ -543,36 +538,33 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
         }
 
         /* save to user list */
-        if (CAN_RFIFOMI0(hcan) & CAN_RFIFO0_RFL0)
+        if (CAN_RFIFO0(hcan) & CAN_RFIFO0_RFL0)
         {
             rt_hw_can_isr(can, RT_CAN_EVENT_RX_IND | fifo << 8);
         }
 
         /* Check FULL flag for FIFO0 */
-        if (CAN_RFIFOMI0(hcan) & CAN_RFIFO0_RFF0)
+        if (CAN_RFIFO0(hcan) & CAN_RFIFO0_RFF0)
         {
             /* Clear FIFO0 FULL Flag */
             can_flag_clear(hcan, CAN_FLAG_RFF0);
         }
-
         break;
     case CAN_RX_FIFO1:
         /* Check Overrun flag for FIFO0 */
-        if (CAN_RFIFOMI1(hcan) & CAN_RFIFO1_RFO1)
+        if (CAN_RFIFO1(hcan) & CAN_RFIFO1_RFO1)
         {
             /* Clear FIFO0 Overrun Flag */
             can_flag_clear(hcan, CAN_FLAG_RFO1);
             rt_hw_can_isr(can, RT_CAN_EVENT_RXOF_IND | fifo << 8);
         }
-
         /* save to user list */
-        if (CAN_RFIFOMI1(hcan) & CAN_RFIFO1_RFL1)
+        if (CAN_RFIFO1(hcan) & CAN_RFIFO1_RFL1)
         {
             rt_hw_can_isr(can, RT_CAN_EVENT_RX_IND | fifo << 8);
         }
-
         /* Check FULL flag for FIFO0 */
-        if (CAN_RFIFOMI1(hcan) & CAN_RFIFO1_RFF1)
+        if (CAN_RFIFO1(hcan) & CAN_RFIFO1_RFF1)
         {
             /* Clear FIFO0 FULL Flag */
             can_flag_clear(hcan, CAN_FLAG_RFF1);
@@ -585,7 +577,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
 /**
  * @brief This function handles CAN0 TX interrupts. transmit fifo0/1/2 is empty can trigger this interrupt
  */
-void USBD_HP_CAN0_TX_IRQHandler(void)
+void CAN0_TX_IRQHandler(void)
 {
     rt_interrupt_enter();
     uint32_t hcan;
@@ -636,7 +628,7 @@ void USBD_HP_CAN0_TX_IRQHandler(void)
 /**
  * @brief This function handles CAN0 RX0 interrupts.
  */
-void USBD_LP_CAN0_RX0_IRQHandler(void)
+void CAN0_RX0_IRQHandler(void)
 {
     rt_interrupt_enter();
     _can_rx_isr(&drv_can0.device, CAN_RX_FIFO0);

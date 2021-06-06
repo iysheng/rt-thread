@@ -115,7 +115,7 @@ ErrStatus can_init(uint32_t can_periph, can_parameter_struct* can_parameter_init
             timeout--;
         }
         /* check exit initialize mode */
-        if(CAN_STAT_IWS == (CAN_STAT(can_periph) & CAN_STAT_IWS)){
+        if(CAN_STAT_IWS != (CAN_STAT(can_periph) & CAN_STAT_IWS)){
             flag = SUCCESS;
         }
     }  
