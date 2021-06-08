@@ -31,6 +31,12 @@ static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
     {CAN100kBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
         | BAUD_DATA_SET(CAN_BT_BS1_11TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
         | 25)},
+    {CAN500kBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
+        | BAUD_DATA_SET(CAN_BT_BS1_11TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
+        | 5)},
+    {CAN1MBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
+        | BAUD_DATA_SET(CAN_BT_BS1_5TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_4TQ, BS2) \
+        | 5)},
 };
 
 #ifdef RT_USING_CAN0
