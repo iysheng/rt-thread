@@ -1,12 +1,37 @@
 /*!
-    \file  gd32f4xx_enet.c
-    \brief ENET driver
+    \file    gd32f4xx_enet.c
+    \brief   ENET driver
+
+    \version 2016-08-15, V1.0.0, firmware for GD32F4xx
+    \version 2018-12-12, V2.0.0, firmware for GD32F4xx
+    \version 2020-09-30, V2.1.0, firmware for GD32F4xx
 */
 
 /*
-    Copyright (C) 2016 GigaDevice
+    Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    2016-08-15, V1.0.1, firmware for GD32F4xx
+    Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this 
+       list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright notice, 
+       this list of conditions and the following disclaimer in the documentation 
+       and/or other materials provided with the distribution.
+    3. Neither the name of the copyright holder nor the names of its contributors 
+       may be used to endorse or promote products derived from this software without 
+       specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+OF SUCH DAMAGE.
 */
 
 #include "gd32f4xx_enet.h"
@@ -31,15 +56,11 @@ uint8_t rx_buff[ENET_RXBUF_NUM][ENET_RXBUF_SIZE];           /*!< ENET receive bu
 #pragma data_alignment=4
 uint8_t tx_buff[ENET_TXBUF_NUM][ENET_TXBUF_SIZE];           /*!< ENET transmit buffer */
 
-#elif defined ( __GNUC__ )
-__attribute__((aligned(4)))
-enet_descriptors_struct  rxdesc_tab[ENET_RXBUF_NUM];        /*!< ENET RxDMA descriptor */
-__attribute__((aligned(4)))
-enet_descriptors_struct  txdesc_tab[ENET_TXBUF_NUM];        /*!< ENET TxDMA descriptor */
-__attribute__((aligned(4)))
-uint8_t rx_buff[ENET_RXBUF_NUM][ENET_RXBUF_SIZE];           /*!< ENET receive buffer */
-__attribute__((aligned(4)))
-uint8_t tx_buff[ENET_TXBUF_NUM][ENET_TXBUF_SIZE];           /*!< ENET transmit buffer */
+#elif defined (__GNUC__)        /* GNU Compiler */
+enet_descriptors_struct  rxdesc_tab[ENET_RXBUF_NUM] __attribute__ ((aligned (4)));        /*!< ENET RxDMA descriptor */ 
+enet_descriptors_struct  txdesc_tab[ENET_TXBUF_NUM] __attribute__ ((aligned (4)));        /*!< ENET TxDMA descriptor */
+uint8_t rx_buff[ENET_RXBUF_NUM][ENET_RXBUF_SIZE] __attribute__ ((aligned (4)));           /*!< ENET receive buffer */
+uint8_t tx_buff[ENET_TXBUF_NUM][ENET_TXBUF_SIZE] __attribute__ ((aligned (4)));           /*!< ENET transmit buffer */
 
 #endif /* __CC_ARM */
 
@@ -53,7 +74,7 @@ enet_descriptors_struct  *dma_current_ptp_rxdesc = NULL;
 
 /* init structure parameters for ENET initialization */
 static enet_initpara_struct enet_initpara ={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
+static uint32_t enet_unknow_err = 0U;
 /* array of register offset for debug information get */
 static const uint16_t enet_reg_tab[] = {
 0x0000, 0x0004, 0x0008, 0x000C, 0x0010, 0x0014, 0x0018, 0x001C, 0x0028, 0x002C, 0x0034,
@@ -65,6 +86,18 @@ static const uint16_t enet_reg_tab[] = {
   
 0x1000, 0x1004, 0x1008, 0x100C, 0x1010, 0x1014, 0x1018, 0x101C, 0x1020, 0x1024, 0x1048,
 0x104C, 0x1050, 0x1054};
+
+/* initialize ENET peripheral with generally concerned parameters, call it by enet_init() */
+static void enet_default_init(void);
+#ifdef USE_DELAY
+/* user can provide more timing precise _ENET_DELAY_ function */
+#define _ENET_DELAY_                              delay_ms 
+#else
+/* insert a delay time */
+static void enet_delay(uint32_t ncount);
+/* default _ENET_DELAY_ function with less precise timing */
+#define _ENET_DELAY_                              enet_delay
+#endif
 
 
 /*!
@@ -84,8 +117,8 @@ void enet_deinit(void)
     \brief      configure the parameters which are usually less cared for initialization
                 note -- this function must be called before enet_init(), otherwise 
                 configuration will be no effect
-    \param[in]  option: different function option, which is related to several parameters, 
-                only one parameter can be selected which is shown as below, refer to enet_option_enum
+    \param[in]  option: different function option, which is related to several parameters, refer to enet_option_enum
+                only one parameter can be selected which is shown as below
       \arg        FORWARD_OPTION: choose to configure the frame forward related parameters
       \arg        DMABUS_OPTION: choose to configure the DMA bus mode related parameters
       \arg        DMA_MAXBURST_OPTION: choose to configure the DMA max burst related parameters
@@ -101,7 +134,7 @@ void enet_deinit(void)
       \arg        TIMER_OPTION: choose to configure time counter related parameters
       \arg        INTERFRAMEGAP_OPTION: choose to configure the inter frame gap related parameters
     \param[in]  para: the related parameters according to the option 
-                      all the related parameters should be configured which are shown as below
+                all the related parameters should be configured which are shown as below
                       FORWARD_OPTION related parameters:
                       -  ENET_AUTO_PADCRC_DROP_ENABLE/ ENET_AUTO_PADCRC_DROP_DISABLE ;
                       -  ENET_TYPEFRAME_CRC_DROP_ENABLE/ ENET_TYPEFRAME_CRC_DROP_DISABLE ;
@@ -269,22 +302,22 @@ void enet_initpara_config(enet_option_enum option, uint32_t para)
 /*!
     \brief      initialize ENET peripheral with generally concerned parameters and the less cared 
                 parameters
-    \param[in]  mediamode: PHY mode and mac loopback configurations, only one parameter can be selected
-                           which is shown as below, refer to enet_mediamode_enum 
+    \param[in]  mediamode: PHY mode and mac loopback configurations, refer to enet_mediamode_enum 
+                only one parameter can be selected which is shown as below
       \arg        ENET_AUTO_NEGOTIATION: PHY auto negotiation
       \arg        ENET_100M_FULLDUPLEX: 100Mbit/s, full-duplex
       \arg        ENET_100M_HALFDUPLEX: 100Mbit/s, half-duplex
       \arg        ENET_10M_FULLDUPLEX: 10Mbit/s, full-duplex
       \arg        ENET_10M_HALFDUPLEX: 10Mbit/s, half-duplex
       \arg        ENET_LOOPBACKMODE: MAC in loopback mode at the MII
-    \param[in]  checksum: IP frame checksum offload function, only one parameter can be selected
-                          which is shown as below, refer to enet_mediamode_enum 
+    \param[in]  checksum: IP frame checksum offload function, refer to enet_mediamode_enum 
+                only one parameter can be selected which is shown as below
       \arg        ENET_NO_AUTOCHECKSUM: disable IP frame checksum function
       \arg        ENET_AUTOCHECKSUM_DROP_FAILFRAMES: enable IP frame checksum function
       \arg        ENET_AUTOCHECKSUM_ACCEPT_FAILFRAMES: enable IP frame checksum function, and the received frame
                                                        with only payload error but no other errors will not be dropped
-    \param[in]  recept: frame filter function, only one parameter can be selected
-                          which is shown as below, refer to enet_frmrecept_enum 
+    \param[in]  recept: frame filter function, refer to enet_frmrecept_enum 
+                only one parameter can be selected which is shown as below
       \arg        ENET_PROMISCUOUS_MODE: promiscuous mode enabled
       \arg        ENET_RECEIVEALL: all received frame are forwarded to application
       \arg        ENET_BROADCAST_FRAMES_PASS: the address filters pass all received broadcast frames
@@ -633,7 +666,7 @@ uint32_t enet_rxframe_size_get(void)
         /* drop current receive frame */
         enet_rxframe_drop();
 
-        return 0U;
+        return 1U;
     }
 #ifdef SELECT_DESCRIPTORS_ENHANCED_MODE
     /* if is an ethernet-type frame, and IP frame payload error occurred */
@@ -642,7 +675,7 @@ uint32_t enet_rxframe_size_get(void)
          /* drop current receive frame */
          enet_rxframe_drop();
 
-        return 0U;
+        return 1U;
     }
 #else 
     /* if is an ethernet-type frame, and IP frame payload error occurred */
@@ -651,7 +684,7 @@ uint32_t enet_rxframe_size_get(void)
          /* drop current receive frame */
          enet_rxframe_drop();
 
-        return 0U;
+        return 1U;
     }  
 #endif 
     /* if CPU owns current descriptor, no error occured, the frame uses only one descriptor */
@@ -668,6 +701,11 @@ uint32_t enet_rxframe_size_get(void)
         if((RESET != (ENET_MAC_CFG & ENET_MAC_CFG_TFCD)) && (RESET != (status & ENET_RDES0_FRMT))){
             size = size + 4U;
         }
+    }else{
+        enet_unknow_err++;
+        enet_rxframe_drop();
+
+        return 1U;
     }
  
     /* return packet size */ 
@@ -676,7 +714,7 @@ uint32_t enet_rxframe_size_get(void)
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in chain mode
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -748,7 +786,7 @@ void enet_descriptors_chain_init(enet_dmadirection_enum direction)
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in ring mode
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -966,7 +1004,7 @@ ErrStatus enet_frame_transmit(uint8_t *buffer, uint32_t length)
 
 /*!
     \brief      configure the transmit IP frame checksum offload calculation and insertion
-    \param[in]  desc: the descriptor pointer which users want to configure
+    \param[in]  desc: the descriptor pointer which users want to configure, refer to enet_descriptors_struct
     \param[in]  checksum: IP frame checksum configuration
                 only one parameter can be selected which is shown as below
       \arg        ENET_CHECKSUM_DISABLE: checksum insertion disabled
@@ -1008,8 +1046,8 @@ void enet_disable(void)
 
 /*!
     \brief      configure MAC address 
-    \param[in]  mac_addr: select which MAC address will be set, 
-                only one parameter can be selected which is shown as below  
+    \param[in]  mac_addr: select which MAC address will be set, refer to enet_macaddress_enum
+                only one parameter can be selected which is shown as below
       \arg        ENET_MAC_ADDRESS0: set MAC address 0 filter
       \arg        ENET_MAC_ADDRESS1: set MAC address 1 filter
       \arg        ENET_MAC_ADDRESS2: set MAC address 2 filter
@@ -1027,7 +1065,7 @@ void enet_mac_address_set(enet_macaddress_enum mac_addr, uint8_t paddr[])
 
 /*!
     \brief      get MAC address 
-    \param[in]  mac_addr: select which MAC address will be get,
+    \param[in]  mac_addr: select which MAC address will be get, refer to enet_macaddress_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_ADDRESS0: get MAC address 0 filter
       \arg        ENET_MAC_ADDRESS1: get MAC address 1 filter
@@ -1130,7 +1168,7 @@ void enet_flag_clear(enet_flag_clear_enum enet_flag)
 
 /*!
     \brief      enable ENET MAC/MSC/DMA interrupt 
-    \param[in]  enet_int: ENET interrupt,
+    \param[in]  enet_int: ENET interrupt,, refer to enet_int_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_INT_WUMIM: WUM interrupt mask
       \arg        ENET_MAC_INT_TMSTIM: timestamp trigger interrupt mask
@@ -1171,7 +1209,7 @@ void enet_interrupt_enable(enet_int_enum enet_int)
 
 /*!
     \brief      disable ENET MAC/MSC/DMA interrupt 
-    \param[in]  enet_int: ENET interrupt,
+    \param[in]  enet_int: ENET interrupt, refer to enet_int_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_INT_WUMIM: WUM interrupt mask
       \arg        ENET_MAC_INT_TMSTIM: timestamp trigger interrupt mask
@@ -1212,7 +1250,7 @@ void enet_interrupt_disable(enet_int_enum enet_int)
 
 /*!
     \brief      get ENET MAC/MSC/DMA interrupt flag 
-    \param[in]  int_flag: ENET interrupt flag,
+    \param[in]  int_flag: ENET interrupt flag, refer to enet_int_flag_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_INT_FLAG_WUM: WUM status flag
       \arg        ENET_MAC_INT_FLAG_MSC: MSC status flag
@@ -1257,7 +1295,7 @@ FlagStatus enet_interrupt_flag_get(enet_int_flag_enum int_flag)
 
 /*!
     \brief      clear ENET DMA interrupt flag 
-    \param[in]  int_flag_clear: clear ENET interrupt flag,
+    \param[in]  int_flag_clear: clear ENET interrupt flag, refer to enet_int_flag_clear_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_INT_FLAG_TS_CLR: transmit status flag
       \arg        ENET_DMA_INT_FLAG_TPS_CLR: transmit process stopped status flag
@@ -1367,18 +1405,18 @@ void enet_registers_get(enet_registers_type_enum type, uint32_t *preg, uint32_t 
 
 /*!
     \brief      get the enet debug status from the debug register
-    \param[in]  mac_debug: enet debug status,
+    \param[in]  mac_debug: enet debug status
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_RECEIVER_NOT_IDLE: MAC receiver is not in idle state
       \arg        ENET_RX_ASYNCHRONOUS_FIFO_STATE: Rx asynchronous FIFO status
-      \arg        ENET_RXFIFO_NOT_WRITING: RxFIFO is not doing write operation
+      \arg        ENET_RXFIFO_WRITING: RxFIFO is doing write operation
       \arg        ENET_RXFIFO_READ_STATUS: RxFIFO read operation status
       \arg        ENET_RXFIFO_STATE: RxFIFO state
       \arg        ENET_MAC_TRANSMITTER_NOT_IDLE: MAC transmitter is not in idle state
       \arg        ENET_MAC_TRANSMITTER_STATUS: status of MAC transmitter
       \arg        ENET_PAUSE_CONDITION_STATUS: pause condition status
       \arg        ENET_TXFIFO_READ_STATUS: TxFIFO read operation status
-      \arg        ENET_TXFIFO_NOT_WRITING: TxFIFO is not doing write operation
+      \arg        ENET_TXFIFO_WRITING: TxFIFO is doing write operation
       \arg        ENET_TXFIFO_NOT_EMPTY: TxFIFO is not empty
       \arg        ENET_TXFIFO_FULL: TxFIFO is full
     \param[out] none
@@ -1415,7 +1453,7 @@ uint32_t enet_debug_status_get(uint32_t mac_debug)
 
 /*!
     \brief      enable the MAC address filter 
-    \param[in]  mac_addr: select which MAC address will be enable  
+    \param[in]  mac_addr: select which MAC address will be enable, refer to enet_macaddress_enum
       \arg        ENET_MAC_ADDRESS1: enable MAC address 1 filter
       \arg        ENET_MAC_ADDRESS2: enable MAC address 2 filter
       \arg        ENET_MAC_ADDRESS3: enable MAC address 3 filter
@@ -1429,7 +1467,7 @@ void enet_address_filter_enable(enet_macaddress_enum mac_addr)
 
 /*!
     \brief      disable the MAC address filter 
-    \param[in]  mac_addr: select which MAC address will be disable,
+    \param[in]  mac_addr: select which MAC address will be disable, refer to enet_macaddress_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_ADDRESS1: disable MAC address 1 filter
       \arg        ENET_MAC_ADDRESS2: disable MAC address 2 filter
@@ -1444,12 +1482,12 @@ void enet_address_filter_disable(enet_macaddress_enum mac_addr)
 
 /*!
     \brief      configure the MAC address filter 
-    \param[in]  mac_addr: select which MAC address will be configured,
+    \param[in]  mac_addr: select which MAC address will be configured, refer to enet_macaddress_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC_ADDRESS1: configure MAC address 1 filter
       \arg        ENET_MAC_ADDRESS2: configure MAC address 2 filter
       \arg        ENET_MAC_ADDRESS3: configure MAC address 3 filter
-    \param[in]  addr_mask: select which MAC address bytes will be mask,
+    \param[in]  addr_mask: select which MAC address bytes will be mask
                 one or more parameters can be selected which are shown as below
       \arg        ENET_ADDRESS_MASK_BYTE0: mask ENET_MAC_ADDR1L[7:0] bits
       \arg        ENET_ADDRESS_MASK_BYTE1: mask ENET_MAC_ADDR1L[15:8] bits 
@@ -1457,7 +1495,7 @@ void enet_address_filter_disable(enet_macaddress_enum mac_addr)
       \arg        ENET_ADDRESS_MASK_BYTE3: mask ENET_MAC_ADDR1L [31:24] bits
       \arg        ENET_ADDRESS_MASK_BYTE4: mask ENET_MAC_ADDR1H [7:0] bits
       \arg        ENET_ADDRESS_MASK_BYTE5: mask ENET_MAC_ADDR1H [15:8] bits
-    \param[in]  filter_type: select which MAC address filter type will be selected,
+    \param[in]  filter_type: select which MAC address filter type will be selected
                 only one parameter can be selected which is shown as below
       \arg        ENET_ADDRESS_FILTER_SA: The MAC address is used to compared with the SA field of the received frame
       \arg        ENET_ADDRESS_FILTER_DA: The MAC address is used to compared with the DA field of the received frame
@@ -1536,11 +1574,11 @@ ErrStatus enet_phy_config(void)
 
 /*!
     \brief      write to / read from a PHY register
-    \param[in]  direction: only one parameter can be selected which is shown as below
+    \param[in]  direction: only one parameter can be selected which is shown as below, refer to enet_phydirection_enum
       \arg        ENET_PHY_WRITE: write data to phy register
       \arg        ENET_PHY_READ:  read data from phy register
-    \param[in]  phy_address: 0x0 - 0x1F
-    \param[in]  phy_reg: 0x0 - 0x1F
+    \param[in]  phy_address: 0x0000 - 0x001F
+    \param[in]  phy_reg: 0x0000 - 0x001F
     \param[in]  pvalue: the value will be written to the PHY register in ENET_PHY_WRITE direction 
     \param[out] pvalue: the value will be read from the PHY register in ENET_PHY_READ direction
     \retval     ErrStatus: SUCCESS or ERROR
@@ -1630,7 +1668,7 @@ ErrStatus enet_phyloopback_disable(void)
 
 /*!
     \brief      enable ENET forward feature
-    \param[in]  feature: the feature of ENET forward mode,
+    \param[in]  feature: the feature of ENET forward mode
                 one or more parameters can be selected which are shown as below
       \arg        ENET_AUTO_PADCRC_DROP: the function of the MAC strips the Pad/FCS field on received frames
       \arg        ENET_TYPEFRAME_CRC_DROP: the function that FCS field(last 4 bytes) of frame will be dropped before forwarding
@@ -1652,7 +1690,7 @@ void enet_forward_feature_enable(uint32_t feature)
 
 /*!
     \brief      disable ENET forward feature
-    \param[in]  feature: the feature of ENET forward mode,
+    \param[in]  feature: the feature of ENET forward mode
                 one or more parameters can be selected which are shown as below
       \arg        ENET_AUTO_PADCRC_DROP: the automatic zero-quanta generation function
       \arg        ENET_TYPEFRAME_CRC_DROP: the flow control operation in the MAC
@@ -1674,7 +1712,7 @@ void enet_forward_feature_disable(uint32_t feature)
                             
 /*!                    
     \brief      enable ENET fliter feature
-    \param[in]  feature: the feature of ENET fliter mode,
+    \param[in]  feature: the feature of ENET fliter mode
                 one or more parameters can be selected which are shown as below
       \arg        ENET_SRC_FILTER: filter source address function
       \arg        ENET_SRC_FILTER_INVERSE: inverse source address filtering result function
@@ -1693,7 +1731,7 @@ void enet_fliter_feature_enable(uint32_t feature)
 
 /*!
     \brief      disable ENET fliter feature
-    \param[in]  feature: the feature of ENET fliter mode,
+    \param[in]  feature: the feature of ENET fliter mode
                 one or more parameters can be selected which are shown as below
       \arg        ENET_SRC_FILTER: filter source address function
       \arg        ENET_SRC_FILTER_INVERSE: inverse source address filtering result function
@@ -1733,7 +1771,7 @@ ErrStatus enet_pauseframe_generate(void)
 
 /*!
     \brief      configure the pause frame detect type
-    \param[in]  detect: pause frame detect type,
+    \param[in]  detect: pause frame detect type
                 only one parameter can be selected which is shown as below
       \arg        ENET_MAC0_AND_UNIQUE_ADDRESS_PAUSEDETECT: besides the unique multicast address, MAC can also
                                                             use the MAC0 address to detecting pause frame
@@ -1751,9 +1789,9 @@ void enet_pauseframe_detect_config(uint32_t detect)
 /*!
     \brief      configure the pause frame parameters
     \param[in]  pausetime: pause time in transmit pause control frame
-    \param[in]  pause_threshold: the threshold of the pause timer for retransmitting frames automatically,
-                this value must make sure to be less than configured pause time, only one parameter can be
-                selected which is shown as below
+    \param[in]  pause_threshold: the threshold of the pause timer for retransmitting frames automatically
+                this value must make sure to be less than configured pause time
+                only one parameter can be selected which is shown as below
       \arg        ENET_PAUSETIME_MINUS4: pause time minus 4 slot times
       \arg        ENET_PAUSETIME_MINUS28: pause time minus 28 slot times
       \arg        ENET_PAUSETIME_MINUS144: pause time minus 144 slot times
@@ -1769,9 +1807,9 @@ void enet_pauseframe_config(uint32_t pausetime, uint32_t pause_threshold)
 
 /*!
     \brief      configure the threshold of the flow control(deactive and active threshold)
-    \param[in]  deactive: the threshold of the deactive flow control, this value
-                should always be less than active flow control value, only one 
-                parameter can be selected which is shown as below
+    \param[in]  deactive: the threshold of the deactive flow control
+                this value should always be less than active flow control value
+                only one parameter can be selected which is shown as below
       \arg        ENET_DEACTIVE_THRESHOLD_256BYTES: threshold level is 256 bytes
       \arg        ENET_DEACTIVE_THRESHOLD_512BYTES: threshold level is 512 bytes
       \arg        ENET_DEACTIVE_THRESHOLD_768BYTES: threshold level is 768 bytes
@@ -1779,8 +1817,8 @@ void enet_pauseframe_config(uint32_t pausetime, uint32_t pause_threshold)
       \arg        ENET_DEACTIVE_THRESHOLD_1280BYTES: threshold level is 1280 bytes
       \arg        ENET_DEACTIVE_THRESHOLD_1536BYTES: threshold level is 1536 bytes
       \arg        ENET_DEACTIVE_THRESHOLD_1792BYTES: threshold level is 1792 bytes
-    \param[in]  active: the threshold of the active flow control, only one parameter
-                can be selected which is shown as below
+    \param[in]  active: the threshold of the active flow control
+                only one parameter can be selected which is shown as below
       \arg        ENET_ACTIVE_THRESHOLD_256BYTES: threshold level is 256 bytes
       \arg        ENET_ACTIVE_THRESHOLD_512BYTES: threshold level is 512 bytes
       \arg        ENET_ACTIVE_THRESHOLD_768BYTES: threshold level is 768 bytes
@@ -1838,8 +1876,8 @@ void enet_flowcontrol_feature_disable(uint32_t feature)
 
 /*!
     \brief      get the dma transmit/receive process state
-    \param[in]  direction: choose the direction of dma process which users want to check, 
-                refer to enet_dmadirection_enum, only one parameter can be selected which is shown as below
+    \param[in]  direction: choose the direction of dma process which users want to check, refer to enet_dmadirection_enum
+                only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: dma transmit process
       \arg        ENET_DMA_RX: dma receive process
     \param[out] none
@@ -1859,8 +1897,8 @@ uint32_t enet_dmaprocess_state_get(enet_dmadirection_enum direction)
 /*!
     \brief      poll the DMA transmission/reception enable by writing any value to the 
                 ENET_DMA_TPEN/ENET_DMA_RPEN register, this will make the DMA to resume transmission/reception
-    \param[in]  direction: choose the direction of DMA process which users want to resume, 
-                refer to enet_dmadirection_enum, only one parameter can be selected which is shown as below
+    \param[in]  direction: choose the direction of DMA process which users want to resume, refer to enet_dmadirection_enum
+                only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA transmit process
       \arg        ENET_DMA_RX: DMA receive process
     \param[out] none
@@ -1926,7 +1964,7 @@ ErrStatus enet_txfifo_flush(void)
 
 /*!
     \brief      get the transmit/receive address of current descriptor, or current buffer, or descriptor table
-    \param[in]  addr_get: choose the address which users want to get, refer to enet_desc_reg_enum,
+    \param[in]  addr_get: choose the address which users want to get, refer to enet_desc_reg_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_RX_DESC_TABLE: the start address of the receive descriptor table
       \arg        ENET_RX_CURRENT_DESC: the start descriptor address of the current receive descriptor read by
@@ -1950,7 +1988,7 @@ uint32_t enet_current_desc_address_get(enet_desc_reg_enum addr_get)
 /*!
     \brief      get the Tx or Rx descriptor information
     \param[in]  desc: the descriptor pointer which users want to get information
-    \param[in]  info_get: the descriptor information type which is selected,
+    \param[in]  info_get: the descriptor information type which is selected, refer to enet_descstate_enum
                 only one parameter can be selected which is shown as below
       \arg        RXDESC_BUFFER_1_SIZE: receive buffer 1 size
       \arg        RXDESC_BUFFER_2_SIZE: receive buffer 2 size
@@ -1974,12 +2012,17 @@ uint32_t enet_desc_information_get(enet_descriptors_struct *desc, enet_descstate
         break; 
     case RXDESC_FRAME_LENGTH:    
         reval = GET_RDES0_FRML(desc->status);
-        reval = reval - 4U;
+        if(reval > 4U){
+            reval = reval - 4U;
         
-        /* if is a type frame, and CRC is not included in forwarding frame */ 
-        if((RESET != (ENET_MAC_CFG & ENET_MAC_CFG_TFCD)) && (RESET != (desc->status & ENET_RDES0_FRMT))){
-            reval = reval + 4U;
-        }    
+            /* if is a type frame, and CRC is not included in forwarding frame */ 
+            if((RESET != (ENET_MAC_CFG & ENET_MAC_CFG_TFCD)) && (RESET != (desc->status & ENET_RDES0_FRMT))){
+                reval = reval + 4U;
+            }    
+        }else{
+            reval = 0U;
+        }
+    
         break;
     case RXDESC_BUFFER_1_ADDR:    
         reval = desc->buffer1_addr;    
@@ -2015,7 +2058,7 @@ void enet_missed_frame_counter_get(uint32_t *rxfifo_drop, uint32_t *rxdma_drop)
 /*!
     \brief      get the bit flag of ENET DMA descriptor
     \param[in]  desc: the descriptor pointer which users want to get flag
-    \param[in]  desc_flag: the bit flag of ENET DMA descriptor,
+    \param[in]  desc_flag: the bit flag of ENET DMA descriptor
                 only one parameter can be selected which is shown as below
       \arg        ENET_TDES0_DB: deferred 
       \arg        ENET_TDES0_UFE: underflow error
@@ -2078,7 +2121,7 @@ FlagStatus enet_desc_flag_get(enet_descriptors_struct *desc, uint32_t desc_flag)
 /*!
     \brief      set the bit flag of ENET DMA descriptor
     \param[in]  desc: the descriptor pointer which users want to set flag
-    \param[in]  desc_flag: the bit flag of ENET DMA descriptor,
+    \param[in]  desc_flag: the bit flag of ENET DMA descriptor
                 only one parameter can be selected which is shown as below
       \arg        ENET_TDES0_VFRM: VLAN frame
       \arg        ENET_TDES0_FRMF: frame flushed
@@ -2103,7 +2146,7 @@ void enet_desc_flag_set(enet_descriptors_struct *desc, uint32_t desc_flag)
 /*!
     \brief      clear the bit flag of ENET DMA descriptor
     \param[in]  desc: the descriptor pointer which users want to clear flag
-    \param[in]  desc_flag: the bit flag of ENET DMA descriptor,
+    \param[in]  desc_flag: the bit flag of ENET DMA descriptor
                 only one parameter can be selected which is shown as below
       \arg        ENET_TDES0_VFRM: VLAN frame
       \arg        ENET_TDES0_FRMF: frame flushed
@@ -2139,7 +2182,7 @@ void enet_rx_desc_immediate_receive_complete_interrupt(enet_descriptors_struct *
 /*!
     \brief      when receiving completed, set RS bit in ENET_DMA_STAT register will is set after a configurable delay time 
     \param[in]  desc: the descriptor pointer which users want to configure
-    \param[in]  delay_time: delay a time of 256*delay_time HCLK, this value must be between 0 and 0xFF
+    \param[in]  delay_time: delay a time of 256*delay_time HCLK(0x00000000 - 0x000000FF)
     \param[out] none
     \retval     none
 */
@@ -2196,9 +2239,9 @@ void enet_rxframe_drop(void)
 
 /*!
     \brief      enable DMA feature
-    \param[in]  feature: the feature of DMA mode,
+    \param[in]  feature: the feature of DMA mode
                 one or more parameters can be selected which are shown as below
-      \arg        ENET_FLUSH_RXFRAME: RxDMA flushes frames function
+      \arg        ENET_NO_FLUSH_RXFRAME: RxDMA does not flushes frames function
       \arg        ENET_SECONDFRAME_OPT: TxDMA controller operate on second frame function
     \param[out] none
     \retval     none
@@ -2210,9 +2253,9 @@ void enet_dma_feature_enable(uint32_t feature)
 
 /*!
     \brief      disable DMA feature
-    \param[in]  feature: the feature of DMA mode,
+    \param[in]  feature: the feature of DMA mode
                 one or more parameters can be selected which are shown as below
-      \arg        ENET_FLUSH_RXFRAME: RxDMA flushes frames function
+      \arg        ENET_NO_FLUSH_RXFRAME: RxDMA does not flushes frames function
       \arg        ENET_SECONDFRAME_OPT: TxDMA controller operate on second frame function
     \param[out] none
     \retval     none
@@ -2226,7 +2269,7 @@ void enet_dma_feature_disable(uint32_t feature)
 /*!
     \brief      get the bit of extended status flag in ENET DMA descriptor
     \param[in]  desc: the descriptor pointer which users want to get the extended status flag
-    \param[in]  desc_status: the extended status want to get,
+    \param[in]  desc_status: the extended status want to get
                 only one parameter can be selected which is shown as below
       \arg        ENET_RDES4_IPPLDT: IP frame payload type
       \arg        ENET_RDES4_IPHERR: IP frame header error
@@ -2275,7 +2318,7 @@ void enet_desc_select_enhanced_mode(void)
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in enhanced chain mode with ptp function
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -2345,7 +2388,7 @@ void enet_ptp_enhanced_descriptors_chain_init(enet_dmadirection_enum direction)
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in enhanced ring mode with ptp function
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -2524,7 +2567,6 @@ ErrStatus enet_ptpframe_receive_enhanced_mode(uint8_t *buffer, uint32_t bufsize,
     \param[in]  length: the length of frame data to be transmitted
     \param[out] timestamp: pointer to the table which stores the timestamp high and low
                 note -- if the input is NULL, timestamp is ignored
-    \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
 */
 ErrStatus enet_ptpframe_transmit_enhanced_mode(uint8_t *buffer, uint32_t length, uint32_t timestamp[])
@@ -2622,7 +2664,7 @@ void enet_desc_select_normal_mode(void)
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in normal chain mode with PTP function
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -2701,7 +2743,7 @@ void enet_ptp_normal_descriptors_chain_init(enet_dmadirection_enum direction, en
 
 /*!
     \brief      initialize the DMA Tx/Rx descriptors's parameters in normal ring mode with PTP function
-    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum,
+    \param[in]  direction: the descriptors which users want to init, refer to enet_dmadirection_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_DMA_TX: DMA Tx descriptors
       \arg        ENET_DMA_RX: DMA Rx descriptors
@@ -2786,9 +2828,9 @@ void enet_ptp_normal_descriptors_ring_init(enet_dmadirection_enum direction, ene
 /*!
     \brief      receive a packet data with timestamp values to application buffer, when the DMA is in normal mode   
     \param[in]  bufsize: the size of buffer which is the parameter in function
-    \param[out] timestamp: pointer to the table which stores the timestamp high and low
     \param[out] buffer: pointer to the application buffer
                 note -- if the input is NULL, user should copy data in application by himself
+    \param[out] timestamp: pointer to the table which stores the timestamp high and low
     \retval     ErrStatus: SUCCESS or ERROR
 */
 ErrStatus enet_ptpframe_receive_normal_mode(uint8_t *buffer, uint32_t bufsize, uint32_t timestamp[])
@@ -3008,7 +3050,8 @@ void enet_wum_filter_config(uint32_t pdata[])
 
 /*!
     \brief      enable wakeup management features  
-    \param[in]  feature: one or more parameters can be selected which are shown as below
+    \param[in]  feature: the wake up type which is selected
+                one or more parameters can be selected which are shown as below
       \arg        ENET_WUM_POWER_DOWN: power down mode
       \arg        ENET_WUM_MAGIC_PACKET_FRAME: enable a wakeup event due to magic packet reception
       \arg        ENET_WUM_WAKE_UP_FRAME: enable a wakeup event due to wakeup frame reception
@@ -3023,7 +3066,8 @@ void enet_wum_feature_enable(uint32_t feature)
 
 /*!
     \brief      disable wakeup management features  
-    \param[in]  feature: one or more parameters can be selected which are shown as below
+    \param[in]  feature: the wake up type which is selected
+                one or more parameters can be selected which are shown as below
       \arg        ENET_WUM_MAGIC_PACKET_FRAME: enable a wakeup event due to magic packet reception
       \arg        ENET_WUM_WAKE_UP_FRAME: enable a wakeup event due to wakeup frame reception
       \arg        ENET_WUM_GLOBAL_UNICAST: any received unicast frame passed filter is considered to be a wakeup frame
@@ -3049,7 +3093,8 @@ void enet_msc_counters_reset(void)
 
 /*!
     \brief      enable the MAC statistics counter features
-    \param[in]  feature: one or more parameters can be selected which are shown as below
+    \param[in]  feature: the feature of MAC statistics counter
+                one or more parameters can be selected which are shown as below
       \arg        ENET_MSC_COUNTER_STOP_ROLLOVER: counter stop rollover
       \arg        ENET_MSC_RESET_ON_READ: reset on read
       \arg        ENET_MSC_COUNTERS_FREEZE: MSC counter freeze
@@ -3063,7 +3108,8 @@ void enet_msc_feature_enable(uint32_t feature)
 
 /*!
     \brief      disable the MAC statistics counter features
-    \param[in]  feature: one or more parameters can be selected which are shown as below 
+    \param[in]  feature: the feature of MAC statistics counter
+                one or more parameters can be selected which are shown as below 
       \arg        ENET_MSC_COUNTER_STOP_ROLLOVER: counter stop rollover
       \arg        ENET_MSC_RESET_ON_READ: reset on read
       \arg        ENET_MSC_COUNTERS_FREEZE: MSC counter freeze
@@ -3077,7 +3123,7 @@ void enet_msc_feature_disable(uint32_t feature)
 
 /*!
     \brief      configure MAC statistics counters preset mode   
-    \param[in]  mode: MSC counters preset mode, refer to enet_msc_preset_enum,
+    \param[in]  mode: MSC counters preset mode, refer to enet_msc_preset_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MSC_PRESET_NONE: do not preset MSC counter
       \arg        ENET_MSC_PRESET_HALF: preset all MSC counters to almost-half(0x7FFF FFF0) value
@@ -3093,7 +3139,7 @@ void enet_msc_counters_preset_config(enet_msc_preset_enum mode)
 
 /*!
     \brief      get MAC statistics counter  
-    \param[in]  counter: MSC counters which is selected, refer to enet_msc_counter_enum,
+    \param[in]  counter: MSC counters which is selected, refer to enet_msc_counter_enum
                 only one parameter can be selected which is shown as below
       \arg        ENET_MSC_TX_SCCNT: MSC transmitted good frames after a single collision counter
       \arg        ENET_MSC_TX_MSCCNT: MSC transmitted good frames after more than a single collision counter
@@ -3153,7 +3199,8 @@ void enet_ptp_feature_disable(uint32_t feature)
 
 /*!
     \brief      configure the PTP timestamp function
-    \param[in]  func: only one parameter can be selected which is shown as below
+    \param[in]  func: the function of PTP timestamp
+                only one parameter can be selected which is shown as below
       \arg        ENET_CKNT_ORDINARY: type of ordinary clock node type for timestamp
       \arg        ENET_CKNT_BOUNDARY: type of boundary clock node type for timestamp
       \arg        ENET_CKNT_END_TO_END: type of end-to-end transparent clock node type for timestamp
@@ -3243,8 +3290,7 @@ ErrStatus enet_ptp_timestamp_function_config(enet_ptp_function_enum func)
 
 /*!
     \brief      configure system time subsecond increment value
-    \param[in]  subsecond: the value will be added to the subsecond value of system time, 
-                this value must be between 0 and 0xFF
+    \param[in]  subsecond: the value will be added to the subsecond value of system time(0x00000000 - 0x000000FF)
     \param[out] none
     \retval     none
 */
@@ -3266,7 +3312,7 @@ void enet_ptp_timestamp_addend_config(uint32_t add)
 
 /*!
     \brief      initialize or add/subtract to second of the system time
-    \param[in]  sign: timestamp update positive or negative sign,
+    \param[in]  sign: timestamp update positive or negative sign
                 only one parameter can be selected which is shown as below
       \arg        ENET_PTP_ADD_TO_TIME: timestamp update value is added to system time
       \arg        ENET_PTP_SUBSTRACT_FROM_TIME: timestamp update value is subtracted from system time
@@ -3322,7 +3368,7 @@ void enet_ptp_system_time_get(enet_ptp_systime_struct *systime_struct)
 
 /*!
     \brief      configure the PPS output frequency
-    \param[in]  freq: PPS output frequency,
+    \param[in]  freq: PPS output frequency
                 only one parameter can be selected which is shown as below
       \arg        ENET_PPSOFC_1HZ: PPS output 1Hz frequency
       \arg        ENET_PPSOFC_2HZ: PPS output 2Hz frequency 
@@ -3451,7 +3497,7 @@ static void enet_default_init(void)
 */
 static void enet_delay(uint32_t ncount)
 {
-    uint32_t delay_time = 0U; 
+    __IO uint32_t delay_time = 0U; 
     
     for(delay_time = ncount; delay_time != 0U; delay_time--){
     }

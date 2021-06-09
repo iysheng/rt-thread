@@ -1,13 +1,39 @@
 /*!
-    \file  gd32f4xx_rtc.c
-    \brief RTC driver
+    \file    gd32f4xx_rtc.c
+    \brief   RTC driver
+
+    \version 2016-08-15, V1.0.0, firmware for GD32F4xx
+    \version 2018-12-12, V2.0.0, firmware for GD32F4xx
+    \version 2020-09-30, V2.1.0, firmware for GD32F4xx
 */
 
 /*
-    Copyright (C) 2016 GigaDevice
+    Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    2016-08-15, V1.0.0, firmware for GD32F4xx
+    Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this 
+       list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright notice, 
+       this list of conditions and the following disclaimer in the documentation 
+       and/or other materials provided with the distribution.
+    3. Neither the name of the copyright holder nor the names of its contributors 
+       may be used to endorse or promote products derived from this software without 
+       specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+OF SUCH DAMAGE.
 */
+
 
 #include "gd32f4xx_rtc.h"
 
@@ -42,7 +68,7 @@ ErrStatus rtc_deinit(void)
     error_status = rtc_init_mode_enter();
 
     if(ERROR != error_status){
-        /* reset RTC_CTL register, but RTC_CTL[2£º0] */
+        /* reset RTC_CTL register, but RTC_CTL[2ï¿½ï¿½0] */
         RTC_CTL &= (RTC_REGISTER_RESET | RTC_CTL_WTCS);
         /* before reset RTC_TIME and RTC_DATE, BPSHAD bit in RTC_CTL should be reset as the condition.
            in order to read calendar from shadow register, not the real registers being reset */
@@ -50,7 +76,7 @@ ErrStatus rtc_deinit(void)
         RTC_DATE = RTC_DATE_RESET;
 
         RTC_PSC = RTC_PSC_RESET;
-        /* only when RTC_CTL_WTEN=0 and RTC_STAT_WTWF=1 can write RTC_CTL[2£º0] */
+        /* only when RTC_CTL_WTEN=0 and RTC_STAT_WTWF=1 can write RTC_CTL[2ï¿½ï¿½0] */
         /* wait until the WTWF flag to be set */
         do{
            flag_status = RTC_STAT & RTC_STAT_WTWF;
@@ -139,7 +165,7 @@ ErrStatus rtc_init(rtc_parameter_struct* rtc_initpara_struct)
         /* 3rd: exit init mode */  
         rtc_init_mode_exit();
         
-        /* 4th: wait the RSYNF flag to set */          
+        /* 4th: wait the RSYNF flag to set */
         error_status = rtc_register_sync_wait();
     }
 
@@ -601,10 +627,16 @@ void rtc_timestamp_pin_map(uint32_t rtc_af)
     \param[in]  rtc_tamper: pointer to a rtc_tamper_struct structure which contains 
                 parameters for RTC tamper configuration
                 members of the structure and the member values are shown as below:
+                  detecting tamper event can using edge mode or level mode
+                  (1) using edge mode configuration:
                   tamper_source: RTC_TAMPER0, RTC_TAMPER1
                   tamper_trigger: RTC_TAMPER_TRIGGER_EDGE_RISING, RTC_TAMPER_TRIGGER_EDGE_FALLING
-                                      RTC_TAMPER_TRIGGER_LEVEL_LOW, RTC_TAMPER_TRIGGER_LEVEL_HIGH
-                  tamper_filter: RTC_FLT_EDGE, RTC_FLT_2S, RTC_FLT_4S, RTC_FLT_8S
+                  tamper_filter: RTC_FLT_EDGE
+                  tamper_with_timestamp: DISABLE, ENABLE
+                  (2) using level mode configuration:
+                  tamper_source: RTC_TAMPER0, RTC_TAMPER1
+                  tamper_trigger:RTC_TAMPER_TRIGGER_LEVEL_LOW, RTC_TAMPER_TRIGGER_LEVEL_HIGH
+                  tamper_filter: RTC_FLT_2S, RTC_FLT_4S, RTC_FLT_8S
                   tamper_sample_frequency: RTC_FREQ_DIV32768, RTC_FREQ_DIV16384, RTC_FREQ_DIV8192,
                                                RTC_FREQ_DIV4096, RTC_FREQ_DIV2048, RTC_FREQ_DIV1024,
                                                RTC_FREQ_DIV512, RTC_FREQ_DIV256
@@ -635,19 +667,25 @@ void rtc_tamper_enable(rtc_tamper_struct* rtc_tamper)
 
         RTC_TAMP |= (uint32_t)(rtc_tamper->tamper_sample_frequency);
         RTC_TAMP |= (uint32_t)(rtc_tamper->tamper_filter);
+        
+        /* configure the tamper trigger */
+        RTC_TAMP &= ((uint32_t)~((rtc_tamper->tamper_source) << RTC_TAMPER_TRIGGER_POS));    
+        if(RTC_TAMPER_TRIGGER_LEVEL_LOW != rtc_tamper->tamper_trigger){
+            RTC_TAMP |= (uint32_t)((rtc_tamper->tamper_source)<< RTC_TAMPER_TRIGGER_POS);
+        }
+    }else{
+ 
+        /* configure the tamper trigger */
+        RTC_TAMP &= ((uint32_t)~((rtc_tamper->tamper_source) << RTC_TAMPER_TRIGGER_POS));    
+        if(RTC_TAMPER_TRIGGER_EDGE_RISING != rtc_tamper->tamper_trigger){
+            RTC_TAMP |= (uint32_t)((rtc_tamper->tamper_source)<< RTC_TAMPER_TRIGGER_POS);  
+        }
     }
     
-    RTC_TAMP &= (uint32_t)~RTC_TAMP_TPTS;  
-    
+    RTC_TAMP &= (uint32_t)~RTC_TAMP_TPTS;      
     if(DISABLE != rtc_tamper->tamper_with_timestamp){           
         /* the tamper event also cause a time-stamp event */
         RTC_TAMP |= (uint32_t)RTC_TAMP_TPTS;
-    } 
-    
-    /* configure the tamper trigger */
-    RTC_TAMP &= ((uint32_t)~((rtc_tamper->tamper_source) << RTC_TAMPER_TRIGGER_POS));    
-    if(RTC_TAMPER_TRIGGER_EDGE_RISING != rtc_tamper->tamper_trigger){
-        RTC_TAMP |= (uint32_t)((rtc_tamper->tamper_source)<< RTC_TAMPER_TRIGGER_POS);  
     }    
     /* enable tamper */
     RTC_TAMP |=  (uint32_t)(rtc_tamper->tamper_source); 
@@ -681,13 +719,14 @@ void rtc_tamper0_pin_map(uint32_t rtc_af)
     RTC_TAMP &= ~(RTC_TAMP_TP0EN | RTC_TAMP_TP0SEL);
     RTC_TAMP |= rtc_af;
 }
+
 /*!
     \brief      enable specified RTC interrupt
     \param[in]  interrupt: specify which interrupt source to be enabled
       \arg        RTC_INT_TIMESTAMP: timestamp interrupt
       \arg        RTC_INT_ALARM0: alarm0 interrupt
       \arg        RTC_INT_ALARM1: alarm1 interrupt
-      \arg        RTC_INT_TAMP: tamp interrupt
+      \arg        RTC_INT_TAMP: tamper detection interrupt
       \arg        RTC_INT_WAKEUP: wakeup timer interrupt
     \param[out] none
     \retval     none
@@ -713,7 +752,7 @@ void rtc_interrupt_enable(uint32_t interrupt)
       \arg        RTC_INT_TIMESTAMP: timestamp interrupt
       \arg        RTC_INT_ALARM0: alarm interrupt
       \arg        RTC_INT_ALARM1: alarm interrupt
-      \arg        RTC_INT_TAMP: tamp interrupt
+      \arg        RTC_INT_TAMP: tamper detection interrupt
       \arg        RTC_INT_WAKEUP: wakeup timer interrupt
     \param[out] none
     \retval     none
@@ -736,21 +775,21 @@ void rtc_interrupt_disable(uint32_t interrupt)
 /*!
     \brief      check specified flag
     \param[in]  flag: specify which flag to check
-      \arg        RTC_STAT_RECPF: recalibration pending flag
-      \arg        RTC_STAT_TP1F: tamper 1 event flag
-      \arg        RTC_STAT_TP0F: tamper 0 event flag
-      \arg        RTC_STAT_TSOVRF: time-stamp overflow event flag
-      \arg        RTC_STAT_TSF: time-stamp event flag
-      \arg        RTC_STAT_ALRM0F: alarm0 event flag
-      \arg        RTC_STAT_ALRM1F: alarm1 event flag
-      \arg        RTC_STAT_WTF: wakeup timer event flag
-      \arg        RTC_STAT_INITF: init mode event flag
-      \arg        RTC_STAT_RSYNF: time and date registers synchronized event flag
-      \arg        RTC_STAT_YCM: year parameter configured event flag
-      \arg        RTC_STAT_SOPF: shift operation pending flag
-      \arg        RTC_STAT_ALRM0WF: alarm0 writen available flag
-      \arg        RTC_STAT_ALRM1WF: alarm1 writen available flag
-      \arg        RTC_STAT_WTWF: wakeup timer writen available flag
+      \arg        RTC_STAT_SCP: smooth calibration pending flag
+      \arg        RTC_FLAG_TP1: RTC tamper 1 detected flag
+      \arg        RTC_FLAG_TP0: RTC tamper 0 detected flag
+      \arg        RTC_FLAG_TSOVR: time-stamp overflow flag
+      \arg        RTC_FLAG_TS: time-stamp flag 
+      \arg        RTC_FLAG_ALARM0: alarm0 occurs flag
+      \arg        RTC_FLAG_ALARM1: alarm1 occurs flag
+      \arg        RTC_FLAG_WT: wakeup timer occurs flag
+      \arg        RTC_FLAG_INIT: initialization state flag
+      \arg        RTC_FLAG_RSYN: register synchronization flag
+      \arg        RTC_FLAG_YCM: year configuration mark status flag
+      \arg        RTC_FLAG_SOP: shift function operation pending flag
+      \arg        RTC_FLAG_ALRM0W: alarm0 configuration can be write flag
+      \arg        RTC_FLAG_ALRM1W: alarm1 configuration can be write flag
+      \arg        RTC_FLAG_WTW: wakeup timer can be write flag
     \param[out] none
     \retval     FlagStatus: SET or RESET
 */
@@ -766,15 +805,14 @@ FlagStatus rtc_flag_get(uint32_t flag)
 
 /*!
     \brief      clear specified flag
-    \param[in]  flag: specify which flag to clear
-      \arg        RTC_STAT_TP1F: tamper 1 event flag
-      \arg        RTC_STAT_TP0F: tamper 0 event flag
-      \arg        RTC_STAT_TSOVRF: time-stamp overflow event flag
-      \arg        RTC_STAT_TSF: time-stamp event flag
-      \arg        RTC_STAT_WTF: time-stamp event flag
-      \arg        RTC_STAT_ALRM0F: alarm0 event flag
-      \arg        RTC_STAT_ALRM1F: alarm1 event flag
-      \arg        RTC_STAT_RSYNF: time and date registers synchronized event flag
+      \arg        RTC_FLAG_TP1: RTC tamper 1 detected flag
+      \arg        RTC_FLAG_TP0: RTC tamper 0 detected flag
+      \arg        RTC_FLAG_TSOVR: time-stamp overflow flag
+      \arg        RTC_FLAG_TS: time-stamp flag
+      \arg        RTC_FLAG_WT: wakeup timer occurs flag
+      \arg        RTC_FLAG_ALARM0: alarm0 occurs flag
+      \arg        RTC_FLAG_ALARM1: alarm1 occurs flag
+      \arg        RTC_FLAG_RSYN: register synchronization flag
     \param[out] none
     \retval     none
 */
@@ -821,7 +859,7 @@ void rtc_alarm_output_config(uint32_t source, uint32_t mode)
       \arg        RTC_CALIBRATION_512HZ: when the LSE freqency is 32768Hz and the RTC_PSC 
                                          is the default value, output 512Hz signal
       \arg        RTC_CALIBRATION_1HZ: when the LSE freqency is 32768Hz and the RTC_PSC 
-                                       is the default value, output 512Hz signal
+                                       is the default value, output 1Hz signal
     \param[out] none
     \retval     none
 */
@@ -1058,7 +1096,7 @@ ErrStatus rtc_wakeup_clock_set(uint8_t wakeup_clock)
     /* disable the write protection */
     RTC_WPK = RTC_UNLOCK_KEY1;
     RTC_WPK = RTC_UNLOCK_KEY2; 
-    /* only when RTC_CTL_WTEN=0 and RTC_STAT_WTWF=1 can write RTC_CTL[2£º0] */
+    /* only when RTC_CTL_WTEN=0 and RTC_STAT_WTWF=1 can write RTC_CTL[2ï¿½ï¿½0] */
     /* wait until the WTWF flag to be set */
     do{
         flag_status = RTC_STAT & RTC_STAT_WTWF;
