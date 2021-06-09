@@ -49,7 +49,7 @@ struct rt_can_filter_item
     rt_uint32_t rtr : 1;
     rt_uint32_t mode : 1;
     rt_uint32_t mask;
-    rt_int32_t hdr;
+    rt_int32_t hdr; /* 这个是什么??? */
 #ifdef RT_CAN_USING_HDR
     rt_err_t (*ind)(rt_device_t dev, void *args , rt_int32_t hdr, rt_size_t size);
     void *args;
