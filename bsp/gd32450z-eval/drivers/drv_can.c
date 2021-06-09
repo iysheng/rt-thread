@@ -83,7 +83,7 @@ static rt_err_t _can_config(struct rt_can_device *can, struct can_configure *cfg
     drv_can->CanParam.time_triggered = DISABLE;
     drv_can->CanParam.auto_wake_up = DISABLE;
     drv_can->CanParam.auto_bus_off_recovery = DISABLE;
-    drv_can->CanParam.auto_retrans= ENABLE;
+    drv_can->CanParam.no_auto_retrans = DISABLE;
     drv_can->CanParam.rec_fifo_overwrite = DISABLE;
     drv_can->CanParam.trans_fifo_order = DISABLE;
 
