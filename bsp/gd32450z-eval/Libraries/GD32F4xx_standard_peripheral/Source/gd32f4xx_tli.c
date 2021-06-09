@@ -1,7 +1,7 @@
 /*!
     \file    gd32f4xx_tli.c
     \brief   TLI driver
-    
+
     \version 2016-08-15, V1.0.0, firmware for GD32F4xx
     \version 2018-12-12, V2.0.0, firmware for GD32F4xx
     \version 2020-09-30, V2.1.0, firmware for GD32F4xx
@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -122,13 +122,13 @@ void tli_init(tli_parameter_struct *tli_struct)
     /* back-porch size configuration */
     TLI_BPSZ &= ~(TLI_BPSZ_VBPSZ|TLI_BPSZ_HBPSZ);
     TLI_BPSZ = (uint32_t)((uint32_t)tli_struct->backpsz_vbpsz|((uint32_t)tli_struct->backpsz_hbpsz<<16U));
-    /* active size configuration */    
+    /* active size configuration */
     TLI_ASZ &= ~(TLI_ASZ_VASZ|TLI_ASZ_HASZ);
     TLI_ASZ = (tli_struct->activesz_vasz|(tli_struct->activesz_hasz<<16U));
-    /* total size configuration */    
+    /* total size configuration */
     TLI_TSZ &= ~(TLI_TSZ_VTSZ|TLI_TSZ_HTSZ);
     TLI_TSZ = (tli_struct->totalsz_vtsz|(tli_struct->totalsz_htsz<<16U));
-    /* background color configuration */    
+    /* background color configuration */
     TLI_BGC &= ~(TLI_BGC_BVB|(TLI_BGC_BVG)|(TLI_BGC_BVR));
     TLI_BGC = (tli_struct->backcolor_blue|(tli_struct->backcolor_green<<8U)|(tli_struct->backcolor_red<<16U));
     TLI_CTL &= ~(TLI_CTL_HPPS|TLI_CTL_VPPS|TLI_CTL_DEPS|TLI_CTL_CLKPS);
@@ -156,7 +156,7 @@ void tli_dither_config(uint8_t dither_stat)
 }
 
 /*!
-    \brief      enable TLI 
+    \brief      enable TLI
     \param[in]  none
     \param[out] none
     \retval     none
@@ -167,7 +167,7 @@ void tli_enable(void)
 }
 
 /*!
-    \brief      disable TLI 
+    \brief      disable TLI
     \param[in]  none
     \param[out] none
     \retval     none
@@ -198,13 +198,13 @@ void tli_reload_config(uint8_t reload_mod)
 }
 
 /*!
-    \brief      initialize the parameters of TLI layer structure with the default values, it is suggested 
+    \brief      initialize the parameters of TLI layer structure with the default values, it is suggested
                 that call this function after a tli_layer_parameter_struct structure is defined
     \param[in]  none
     \param[out] layer_struct: TLI Layer parameter struct
                   layer_window_rightpos: window right position
                   layer_window_leftpos: window left position
-                  layer_window_bottompos: window bottom position 
+                  layer_window_bottompos: window bottom position
                   layer_window_toppos: window top position
                   layer_ppf: LAYER_PPF_ARGB8888,LAYER_PPF_RGB888,LAYER_PPF_RGB565,
                                  LAYER_PPF_ARG1555,LAYER_PPF_ARGB4444,LAYER_PPF_L8,
@@ -244,12 +244,12 @@ void tli_layer_struct_para_init(tli_layer_parameter_struct *layer_struct)
 }
 
 /*!
-    \brief      initialize TLI layer 
+    \brief      initialize TLI layer
     \param[in]  layerx: LAYERx(x=0,1)
     \param[in]  layer_struct: TLI Layer parameter struct
                   layer_window_rightpos: window right position
                   layer_window_leftpos: window left position
-                  layer_window_bottompos: window bottom position 
+                  layer_window_bottompos: window bottom position
                   layer_window_toppos: window top position
                   layer_ppf: LAYER_PPF_ARGB8888,LAYER_PPF_RGB888,LAYER_PPF_RGB565,
                                  LAYER_PPF_ARG1555,LAYER_PPF_ARGB4444,LAYER_PPF_L8,
@@ -304,7 +304,7 @@ void tli_layer_init(uint32_t layerx,tli_layer_parameter_struct *layer_struct)
 }
 
 /*!
-    \brief      reconfigure window position 
+    \brief      reconfigure window position
     \param[in]  layerx: LAYERx(x=0,1)
     \param[in]  offset_x: new horizontal offset
     \param[in]  offset_y: new vertical offset
@@ -353,7 +353,7 @@ void tli_layer_window_offset_modify(uint32_t layerx,uint16_t offset_x,uint16_t o
 }
 
 /*!
-    \brief      initialize the parameters of TLI layer LUT structure with the default values, it is suggested 
+    \brief      initialize the parameters of TLI layer LUT structure with the default values, it is suggested
                 that call this function after a tli_layer_lut_parameter_struct structure is defined
     \param[in]  none
     \param[out] lut_struct: TLI layer LUT parameter struct
@@ -373,7 +373,7 @@ void tli_lut_struct_para_init(tli_layer_lut_parameter_struct *lut_struct)
 }
 
 /*!
-    \brief      initialize TLI layer LUT 
+    \brief      initialize TLI layer LUT
     \param[in]  layerx: LAYERx(x=0,1)
     \param[in]  lut_struct: TLI layer LUT parameter struct
                   layer_table_addr: look up table write address
@@ -392,10 +392,10 @@ void tli_lut_init(uint32_t layerx,tli_layer_lut_parameter_struct *lut_struct)
 }
 
 /*!
-    \brief      initialize TLI layer color key 
+    \brief      initialize TLI layer color key
     \param[in]  layerx: LAYERx(x=0,1)
     \param[in]  redkey: color key red
-    \param[in]  greenkey: color key green 
+    \param[in]  greenkey: color key green
     \param[in]  bluekey: color key blue
     \param[out] none
     \retval     none
@@ -406,7 +406,7 @@ void tli_color_key_init(uint32_t layerx,uint8_t redkey,uint8_t greenkey,uint8_t 
 }
 
 /*!
-    \brief      enable TLI layer 
+    \brief      enable TLI layer
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -417,7 +417,7 @@ void tli_layer_enable(uint32_t layerx)
 }
 
 /*!
-    \brief      disable TLI layer 
+    \brief      disable TLI layer
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -428,7 +428,7 @@ void tli_layer_disable(uint32_t layerx)
 }
 
 /*!
-    \brief      enable TLI layer color keying 
+    \brief      enable TLI layer color keying
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -439,7 +439,7 @@ void tli_color_key_enable(uint32_t layerx)
 }
 
 /*!
-    \brief      disable TLI layer color keying 
+    \brief      disable TLI layer color keying
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -450,7 +450,7 @@ void tli_color_key_disable(uint32_t layerx)
 }
 
 /*!
-    \brief      enable TLI layer LUT 
+    \brief      enable TLI layer LUT
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -461,7 +461,7 @@ void tli_lut_enable(uint32_t layerx)
 }
 
 /*!
-    \brief      disable TLI layer LUT 
+    \brief      disable TLI layer LUT
     \param[in]  layerx: LAYERx(x=0,1)
     \param[out] none
     \retval     none
@@ -472,8 +472,8 @@ void tli_lut_disable(uint32_t layerx)
 }
 
 /*!
-    \brief      set line mark value 
-    \param[in]  line_num: line number 
+    \brief      set line mark value
+    \param[in]  line_num: line number
     \param[out] none
     \retval     none
 */
@@ -484,7 +484,7 @@ void tli_line_mark_set(uint16_t line_num)
 }
 
 /*!
-    \brief      get current displayed position 
+    \brief      get current displayed position
     \param[in]  none
     \param[out] none
     \retval     position of current pixel
@@ -495,13 +495,13 @@ uint32_t tli_current_pos_get(void)
 }
 
 /*!
-    \brief      enable TLI interrupt 
+    \brief      enable TLI interrupt
     \param[in]  int_flag: TLI interrupt flags
                 one or more parameters can be selected which are shown as below:
-      \arg        TLI_INT_LM: line mark interrupt 
-      \arg        TLI_INT_FE: FIFO error interrupt 
-      \arg        TLI_INT_TE: transaction error interrupt 
-      \arg        TLI_INT_LCR: layer configuration reloaded interrupt 
+      \arg        TLI_INT_LM: line mark interrupt
+      \arg        TLI_INT_FE: FIFO error interrupt
+      \arg        TLI_INT_TE: transaction error interrupt
+      \arg        TLI_INT_LCR: layer configuration reloaded interrupt
     \param[out] none
     \retval     none
 */
@@ -511,13 +511,13 @@ void tli_interrupt_enable(uint32_t int_flag)
 }
 
 /*!
-    \brief      disable TLI interrupt 
+    \brief      disable TLI interrupt
     \param[in]  int_flag: TLI interrupt flags
                 one or more parameters can be selected which are shown as below:
-      \arg        TLI_INT_LM: line mark interrupt 
-      \arg        TLI_INT_FE: FIFO error interrupt 
-      \arg        TLI_INT_TE: transaction error interrupt 
-      \arg        TLI_INT_LCR: layer configuration reloaded interrupt 
+      \arg        TLI_INT_LM: line mark interrupt
+      \arg        TLI_INT_FE: FIFO error interrupt
+      \arg        TLI_INT_TE: transaction error interrupt
+      \arg        TLI_INT_LCR: layer configuration reloaded interrupt
     \param[out] none
     \retval     none
 */
@@ -527,7 +527,7 @@ void tli_interrupt_disable(uint32_t int_flag)
 }
 
 /*!
-    \brief      get TLI interrupt flag 
+    \brief      get TLI interrupt flag
     \param[in]  int_flag: TLI interrupt flags
                 one or more parameters can be selected which are shown as below:
       \arg        TLI_INT_FLAG_LM: line mark interrupt flag
@@ -551,7 +551,7 @@ FlagStatus tli_interrupt_flag_get(uint32_t int_flag)
 }
 
 /*!
-    \brief      clear TLI interrupt flag 
+    \brief      clear TLI interrupt flag
     \param[in]  int_flag: TLI interrupt flags
                 one or more parameters can be selected which are shown as below:
       \arg        TLI_INT_FLAG_LM: line mark interrupt flag
@@ -570,14 +570,14 @@ void tli_interrupt_flag_clear(uint32_t int_flag)
     \brief      get TLI flag or state in TLI_INTF register or TLI_STAT register
     \param[in]  flag: TLI flags or states
                 only one parameter can be selected which is shown as below:
-      \arg        TLI_FLAG_VDE: current VDE state 
+      \arg        TLI_FLAG_VDE: current VDE state
       \arg        TLI_FLAG_HDE: current HDE state
       \arg        TLI_FLAG_VS: current VS status of the TLI
       \arg        TLI_FLAG_HS: current HS status of the TLI
       \arg        TLI_FLAG_LM: line mark interrupt flag
       \arg        TLI_FLAG_FE: FIFO error interrupt flag
-      \arg        TLI_FLAG_TE: transaction error interrupt flag 
-      \arg        TLI_FLAG_LCR: layer configuration reloaded interrupt flag 
+      \arg        TLI_FLAG_TE: transaction error interrupt flag
+      \arg        TLI_FLAG_LCR: layer configuration reloaded interrupt flag
     \param[out] none
     \retval     FlagStatus: SET or RESET
 */

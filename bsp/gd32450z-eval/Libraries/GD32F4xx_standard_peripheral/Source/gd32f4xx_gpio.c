@@ -1,7 +1,7 @@
 /*!
     \file    gd32f4xx_gpio.c
     \brief   GPIO driver
-    
+
     \version 2016-08-15, V1.0.0, firmware for GD32F4xx
     \version 2018-12-12, V2.0.0, firmware for GD32F4xx
     \version 2020-09-30, V2.1.0, firmware for GD32F4xx
@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -38,7 +38,7 @@ OF SUCH DAMAGE.
 
 /*!
     \brief      reset GPIO port
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[out] none
@@ -99,7 +99,7 @@ void gpio_deinit(uint32_t gpio_periph)
 
 /*!
     \brief      set GPIO mode
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  mode: GPIO pin mode
@@ -145,15 +145,15 @@ void gpio_mode_set(uint32_t gpio_periph, uint32_t mode, uint32_t pull_up_down, u
 
 /*!
     \brief      set GPIO output type and speed
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  otype: GPIO pin output mode
       \arg        GPIO_OTYPE_PP: push pull mode
       \arg        GPIO_OTYPE_OD: open drain mode
     \param[in]  speed: GPIO pin output max speed
-      \arg        GPIO_OSPEED_2MHZ: output max speed 2MHz 
-      \arg        GPIO_OSPEED_25MHZ: output max speed 25MHz 
+      \arg        GPIO_OSPEED_2MHZ: output max speed 2MHz
+      \arg        GPIO_OSPEED_25MHZ: output max speed 25MHz
       \arg        GPIO_OSPEED_50MHZ: output max speed 50MHz
       \arg        GPIO_OSPEED_200MHZ: output max speed 200MHz
     \param[in]  pin: GPIO pin
@@ -189,7 +189,7 @@ void gpio_output_options_set(uint32_t gpio_periph, uint8_t otype, uint32_t speed
 
 /*!
     \brief      set GPIO pin bit
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -205,7 +205,7 @@ void gpio_bit_set(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      reset GPIO pin bit
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -221,7 +221,7 @@ void gpio_bit_reset(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      write data to the specified GPIO pin
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -244,7 +244,7 @@ void gpio_bit_write(uint32_t gpio_periph, uint32_t pin, bit_status bit_value)
 
 /*!
     \brief      write data to the specified GPIO port
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  data: specify the value to be written to the port output control register
@@ -258,7 +258,7 @@ void gpio_port_write(uint32_t gpio_periph, uint16_t data)
 
 /*!
     \brief      get GPIO pin input status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -270,7 +270,7 @@ void gpio_port_write(uint32_t gpio_periph, uint16_t data)
 FlagStatus gpio_input_bit_get(uint32_t gpio_periph, uint32_t pin)
 {
     if((uint32_t)RESET != (GPIO_ISTAT(gpio_periph)&(pin))){
-        return SET; 
+        return SET;
     }else{
         return RESET;
     }
@@ -278,7 +278,7 @@ FlagStatus gpio_input_bit_get(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      get GPIO all pins input status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[out] none
@@ -291,7 +291,7 @@ uint16_t gpio_input_port_get(uint32_t gpio_periph)
 
 /*!
     \brief      get GPIO pin output status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -311,9 +311,9 @@ FlagStatus gpio_output_bit_get(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      get GPIO all pins output status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
-      \arg        GPIOx(x = A,B,C,D,E,F,G,H,I) 
+      \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[out] none
     \retval     output status of GPIO all pins
 */
@@ -324,7 +324,7 @@ uint16_t gpio_output_port_get(uint32_t gpio_periph)
 
 /*!
     \brief      set GPIO alternate function
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  alt_func_num: GPIO pin af function
@@ -334,7 +334,7 @@ uint16_t gpio_output_port_get(uint32_t gpio_periph)
       \arg        GPIO_AF_3: TIMER7, TIMER8, TIMER9, TIMER10
       \arg        GPIO_AF_4: I2C0, I2C1, I2C2
       \arg        GPIO_AF_5: SPI0, SPI1, SPI2, SPI3, SPI4, SPI5
-      \arg        GPIO_AF_6: SPI1, SPI2, SAI0 
+      \arg        GPIO_AF_6: SPI1, SPI2, SAI0
       \arg        GPIO_AF_7: USART0, USART1, USART2
       \arg        GPIO_AF_8: UART3, UART4, USART5, UART6, UART7
       \arg        GPIO_AF_9: CAN0, CAN1, TLI, TIMER11, TIMER12, TIMER13
@@ -380,7 +380,7 @@ void gpio_af_set(uint32_t gpio_periph, uint32_t alt_func_num, uint32_t pin)
 
 /*!
     \brief      lock GPIO pin bit
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -404,7 +404,7 @@ void gpio_pin_lock(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      toggle GPIO pin status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
     \param[in]  pin: GPIO pin
@@ -420,7 +420,7 @@ void gpio_bit_toggle(uint32_t gpio_periph, uint32_t pin)
 
 /*!
     \brief      toggle GPIO port status
-    \param[in]  gpio_periph: GPIO port 
+    \param[in]  gpio_periph: GPIO port
                 only one parameter can be selected which is shown as below:
       \arg        GPIOx(x = A,B,C,D,E,F,G,H,I)
 

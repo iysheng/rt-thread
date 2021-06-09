@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -63,7 +63,7 @@ OF SUCH DAMAGE.
 void fmc_wscnt_set(uint32_t wscnt)
 {
     uint32_t reg;
-    
+
     reg = FMC_WS;
     /* set the wait state counter value */
     reg &= ~FMC_WC_WSCNT;
@@ -101,34 +101,34 @@ void fmc_lock(void)
     \brief      erase sector
     \param[in]  fmc_sector: select the sector to erase
                 only one parameter can be selected which is shown as below:
-      \arg        CTL_SECTOR_NUMBER_0: sector 0 
-      \arg        CTL_SECTOR_NUMBER_1: sector 1 
-      \arg        CTL_SECTOR_NUMBER_2: sector 2 
-      \arg        CTL_SECTOR_NUMBER_3: sector 3 
-      \arg        CTL_SECTOR_NUMBER_4: sector 4 
-      \arg        CTL_SECTOR_NUMBER_5: sector 5 
-      \arg        CTL_SECTOR_NUMBER_6: sector 6 
-      \arg        CTL_SECTOR_NUMBER_7: sector 7 
-      \arg        CTL_SECTOR_NUMBER_8: sector 8 
-      \arg        CTL_SECTOR_NUMBER_9: sector 9 
-      \arg        CTL_SECTOR_NUMBER_10: sector 10 
-      \arg        CTL_SECTOR_NUMBER_11: sector 11 
-      \arg        CTL_SECTOR_NUMBER_12: sector 12 
-      \arg        CTL_SECTOR_NUMBER_13: sector 13 
-      \arg        CTL_SECTOR_NUMBER_14: sector 14 
-      \arg        CTL_SECTOR_NUMBER_15: sector 15 
-      \arg        CTL_SECTOR_NUMBER_16: sector 16 
-      \arg        CTL_SECTOR_NUMBER_17: sector 17 
-      \arg        CTL_SECTOR_NUMBER_18: sector 18 
-      \arg        CTL_SECTOR_NUMBER_19: sector 19 
-      \arg        CTL_SECTOR_NUMBER_20: sector 20 
-      \arg        CTL_SECTOR_NUMBER_21: sector 21 
-      \arg        CTL_SECTOR_NUMBER_22: sector 22 
-      \arg        CTL_SECTOR_NUMBER_23: sector 23 
-      \arg        CTL_SECTOR_NUMBER_24: sector 24 
-      \arg        CTL_SECTOR_NUMBER_25: sector 25 
-      \arg        CTL_SECTOR_NUMBER_26: sector 26 
-      \arg        CTL_SECTOR_NUMBER_27: sector 27 
+      \arg        CTL_SECTOR_NUMBER_0: sector 0
+      \arg        CTL_SECTOR_NUMBER_1: sector 1
+      \arg        CTL_SECTOR_NUMBER_2: sector 2
+      \arg        CTL_SECTOR_NUMBER_3: sector 3
+      \arg        CTL_SECTOR_NUMBER_4: sector 4
+      \arg        CTL_SECTOR_NUMBER_5: sector 5
+      \arg        CTL_SECTOR_NUMBER_6: sector 6
+      \arg        CTL_SECTOR_NUMBER_7: sector 7
+      \arg        CTL_SECTOR_NUMBER_8: sector 8
+      \arg        CTL_SECTOR_NUMBER_9: sector 9
+      \arg        CTL_SECTOR_NUMBER_10: sector 10
+      \arg        CTL_SECTOR_NUMBER_11: sector 11
+      \arg        CTL_SECTOR_NUMBER_12: sector 12
+      \arg        CTL_SECTOR_NUMBER_13: sector 13
+      \arg        CTL_SECTOR_NUMBER_14: sector 14
+      \arg        CTL_SECTOR_NUMBER_15: sector 15
+      \arg        CTL_SECTOR_NUMBER_16: sector 16
+      \arg        CTL_SECTOR_NUMBER_17: sector 17
+      \arg        CTL_SECTOR_NUMBER_18: sector 18
+      \arg        CTL_SECTOR_NUMBER_19: sector 19
+      \arg        CTL_SECTOR_NUMBER_20: sector 20
+      \arg        CTL_SECTOR_NUMBER_21: sector 21
+      \arg        CTL_SECTOR_NUMBER_22: sector 22
+      \arg        CTL_SECTOR_NUMBER_23: sector 23
+      \arg        CTL_SECTOR_NUMBER_24: sector 24
+      \arg        CTL_SECTOR_NUMBER_25: sector 25
+      \arg        CTL_SECTOR_NUMBER_26: sector 26
+      \arg        CTL_SECTOR_NUMBER_27: sector 27
     \param[out] none
     \retval     state of FMC
       \arg        FMC_READY: the operation has been completed
@@ -145,8 +145,8 @@ fmc_state_enum fmc_sector_erase(uint32_t fmc_sector)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
-    if(FMC_READY == fmc_state){ 
+
+    if(FMC_READY == fmc_state){
         /* start sector erase */
         FMC_CTL &= ~FMC_CTL_SN;
         FMC_CTL |= (FMC_CTL_SER | fmc_sector);
@@ -154,10 +154,10 @@ fmc_state_enum fmc_sector_erase(uint32_t fmc_sector)
 
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
-    
+
         /* reset the SER bit */
         FMC_CTL &= (~FMC_CTL_SER);
-        FMC_CTL &= ~FMC_CTL_SN; 
+        FMC_CTL &= ~FMC_CTL_SN;
     }
 
     /* return the FMC state */
@@ -184,11 +184,11 @@ fmc_state_enum fmc_mass_erase(void)
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
 
-    if(FMC_READY == fmc_state){ 
-        /* start whole chip erase */  
+    if(FMC_READY == fmc_state){
+        /* start whole chip erase */
         FMC_CTL |= (FMC_CTL_MER0 | FMC_CTL_MER1);
         FMC_CTL |= FMC_CTL_START;
-    
+
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
 
@@ -224,7 +224,7 @@ fmc_state_enum fmc_bank0_erase(void)
         /* start FMC bank0 erase */
         FMC_CTL |= FMC_CTL_MER0;
         FMC_CTL |= FMC_CTL_START;
-    
+
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
 
@@ -255,12 +255,12 @@ fmc_state_enum fmc_bank1_erase(void)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
+
    if(FMC_READY == fmc_state){
         /* start FMC bank1 erase */
         FMC_CTL |= FMC_CTL_MER1;
         FMC_CTL |= FMC_CTL_START;
-    
+
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
 
@@ -292,22 +292,22 @@ fmc_state_enum fmc_word_program(uint32_t address, uint32_t data)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
+
     if(FMC_READY == fmc_state){
         /* set the PG bit to start program */
         FMC_CTL &= ~FMC_CTL_PSZ;
         FMC_CTL |= CTL_PSZ_WORD;
-        FMC_CTL |= FMC_CTL_PG; 
-  
+        FMC_CTL |= FMC_CTL_PG;
+
         REG32(address) = data;
 
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
-    
+
         /* reset the PG bit */
-        FMC_CTL &= ~FMC_CTL_PG; 
-    } 
-  
+        FMC_CTL &= ~FMC_CTL_PG;
+    }
+
     /* return the FMC state */
     return fmc_state;
 }
@@ -332,22 +332,22 @@ fmc_state_enum fmc_halfword_program(uint32_t address, uint16_t data)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
-    if(FMC_READY == fmc_state){ 
+
+    if(FMC_READY == fmc_state){
         /* set the PG bit to start program */
         FMC_CTL &= ~FMC_CTL_PSZ;
         FMC_CTL |= CTL_PSZ_HALF_WORD;
-        FMC_CTL |= FMC_CTL_PG; 
-  
+        FMC_CTL |= FMC_CTL_PG;
+
         REG16(address) = data;
 
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
-    
+
         /* reset the PG bit */
-        FMC_CTL &= ~FMC_CTL_PG; 
-    } 
-  
+        FMC_CTL &= ~FMC_CTL_PG;
+    }
+
     /* return the FMC state */
     return fmc_state;
 }
@@ -372,22 +372,22 @@ fmc_state_enum fmc_byte_program(uint32_t address, uint8_t data)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
+
     if(FMC_READY == fmc_state){
         /* set the PG bit to start program */
         FMC_CTL &= ~FMC_CTL_PSZ;
         FMC_CTL |= CTL_PSZ_BYTE;
         FMC_CTL |= FMC_CTL_PG;
-  
+
         REG8(address) = data;
 
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait();
-    
+
         /* reset the PG bit */
-        FMC_CTL &= ~FMC_CTL_PG; 
+        FMC_CTL &= ~FMC_CTL_PG;
     }
-  
+
     /* return the FMC state */
     return fmc_state;
 }
@@ -449,11 +449,11 @@ void ob_erase(void)
     fmc_state_enum fmc_state = FMC_READY;
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-    
+
     if(FMC_READY == fmc_state){
         reg = FMC_OBCTL0;
         reg1 = FMC_OBCTL1;
-        
+
         /* reset the OB_FWDGT, OB_DEEPSLEEP and OB_STDBY, set according to ob_fwdgt ,ob_deepsleep and ob_stdby */
         reg |= (FMC_OBCTL0_NWDG_HW | FMC_OBCTL0_NRST_DPSLP | FMC_OBCTL0_NRST_STDBY);
         /* reset the BOR level */
@@ -537,7 +537,7 @@ void ob_write_protection_disable(uint32_t ob_wp)
 
 /*!
     \brief      enable erase/program protection and D-bus read protection
-    \param[in]  ob_drp: enable the WPx bits used as erase/program protection and D-bus read protection of each sector 
+    \param[in]  ob_drp: enable the WPx bits used as erase/program protection and D-bus read protection of each sector
                 one or more parameters can be selected which are shown as below:
       \arg        OB_DRP_x(x=0..22): sector x(x = 0,1,2...22)
       \arg        OB_DRP_23_27: sector23~27
@@ -594,7 +594,7 @@ void ob_drp_disable(uint32_t ob_drp)
         reg0 |= FMC_OBCTL0_WP0;
         reg0 &= (~FMC_OBCTL0_DRP);
         FMC_OBCTL0 = reg0;
-        
+
         reg1 |= FMC_OBCTL1_WP1;
         FMC_OBCTL1 = reg1;
     }
@@ -618,7 +618,7 @@ void ob_security_protection_config(uint8_t ob_spc)
 
     if(FMC_READY == fmc_state){
         uint32_t reg;
-    
+
         reg = FMC_OBCTL0;
         /* reset the OBCTL0_SPC, set according to ob_spc */
         reg &= ~FMC_OBCTL0_SPC;
@@ -628,7 +628,7 @@ void ob_security_protection_config(uint8_t ob_spc)
 }
 
 /*!
-    \brief      program the FMC user option byte 
+    \brief      program the FMC user option byte
     \param[in]  ob_fwdgt: option byte watchdog value
                 only one parameter can be selected which is shown as below:
       \arg        OB_FWDGT_SW: software free watchdog
@@ -636,11 +636,11 @@ void ob_security_protection_config(uint8_t ob_spc)
     \param[in]  ob_deepsleep: option byte deepsleep reset value
                 only one parameter can be selected which is shown as below:
       \arg        OB_DEEPSLEEP_NRST: no reset when entering deepsleep mode
-      \arg        OB_DEEPSLEEP_RST: generate a reset instead of entering deepsleep mode 
+      \arg        OB_DEEPSLEEP_RST: generate a reset instead of entering deepsleep mode
     \param[in]  ob_stdby:option byte standby reset value
                 only one parameter can be selected which is shown as below:
       \arg        OB_STDBY_NRST: no reset when entering standby mode
-      \arg        OB_STDBY_RST: generate a reset instead of entering standby mode 
+      \arg        OB_STDBY_RST: generate a reset instead of entering standby mode
     \param[out] none
     \retval     none
 */
@@ -650,10 +650,10 @@ void ob_user_write(uint32_t ob_fwdgt, uint32_t ob_deepsleep, uint32_t ob_stdby)
 
     /* wait for the FMC ready */
     fmc_state = fmc_ready_wait();
-  
+
     if(FMC_READY == fmc_state){
         uint32_t reg;
-    
+
         reg = FMC_OBCTL0;
         /* reset the OB_FWDGT, OB_DEEPSLEEP and OB_STDBY, set according to ob_fwdgt ,ob_deepsleep and ob_stdby */
         reg &= ~(FMC_OBCTL0_NWDG_HW | FMC_OBCTL0_NRST_DPSLP | FMC_OBCTL0_NRST_STDBY);
@@ -675,7 +675,7 @@ void ob_user_write(uint32_t ob_fwdgt, uint32_t ob_deepsleep, uint32_t ob_stdby)
 void ob_user_bor_threshold(uint32_t ob_bor_th)
 {
     uint32_t reg;
-    
+
     reg = FMC_OBCTL0;
     /* set the BOR level */
     reg &= ~FMC_OBCTL0_BOR_TH;
@@ -694,7 +694,7 @@ void ob_user_bor_threshold(uint32_t ob_bor_th)
 void ob_boot_mode_config(uint32_t boot_mode)
 {
     uint32_t reg;
-    
+
     reg = FMC_OBCTL0;
     /* set option byte boot bank value */
     reg &= ~FMC_OBCTL0_BB;
@@ -769,7 +769,7 @@ uint16_t ob_drp1_get(void)
 FlagStatus ob_spc_get(void)
 {
     FlagStatus spc_state = RESET;
-  
+
     if (((uint8_t)(FMC_OBCTL0 >> 8)) != (uint8_t)FMC_NSPC){
         spc_state = SET;
     }else{
@@ -827,7 +827,7 @@ void fmc_interrupt_disable(uint32_t fmc_int)
       \arg        FMC_FLAG_PGSERR: FMC program sequence error flag bit
       \arg        FMC_FLAG_PGMERR: FMC program size not match error flag bit
       \arg        FMC_FLAG_WPERR: FMC Erase/Program protection error flag bit
-      \arg        FMC_FLAG_OPERR: FMC operation error flag bit 
+      \arg        FMC_FLAG_OPERR: FMC operation error flag bit
       \arg        FMC_FLAG_END: FMC end of operation flag bit
     \param[out] none
     \retval     FlagStatus: SET or RESET
@@ -838,7 +838,7 @@ FlagStatus fmc_flag_get(uint32_t fmc_flag)
         return  SET;
     }
     /* return the state of corresponding FMC flag */
-    return RESET; 
+    return RESET;
 }
 
 /*!
@@ -849,7 +849,7 @@ FlagStatus fmc_flag_get(uint32_t fmc_flag)
       \arg        FMC_FLAG_PGSERR: FMC program sequence error flag bit
       \arg        FMC_FLAG_PGMERR: FMC program size not match error flag bit
       \arg        FMC_FLAG_WPERR: FMC erase/program protection error flag bit
-      \arg        FMC_FLAG_OPERR: FMC operation error flag bit 
+      \arg        FMC_FLAG_OPERR: FMC operation error flag bit
       \arg        FMC_FLAG_END: FMC end of operation flag bit
     \param[out] none
     \retval     none
@@ -877,18 +877,18 @@ void fmc_flag_clear(uint32_t fmc_flag)
 fmc_state_enum fmc_state_get(void)
 {
     fmc_state_enum fmc_state = FMC_READY;
-  
+
     if((FMC_STAT & FMC_FLAG_BUSY) == FMC_FLAG_BUSY){
         fmc_state = FMC_BUSY;
     }else{
-        if((FMC_STAT & FMC_FLAG_WPERR) != (uint32_t)0x00){ 
+        if((FMC_STAT & FMC_FLAG_WPERR) != (uint32_t)0x00){
             fmc_state = FMC_WPERR;
         }else{
-            if((FMC_STAT & FMC_FLAG_RDDERR) != (uint32_t)0x00){ 
+            if((FMC_STAT & FMC_FLAG_RDDERR) != (uint32_t)0x00){
                 fmc_state = FMC_RDDERR;
             }else{
                 if((FMC_STAT & (uint32_t)0xEF) != (uint32_t)0x00){
-                    fmc_state = FMC_PGERR; 
+                    fmc_state = FMC_PGERR;
                 }else{
                     if((FMC_STAT & FMC_FLAG_OPERR) != (uint32_t)0x00){
                         fmc_state = FMC_OPERR;
@@ -920,13 +920,13 @@ fmc_state_enum fmc_state_get(void)
 fmc_state_enum fmc_ready_wait(void)
 {
     fmc_state_enum fmc_state = FMC_BUSY;
-  
+
     /* wait for FMC ready */
     do{
         /* get FMC state */
         fmc_state = fmc_state_get();
     }while(FMC_BUSY == fmc_state);
-  
+
     /* return the FMC state */
     return fmc_state;
 }

@@ -1,7 +1,7 @@
 /*!
     \file    gd32f4xx_exmc.c
     \brief   EXMC driver
-    
+
     \version 2016-08-15, V1.0.0, firmware for GD32F4xx
     \version 2018-12-12, V2.0.0, firmware for GD32F4xx
     \version 2020-09-30, V2.1.0, firmware for GD32F4xx
@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -184,7 +184,7 @@ void exmc_norsram_struct_para_init(exmc_norsram_parameter_struct* exmc_norsram_i
     \param[in]  exmc_norsram_parameter_struct: configure the EXMC NOR/SRAM parameter
                   norsram_region: EXMC_BANK0_NORSRAM_REGIONx, x=0..3
                   write_mode: EXMC_ASYN_WRITE, EXMC_SYN_WRITE
-                  extended_mode: ENABLE or DISABLE 
+                  extended_mode: ENABLE or DISABLE
                   asyn_wait: ENABLE or DISABLE
                   nwait_signal: ENABLE or DISABLE
                   memory_write: ENABLE or DISABLE
@@ -199,7 +199,7 @@ void exmc_norsram_struct_para_init(exmc_norsram_parameter_struct* exmc_norsram_i
                     asyn_access_mode: EXMC_ACCESS_MODE_A, EXMC_ACCESS_MODE_B, EXMC_ACCESS_MODE_C, EXMC_ACCESS_MODE_D
                     syn_data_latency: EXMC_DATALAT_x_CLK, x=2..17
                     syn_clk_division: EXMC_SYN_CLOCK_RATIO_x_CLK, x=2..16
-                    bus_latency: 0x0U~0xFU 
+                    bus_latency: 0x0U~0xFU
                     asyn_data_setuptime: 0x01U~0xFFU
                     asyn_address_holdtime: 0x1U~0xFU
                     asyn_address_setuptime: 0x0U~0xFU
@@ -207,7 +207,7 @@ void exmc_norsram_struct_para_init(exmc_norsram_parameter_struct* exmc_norsram_i
                     asyn_access_mode: EXMC_ACCESS_MODE_A, EXMC_ACCESS_MODE_B, EXMC_ACCESS_MODE_C, EXMC_ACCESS_MODE_D
                     syn_data_latency: EXMC_DATALAT_x_CLK, x=2..17
                     syn_clk_division: EXMC_SYN_CLOCK_RATIO_x_CLK, x=2..16
-                    bus_latency: 0x0U~0xFU 
+                    bus_latency: 0x0U~0xFU
                     asyn_data_setuptime: 0x01U~0xFFU
                     asyn_address_holdtime: 0x1U~0xFU
                     asyn_address_setuptime: 0x0U~0xFU
@@ -222,9 +222,9 @@ void exmc_norsram_init(exmc_norsram_parameter_struct* exmc_norsram_init_struct)
     snctl = EXMC_SNCTL(exmc_norsram_init_struct->norsram_region);
 
     /* clear relative bits */
-    snctl &= ((uint32_t)~(EXMC_SNCTL_NREN | EXMC_SNCTL_NRTP | EXMC_SNCTL_NRW | EXMC_SNCTL_SBRSTEN | 
-                          EXMC_SNCTL_NRWTPOL | EXMC_SNCTL_WRAPEN | EXMC_SNCTL_NRWTCFG | EXMC_SNCTL_WREN | 
-                          EXMC_SNCTL_NRWTEN | EXMC_SNCTL_EXMODEN | EXMC_SNCTL_ASYNCWAIT | EXMC_SNCTL_SYNCWR | 
+    snctl &= ((uint32_t)~(EXMC_SNCTL_NREN | EXMC_SNCTL_NRTP | EXMC_SNCTL_NRW | EXMC_SNCTL_SBRSTEN |
+                          EXMC_SNCTL_NRWTPOL | EXMC_SNCTL_WRAPEN | EXMC_SNCTL_NRWTCFG | EXMC_SNCTL_WREN |
+                          EXMC_SNCTL_NRWTEN | EXMC_SNCTL_EXMODEN | EXMC_SNCTL_ASYNCWAIT | EXMC_SNCTL_SYNCWR |
                           EXMC_SNCTL_NRMUX ));
 
     snctl |= (uint32_t)(exmc_norsram_init_struct->address_data_mux << SNCTL_NRMUX_OFFSET) |
@@ -365,7 +365,7 @@ void exmc_nand_struct_para_init(exmc_nand_parameter_struct* exmc_nand_init_struc
 void exmc_nand_init(exmc_nand_parameter_struct* exmc_nand_init_struct)
 {
     uint32_t npctl = 0x00000000U, npctcfg = 0x00000000U, npatcfg = 0x00000000U;
-    
+
     npctl = (uint32_t)(exmc_nand_init_struct->wait_feature << NPCTL_NDWTEN_OFFSET)|
                        EXMC_NPCTL_NDTP |
                        exmc_nand_init_struct->databus_width |
@@ -486,10 +486,10 @@ void exmc_pccard_init(exmc_pccard_parameter_struct* exmc_pccard_init_struct)
 {
     /* configure the EXMC bank3 PC card control register */
     EXMC_NPCTL3 = (uint32_t)(exmc_pccard_init_struct->wait_feature << NPCTL_NDWTEN_OFFSET) |
-                                            EXMC_NAND_DATABUS_WIDTH_16B |  
+                                            EXMC_NAND_DATABUS_WIDTH_16B |
                                             exmc_pccard_init_struct->ctr_latency |
                                             exmc_pccard_init_struct->atr_latency ;
-            
+
     /* configure the EXMC bank3 PC card common space timing configuration register */
     EXMC_NPCTCFG3 = (uint32_t)((exmc_pccard_init_struct->common_space_timing->setuptime - 1U) & EXMC_NPCTCFG_COMSET ) |
                                             (((exmc_pccard_init_struct->common_space_timing->waittime - 1U) << NPCTCFG_COMWAIT_OFFSET) & EXMC_NPCTCFG_COMWAIT ) |
@@ -607,7 +607,7 @@ void exmc_sdram_init(exmc_sdram_parameter_struct* exmc_sdram_init_struct)
 {
     uint32_t sdctl0, sdctl1, sdtcfg0, sdtcfg1;
 
-    /* configuration EXMC_SDCTL0 or EXMC_SDCTL1 */ 
+    /* configuration EXMC_SDCTL0 or EXMC_SDCTL1 */
     if(EXMC_SDRAM_DEVICE0 == exmc_sdram_init_struct->sdram_device){
         /* configuration EXMC_SDCTL0 */
         EXMC_SDCTL(EXMC_SDRAM_DEVICE0)  = (uint32_t)exmc_sdram_init_struct->column_address_width |
@@ -617,9 +617,9 @@ void exmc_sdram_init(exmc_sdram_parameter_struct* exmc_sdram_init_struct)
                                                     exmc_sdram_init_struct->cas_latency |
                                                    (exmc_sdram_init_struct->write_protection << SDCTL_WPEN_OFFSET)|
                                                     exmc_sdram_init_struct->sdclock_config |
-                                                   (exmc_sdram_init_struct->brust_read_switch << SDCTL_BRSTRD_OFFSET)| 
+                                                   (exmc_sdram_init_struct->brust_read_switch << SDCTL_BRSTRD_OFFSET)|
                                                     exmc_sdram_init_struct->pipeline_read_delay;
-        
+
         /* configuration EXMC_SDTCFG0 */
         EXMC_SDTCFG(EXMC_SDRAM_DEVICE0) = (uint32_t)((exmc_sdram_init_struct->timing->load_mode_register_delay)-1U) |
                                                    (((exmc_sdram_init_struct->timing->exit_selfrefresh_delay)-1U) << SDTCFG_XSRD_OFFSET) |
@@ -632,11 +632,11 @@ void exmc_sdram_init(exmc_sdram_parameter_struct* exmc_sdram_init_struct)
         /* configuration EXMC_SDCTL0 and EXMC_SDCTL1 */
         /* some bits in the EXMC_SDCTL1 register are reserved */
         sdctl0 = EXMC_SDCTL(EXMC_SDRAM_DEVICE0) & (~( EXMC_SDCTL_PIPED | EXMC_SDCTL_BRSTRD | EXMC_SDCTL_SDCLK ));
-        
+
         sdctl0 |= (uint32_t)exmc_sdram_init_struct->sdclock_config |
-                            exmc_sdram_init_struct->brust_read_switch | 
+                            exmc_sdram_init_struct->brust_read_switch |
                             exmc_sdram_init_struct->pipeline_read_delay;
-        
+
         sdctl1 = (uint32_t)exmc_sdram_init_struct->column_address_width |
                            exmc_sdram_init_struct->row_address_width |
                            exmc_sdram_init_struct->data_width |
@@ -646,7 +646,7 @@ void exmc_sdram_init(exmc_sdram_parameter_struct* exmc_sdram_init_struct)
 
         EXMC_SDCTL(EXMC_SDRAM_DEVICE0) = sdctl0;
         EXMC_SDCTL(EXMC_SDRAM_DEVICE1) = sdctl1;
-        
+
         /* configuration EXMC_SDTCFG0 and EXMC_SDTCFG1 */
         /* some bits in the EXMC_SDTCFG1 register are reserved */
         sdtcfg0 = EXMC_SDTCFG(EXMC_SDRAM_DEVICE0) & (~(EXMC_SDTCFG_RPD | EXMC_SDTCFG_WRD | EXMC_SDTCFG_ARFD));
@@ -658,7 +658,7 @@ void exmc_sdram_init(exmc_sdram_parameter_struct* exmc_sdram_init_struct)
         sdtcfg1 = (uint32_t)((exmc_sdram_init_struct->timing->load_mode_register_delay)-1U) |
                            (((exmc_sdram_init_struct->timing->exit_selfrefresh_delay)-1U) << SDTCFG_XSRD_OFFSET) |
                            (((exmc_sdram_init_struct->timing->row_address_select_delay)-1U) << SDTCFG_RASD_OFFSET) |
-                           (((exmc_sdram_init_struct->timing->row_to_column_delay)-1U) << SDTCFG_RCD_OFFSET);    
+                           (((exmc_sdram_init_struct->timing->row_to_column_delay)-1U) << SDTCFG_RCD_OFFSET);
 
         EXMC_SDTCFG(EXMC_SDRAM_DEVICE0) = sdtcfg0;
         EXMC_SDTCFG(EXMC_SDRAM_DEVICE1) = sdtcfg1;
@@ -819,7 +819,7 @@ void exmc_sdram_readsample_enable(ControlStatus newvalue)
 void exmc_sdram_readsample_config(uint32_t delay_cell, uint32_t extra_hclk)
 {
     uint32_t sdrsctl = 0U;
-    
+
     /* reset the bits */
     sdrsctl = EXMC_SDRSCTL & (~(EXMC_SDRSCTL_SDSC | EXMC_SDRSCTL_SSCR));
     /* set the bits */
@@ -830,13 +830,13 @@ void exmc_sdram_readsample_config(uint32_t delay_cell, uint32_t extra_hclk)
 
 /*!
     \brief      configure the SDRAM memory command
-    \param[in]  exmc_sdram_command_init_struct: initialize EXMC SDRAM command 
+    \param[in]  exmc_sdram_command_init_struct: initialize EXMC SDRAM command
                   mode_register_content:
                   auto_refresh_number: EXMC_SDRAM_AUTO_REFLESH_x_SDCLK, x=1..15
-                  bank_select: EXMC_SDRAM_DEVICE0_SELECT, EXMC_SDRAM_DEVICE1_SELECT, EXMC_SDRAM_DEVICE0_1_SELECT 
-                  command: EXMC_SDRAM_NORMAL_OPERATION, EXMC_SDRAM_CLOCK_ENABLE, EXMC_SDRAM_PRECHARGE_ALL, 
-                           EXMC_SDRAM_AUTO_REFRESH, EXMC_SDRAM_LOAD_MODE_REGISTER, EXMC_SDRAM_SELF_REFRESH, 
-                           EXMC_SDRAM_POWERDOWN_ENTRY 
+                  bank_select: EXMC_SDRAM_DEVICE0_SELECT, EXMC_SDRAM_DEVICE1_SELECT, EXMC_SDRAM_DEVICE0_1_SELECT
+                  command: EXMC_SDRAM_NORMAL_OPERATION, EXMC_SDRAM_CLOCK_ENABLE, EXMC_SDRAM_PRECHARGE_ALL,
+                           EXMC_SDRAM_AUTO_REFRESH, EXMC_SDRAM_LOAD_MODE_REGISTER, EXMC_SDRAM_SELF_REFRESH,
+                           EXMC_SDRAM_POWERDOWN_ENTRY
     \param[out] none
     \retval     none
 */
@@ -931,7 +931,7 @@ uint32_t exmc_sdram_bankstatus_get(uint32_t exmc_sdram_device)
 void exmc_sqpipsram_read_command_set(uint32_t read_command_mode,uint32_t read_wait_cycle, uint32_t read_command_code)
 {
     uint32_t srcmd;
-    
+
     srcmd = (uint32_t) read_command_mode |
                      ((read_wait_cycle << SRCMD_RWAITCYCLE_OFFSET) & EXMC_SRCMD_RWAITCYCLE) |
                      ((read_command_code & EXMC_SRCMD_RCMD));
@@ -954,7 +954,7 @@ void exmc_sqpipsram_read_command_set(uint32_t read_command_mode,uint32_t read_wa
 void exmc_sqpipsram_write_command_set(uint32_t write_command_mode,uint32_t write_wait_cycle, uint32_t write_command_code)
 {
     uint32_t swcmd;
-    
+
     swcmd = (uint32_t) write_command_mode |
                      ((write_wait_cycle << SWCMD_WWAITCYCLE_OFFSET) & EXMC_SWCMD_WWAITCYCLE) |
                      ((write_command_code & EXMC_SWCMD_WCMD));
@@ -1017,14 +1017,14 @@ uint32_t exmc_sqpipsram_high_id_get(void)
 FlagStatus exmc_sqpipsram_send_command_state_get(uint32_t send_command_flag)
 {
     uint32_t flag = 0x00000000U;
-    
+
     if(EXMC_SEND_COMMAND_FLAG_RDID == send_command_flag){
         flag = EXMC_SRCMD;
     }else if(EXMC_SEND_COMMAND_FLAG_SC == send_command_flag){
         flag = EXMC_SWCMD;
     }else{
     }
-    
+
     if (flag & send_command_flag){
         /* flag is set */
         return SET;
@@ -1123,7 +1123,7 @@ FlagStatus exmc_flag_get(uint32_t exmc_bank,uint32_t flag)
          /* SDRAM device0 or device1 */
         status = EXMC_SDSTAT;
     }
-    
+
     if ((status & flag) != (uint32_t)flag ){
         /* flag is reset */
         return RESET;
@@ -1161,7 +1161,7 @@ void exmc_flag_clear(uint32_t exmc_bank, uint32_t flag)
     }else{
         /* SDRAM device0 or device1 */
         EXMC_SDSTAT &= ~flag;
-    } 
+    }
 }
 
 /*!

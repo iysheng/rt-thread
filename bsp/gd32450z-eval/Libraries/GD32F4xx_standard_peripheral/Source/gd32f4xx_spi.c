@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -47,7 +47,7 @@ OF SUCH DAMAGE.
 #define SPI_I2SPSC_DEFAULT_VALUE        ((uint32_t)0x00000002U)  /*!< default value of SPI_I2SPSC register */
 
 /*!
-    \brief      deinitialize SPI and I2S 
+    \brief      deinitialize SPI and I2S
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5),include I2S1_ADD and I2S2_ADD
     \param[out] none
     \retval     none
@@ -125,7 +125,7 @@ void spi_struct_para_init(spi_parameter_struct *spi_struct)
     \retval     none
 */
 void spi_init(uint32_t spi_periph, spi_parameter_struct* spi_struct)
-{   
+{
     uint32_t reg = 0U;
     reg = SPI_CTL0(spi_periph);
     reg &= SPI_INIT_MASK;
@@ -152,7 +152,7 @@ void spi_init(uint32_t spi_periph, spi_parameter_struct* spi_struct)
 }
 
 /*!
-    \brief      enable SPI 
+    \brief      enable SPI
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -163,7 +163,7 @@ void spi_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      disable SPI 
+    \brief      disable SPI
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -174,7 +174,7 @@ void spi_disable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      initialize I2S parameter 
+    \brief      initialize I2S parameter
     \param[in]  spi_periph: SPIx(x=1,2)
     \param[in]  i2s_mode: I2S operation mode
                 only one parameter can be selected which is shown as below:
@@ -203,7 +203,7 @@ void i2s_init(uint32_t spi_periph, uint32_t i2s_mode, uint32_t i2s_standard, uin
     reg &= I2S_INIT_MASK;
 
     /* enable I2S mode */
-    reg |= (uint32_t)SPI_I2SCTL_I2SSEL; 
+    reg |= (uint32_t)SPI_I2SCTL_I2SSEL;
     /* select I2S mode */
     reg |= (uint32_t)i2s_mode;
     /* select I2S standard */
@@ -323,7 +323,7 @@ void i2s_psc_config(uint32_t spi_periph, uint32_t i2s_audiosample, uint32_t i2s_
 }
 
 /*!
-    \brief      enable I2S 
+    \brief      enable I2S
     \param[in]  spi_periph: SPIx(x=1,2)
     \param[out] none
     \retval     none
@@ -334,7 +334,7 @@ void i2s_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      disable I2S 
+    \brief      disable I2S
     \param[in]  spi_periph: SPIx(x=1,2)
     \param[out] none
     \retval     none
@@ -345,7 +345,7 @@ void i2s_disable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      enable SPI nss output 
+    \brief      enable SPI nss output
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -356,7 +356,7 @@ void spi_nss_output_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      disable SPI nss output 
+    \brief      disable SPI nss output
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -408,7 +408,7 @@ void spi_dma_enable(uint32_t spi_periph, uint8_t spi_dma)
 }
 
 /*!
-    \brief      diable SPI DMA send or receive 
+    \brief      diable SPI DMA send or receive
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[in]  spi_dma: SPI DMA mode
                 only one parameter can be selected which is shown as below:
@@ -488,7 +488,7 @@ void spi_bidirectional_transfer_config(uint32_t spi_periph, uint32_t transfer_di
 }
 
 /*!
-    \brief      set SPI CRC polynomial 
+    \brief      set SPI CRC polynomial
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[in]  crc_poly: CRC polynomial value
     \param[out] none
@@ -504,7 +504,7 @@ void spi_crc_polynomial_set(uint32_t spi_periph,uint16_t crc_poly)
 }
 
 /*!
-    \brief      get SPI CRC polynomial 
+    \brief      get SPI CRC polynomial
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     16-bit CRC polynomial
@@ -515,7 +515,7 @@ uint16_t spi_crc_polynomial_get(uint32_t spi_periph)
 }
 
 /*!
-    \brief      turn on CRC function 
+    \brief      turn on CRC function
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -526,7 +526,7 @@ void spi_crc_on(uint32_t spi_periph)
 }
 
 /*!
-    \brief      turn off CRC function 
+    \brief      turn off CRC function
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[out] none
     \retval     none
@@ -591,18 +591,18 @@ void spi_ti_mode_disable(uint32_t spi_periph)
 /*!
     \brief      configure i2s full duplex mode
     \param[in]  i2s_add_periph: I2Sx_ADD(x=1,2)
-    \param[in]  i2s_mode: 
+    \param[in]  i2s_mode:
       \arg        I2S_MODE_SLAVETX : I2S slave transmit mode
       \arg        I2S_MODE_SLAVERX : I2S slave receive mode
       \arg        I2S_MODE_MASTERTX : I2S master transmit mode
       \arg        I2S_MODE_MASTERRX : I2S master receive mode
-    \param[in]  i2s_standard: 
+    \param[in]  i2s_standard:
       \arg        I2S_STD_PHILLIPS : I2S phillips standard
       \arg        I2S_STD_MSB : I2S MSB standard
       \arg        I2S_STD_LSB : I2S LSB standard
       \arg        I2S_STD_PCMSHORT : I2S PCM short standard
       \arg        I2S_STD_PCMLONG : I2S PCM long standard
-    \param[in]  i2s_ckpl: 
+    \param[in]  i2s_ckpl:
       \arg        I2S_CKPL_LOW : I2S clock polarity low level
       \arg        I2S_CKPL_HIGH : I2S clock polarity high level
     \param[in]  i2s_frameformat:
@@ -619,7 +619,7 @@ void i2s_full_duplex_mode_config(uint32_t i2s_add_periph, uint32_t i2s_mode, uin
     uint32_t reg = 0U, tmp = 0U;
 
     reg = I2S_ADD_I2SCTL(i2s_add_periph);
-    reg &= I2S_FULL_DUPLEX_MASK;  
+    reg &= I2S_FULL_DUPLEX_MASK;
 
     /* get the mode of the extra I2S module I2Sx_ADD */
     if((I2S_MODE_MASTERTX == i2s_mode) || (I2S_MODE_SLAVETX == i2s_mode)){
@@ -629,7 +629,7 @@ void i2s_full_duplex_mode_config(uint32_t i2s_add_periph, uint32_t i2s_mode, uin
     }
 
     /* enable I2S mode */
-    reg |= (uint32_t)SPI_I2SCTL_I2SSEL; 
+    reg |= (uint32_t)SPI_I2SCTL_I2SSEL;
     /* select I2S mode */
     reg |= (uint32_t)tmp;
     /* select I2S standard */
@@ -644,7 +644,7 @@ void i2s_full_duplex_mode_config(uint32_t i2s_add_periph, uint32_t i2s_mode, uin
 }
 
 /*!
-    \brief      enable quad wire SPI  
+    \brief      enable quad wire SPI
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -655,7 +655,7 @@ void qspi_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      disable quad wire SPI 
+    \brief      disable quad wire SPI
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -666,7 +666,7 @@ void qspi_disable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      enable quad wire SPI write 
+    \brief      enable quad wire SPI write
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -677,7 +677,7 @@ void qspi_write_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      enable quad wire SPI read 
+    \brief      enable quad wire SPI read
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -688,7 +688,7 @@ void qspi_read_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      enable SPI_IO2 and SPI_IO3 pin output 
+    \brief      enable SPI_IO2 and SPI_IO3 pin output
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -699,7 +699,7 @@ void qspi_io23_output_enable(uint32_t spi_periph)
 }
 
  /*!
-    \brief      disable SPI_IO2 and SPI_IO3 pin output 
+    \brief      disable SPI_IO2 and SPI_IO3 pin output
     \param[in]  spi_periph: SPIx(only x=5)
     \param[out] none
     \retval     none
@@ -710,7 +710,7 @@ void qspi_io23_output_enable(uint32_t spi_periph)
 }
 
 /*!
-    \brief      enable SPI and I2S interrupt 
+    \brief      enable SPI and I2S interrupt
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[in]  spi_i2s_int: SPI/I2S interrupt
                 only one parameter can be selected which is shown as below:
@@ -742,7 +742,7 @@ void spi_i2s_interrupt_enable(uint32_t spi_periph, uint8_t spi_i2s_int)
 }
 
 /*!
-    \brief      disable SPI and I2S interrupt 
+    \brief      disable SPI and I2S interrupt
     \param[in]  spi_periph: SPIx(x=0,1,2,3,4,5)
     \param[in]  spi_i2s_int: SPI/I2S interrupt
                 only one parameter can be selected which is shown as below:

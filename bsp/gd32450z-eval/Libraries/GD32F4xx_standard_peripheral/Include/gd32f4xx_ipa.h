@@ -1,7 +1,7 @@
 /*!
     \file    gd32f4xx_ipa.h
     \brief   definitions for the IPA
-    
+
     \version 2016-08-15, V1.0.0, firmware for GD32F4xx
     \version 2018-12-12, V2.0.0, firmware for GD32F4xx
     \version 2020-09-30, V2.1.0, firmware for GD32F4xx
@@ -10,27 +10,27 @@
 /*
     Copyright (c) 2020, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -190,7 +190,7 @@ OF SUCH DAMAGE.
 /* constants definitions */
 /* IPA foreground parameter struct definitions */
 typedef struct
-{   
+{
     uint32_t foreground_memaddr;                          /*!< foreground memory base address */
     uint32_t foreground_lineoff;                          /*!< foreground line offset */
     uint32_t foreground_prealpha;                         /*!< foreground pre-defined alpha value */
@@ -199,11 +199,11 @@ typedef struct
     uint32_t foreground_prered;                           /*!< foreground pre-defined red value */
     uint32_t foreground_pregreen;                         /*!< foreground pre-defined green value */
     uint32_t foreground_preblue;                          /*!< foreground pre-defined blue value */
-}ipa_foreground_parameter_struct; 
+}ipa_foreground_parameter_struct;
 
 /* IPA background parameter struct definitions */
 typedef struct
-{   
+{
     uint32_t background_memaddr;                          /*!< background memory base address */
     uint32_t background_lineoff;                          /*!< background line offset */
     uint32_t background_prealpha;                         /*!< background pre-defined alpha value */
@@ -212,7 +212,7 @@ typedef struct
     uint32_t background_prered;                           /*!< background pre-defined red value */
     uint32_t background_pregreen;                         /*!< background pre-defined green value */
     uint32_t background_preblue;                          /*!< background pre-defined blue value */
-}ipa_background_parameter_struct; 
+}ipa_background_parameter_struct;
 
 /* IPA destination parameter struct definitions */
 typedef struct
@@ -226,10 +226,10 @@ typedef struct
     uint32_t destination_preblue;                         /*!< destination pre-defined blue value */
     uint32_t image_width;                                 /*!< width of the image to be processed */
     uint32_t image_height;                                /*!< height of the image to be processed */
-}ipa_destination_parameter_struct; 
+}ipa_destination_parameter_struct;
 
 /* destination pixel format */
-typedef enum 
+typedef enum
 {
     IPA_DPF_ARGB8888,                                     /*!< destination pixel format ARGB8888 */
     IPA_DPF_RGB888,                                       /*!< destination pixel format RGB888 */
@@ -339,17 +339,17 @@ void ipa_background_lut_loading_enable(void);
 void ipa_pixel_format_convert_mode_set(uint32_t pfcm);
 
 /* structure initialization, foreground, background, destination and LUT initialization */
-/* initialize the structure of IPA foreground parameter struct with the default values, it is 
+/* initialize the structure of IPA foreground parameter struct with the default values, it is
   suggested that call this function after an ipa_foreground_parameter_struct structure is defined */
 void ipa_foreground_struct_para_init(ipa_foreground_parameter_struct* foreground_struct);
 /* initialize foreground parameters */
 void ipa_foreground_init(ipa_foreground_parameter_struct* foreground_struct);
-/* initialize the structure of IPA background parameter struct with the default values, it is 
+/* initialize the structure of IPA background parameter struct with the default values, it is
   suggested that call this function after an ipa_background_parameter_struct structure is defined */
 void ipa_background_struct_para_init(ipa_background_parameter_struct* background_struct);
 /* initialize background parameters */
 void ipa_background_init(ipa_background_parameter_struct* background_struct);
-/* initialize the structure of IPA destination parameter struct with the default values, it is 
+/* initialize the structure of IPA destination parameter struct with the default values, it is
   suggested that call this function after an ipa_destination_parameter_struct structure is defined */
 void ipa_destination_struct_para_init(ipa_destination_parameter_struct* destination_struct);
 /* initialize destination parameters */
