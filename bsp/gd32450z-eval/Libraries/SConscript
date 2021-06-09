@@ -1,4 +1,5 @@
 import rtconfig
+import os
 from building import *
 
 # get current directory
@@ -21,10 +22,14 @@ path = [
     cwd + '/CMSIS/GD/GD32F4xx/Include',
     cwd + '/CMSIS',
     cwd + '/GD32F4xx_standard_peripheral/Include',]
-    
+
+bsp_usb_subdirs = []
+subdir = ''
 if GetDepend(['RT_USING_BSP_USB']):
-    path += [cwd + '/GD32F4xx_usb_driver/Include']
-    src  += [cwd + '/GD32F4xx_usb_driver/Source']
+    bsp_usb_subdirs = [f.path for f in os.scandir(cwd + '/GD32F4xx_usb_library/') if f.is_dir()]
+    for subdir in bsp_usb_subdirs:
+        src += Glob(os.path.join(cwd + '/GD32F4xx_usb_library/', subdir, "*.c"))
+        path += [cwd + '/GD32F4xx_usb_library/' + subdir]
 
 CPPDEFINES = ['USE_STDPERIPH_DRIVER']
 
