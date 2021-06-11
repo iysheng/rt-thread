@@ -167,5 +167,6 @@
 #define BSP_USING_GPIO
 #define BSP_USING_CAN
 #define RT_USING_CAN0
+#define BSP_USING_ENCODER
 
 #endif

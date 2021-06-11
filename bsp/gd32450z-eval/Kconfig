@@ -74,3 +74,8 @@ menuconfig BSP_USING_CAN
         bool "using can0 device"
         default n
     endif
+menuconfig BSP_USING_ENCODER
+    bool "using encoder"
+    default n
+    if BSP_USING_ENCODER
+    endif
