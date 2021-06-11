@@ -406,9 +406,9 @@ rt_inline void pin_irq_hdr(int irqno)
   */
 void gd32_pin_exti_irqhandler(uint16_t gpio_pin)
 {
-    if (SET == exti_interrupt_flag_get(bit2bitno(gpio_pin)))
+    if (SET == exti_interrupt_flag_get(gpio_pin))
     {
-        exti_interrupt_flag_clear(bit2bitno(gpio_pin));
+        exti_interrupt_flag_clear(gpio_pin);
         pin_irq_hdr(bit2bitno(gpio_pin));
     }
 }
