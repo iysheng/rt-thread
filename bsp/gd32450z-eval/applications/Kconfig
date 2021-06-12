@@ -1,0 +1,8 @@
+menu "Application Configuration"
+menuconfig BSP_USING_CAN_COMM
+    bool "using can commiuncate support"
+    default n
+    select BSP_USING_CAN
+    if BSP_USING_CAN_COMM
+    endif
+endmenu

@@ -3,8 +3,13 @@ Import('rtconfig')
 from building import *
 
 cwd     = os.path.join(str(Dir('#')), 'applications')
-src	= Glob('*.c')
+src	= Glob('main.c')
+
 CPPPATH = [cwd, str(Dir('#'))]
+
+# add can support
+if GetDepend('BSP_USING_CAN_COMM'):
+    src += ['can_comm.c']
 
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 

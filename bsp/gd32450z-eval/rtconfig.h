@@ -162,6 +162,10 @@
 
 /* samples: kernel and components samples */
 
+
+/* Application Configuration */
+
+#define BSP_USING_CAN_COMM
 #define SOC_GD32450Z
 #define BSP_USING_UART0
 #define BSP_USING_GPIO
