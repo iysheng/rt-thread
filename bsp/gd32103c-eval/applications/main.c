@@ -15,12 +15,26 @@
 #include <stdio.h>
 #include <rtthread.h>
 
+static rt_thread_t gs_can_thread;
+extern void can_backend_entry(void * arg);
+
 int main(void)
 {
 #if 0
 #define RPA12  GET_PIN(A, 12)
     rt_pin_mode(RPA12, PIN_MODE_OUTPUT);
 #endif
+    gs_can_thread = rt_thread_create("canBack", can_backend_entry, RT_NULL, 0x800, 5, 10);
+    if (!gs_can_thread)
+    {
+        LOG_E("Failed create can backend thread.");
+        return -1;
+    }
+    else if (RT_EOK != rt_thread_startup(gs_can_thread))
+    {
+        LOG_E("Failed startup can backend thread.");
+        return -2;
+    }
 
     while (1)
     {
@@ -100,7 +114,7 @@ static int triger_cmp(int argc, char **argv)
     return 0;
 }
 MSH_CMD_EXPORT(triger_cmp, "triger cmp mode")
-#if 1
+#if 0
 /*
  * File      : can_thread.c
  * This file is part of RT-Thread RTOS

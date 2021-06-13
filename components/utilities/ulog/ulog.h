@@ -45,7 +45,18 @@ void ulog_deinit(void);
 #define LOG_I(...)                     ulog_i(LOG_TAG, __VA_ARGS__)
 #define LOG_D(...)                     ulog_d(LOG_TAG, __VA_ARGS__)
 #define LOG_RAW(...)                   ulog_raw(__VA_ARGS__)
-#define LOG_HEX(name, width, buf, size)      ulog_hex(name, width, buf, size)
+#define LOG_HEX(name, width, buf, size) \
+    { \
+        int t_log_hex_index = 0; \
+        do { \
+            rt_kprintf("[%s(%d):", name, (size)); \
+            for (; t_log_hex_index < (size); t_log_hex_index++) \
+            { \
+                rt_kprintf(" %x",*((unsigned char *)buf + t_log_hex_index)); \
+            } \
+            rt_kprintf("]\n"); \
+        } while(0); \
+    }
 
 /*
  * backend register and unregister

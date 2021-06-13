@@ -39,6 +39,9 @@ static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
     {CAN100kBaud, (BAUD_DATA_SET(CAN_SJW_1TQ, SJW) \
         | BAUD_DATA_SET(CAN_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BS2_8TQ, BS2) \
         | 30)},
+    {CAN1MBaud, (BAUD_DATA_SET(CAN_SJW_1TQ, SJW) \
+        | BAUD_DATA_SET(CAN_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BS2_8TQ, BS2) \
+        | 3)},
 };
 
 #ifdef RT_USING_CAN0
@@ -883,7 +886,7 @@ int rt_hw_can_init(void)
         .CAN_FilterWork = ENABLE,
     };
 
-    config.baud_rate = CAN100kBaud;
+    config.baud_rate = CAN1MBaud;
     config.privmode = RT_CAN_MODE_NOPRIV;
     config.ticks = 50;
 #ifdef RT_CAN_USING_HDR
