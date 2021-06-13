@@ -15,7 +15,7 @@
 #include <rtthread.h>
 
 #ifndef RT_CANMSG_BOX_SZ
-#define RT_CANMSG_BOX_SZ    16
+#define RT_CANMSG_BOX_SZ    1
 #endif
 #ifndef RT_CANSND_BOX_NUM
 #define RT_CANSND_BOX_NUM   1
