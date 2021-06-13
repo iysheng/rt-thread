@@ -32,6 +32,14 @@ static uint16_t g_tcd_convert_data_filter4mark[VALID_CCD_DATA_LEN];
 static uint16_t g_tcd_convert_data_filter4cmp[VALID_CCD_DATA_LEN];
 
 typedef struct {
+    struct rt_semaphore sem;
+    int ans;
+} ccd_check_sync_t;
+
+static ccd_check_sync_t gs_ccd_sync;
+
+
+typedef struct {
     uint16_t ans_zone0; /* [0...1000) */
     uint16_t ans_zone1; /* [1000...2647] */
     uint16_t ans_zone2; /* (2647,3647] */
@@ -451,36 +459,54 @@ static int check_whether_match_target(drv_tcd1304_target_ans_t *mark, drv_tcd130
 #define COMPARE_THREOLD    150
     int match = 0;
 
-	if (mark->ans_zone0 > cmp->ans_zone0)
-	{
-		match += (mark->ans_zone0 - cmp->ans_zone0 > COMPARE_THREOLD);
-	}
-	else
-	{
-		match += (cmp->ans_zone0 - mark->ans_zone0 > COMPARE_THREOLD);
-	}
+    if (mark->ans_zone0 > cmp->ans_zone0)
+    {
+        match += (mark->ans_zone0 - cmp->ans_zone0 > COMPARE_THREOLD);
+    }
+    else
+    {
+        match += (cmp->ans_zone0 - mark->ans_zone0 > COMPARE_THREOLD);
+    }
 
-	if (mark->ans_zone1 > cmp->ans_zone1)
-	{
-		match += (mark->ans_zone1 - cmp->ans_zone1 > COMPARE_THREOLD);
-	}
-	else
-	{
-		match += (cmp->ans_zone1 - mark->ans_zone1 > COMPARE_THREOLD);
-	}
+    if (mark->ans_zone1 > cmp->ans_zone1)
+    {
+        match += (mark->ans_zone1 - cmp->ans_zone1 > COMPARE_THREOLD);
+    }
+    else
+    {
+        match += (cmp->ans_zone1 - mark->ans_zone1 > COMPARE_THREOLD);
+    }
 
-	if (mark->ans_zone2 > cmp->ans_zone2)
-	{
-		match += (mark->ans_zone2 - cmp->ans_zone2 > COMPARE_THREOLD);
-	}
-	else
-	{
-		match += (cmp->ans_zone2 - mark->ans_zone2 > COMPARE_THREOLD);
-	}
+    if (mark->ans_zone2 > cmp->ans_zone2)
+    {
+        match += (mark->ans_zone2 - cmp->ans_zone2 > COMPARE_THREOLD);
+    }
+    else
+    {
+        match += (cmp->ans_zone2 - mark->ans_zone2 > COMPARE_THREOLD);
+    }
 
-	LOG_I(">--------------no match counts=%d.", match);
+    LOG_I(">--------------no match counts=%d.", match);
 
     return match;
+}
+
+/*
+ * 获取检测的结果
+ * 1 : 匹配
+ * 0 : 不匹配
+ * < 0 : 错误
+ * */
+int get_ccd_check_ans(void)
+{
+    if (RT_EOK == rt_sem_take(&gs_ccd_sync.sem, RT_TICK_PER_SECOND))
+    {
+        return gs_ccd_sync.ans;
+    }
+    else
+    {
+        return -RT_ERROR;
+    }
 }
 
 void DMA0_Channel0_IRQHandler(void)
@@ -517,7 +543,8 @@ void DMA0_Channel0_IRQHandler(void)
             rt_memset(&gs_tcd_cmp_target_ans, 0, sizeof(gs_tcd_cmp_target_ans));
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
             /* check whether match */
-            if (check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans))
+            gs_ccd_sync.ans = check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
+            if (gs_ccd_sync.ans)
             {
                 LOG_I("no match");
             }
@@ -525,6 +552,8 @@ void DMA0_Channel0_IRQHandler(void)
             {
                 LOG_W("match to alarm");
             }
+            /* 释放信号量 */
+            rt_sem_release(&gs_ccd_sync.sem);
         }
     }
 #endif
@@ -613,6 +642,7 @@ static int init_adc_4tcd(unsigned int freq)
  */
 static int drv_tcd1304_init(void)
 {
+    rt_sem_init(&gs_ccd_sync.sem, "check_sem", 0, RT_IPC_FLAG_FIFO);
     test_func();
     /* 測試產生 2MHz 的波形 */
     init_timer4_4fm(CCD_FM_FREQ);
