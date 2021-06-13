@@ -12,9 +12,14 @@
 #include <rtdevice.h>
 #include <math.h>
 
-#define DBG_TAG    "drv.CCD"
 #define DBG_LVL    DBG_INFO
+#define DBG_TAG    "drv.CCD"
 #include <rtdbg.h>
+
+#ifdef LOG_HEX
+#undef LOG_HEX
+#define LOG_HEX()
+#endif
 
 #define CCD_FM_FREQ    2000000
 #define CCD_DATA_LEN    3694
@@ -118,7 +123,7 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
         }
     }
 
-    LOG_I("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
+    LOG_D("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
     return 0;
 }
 
@@ -152,16 +157,16 @@ static int init_timer4_4fm(unsigned int fm_freq)
     TIMER_OCInitPara TIMER_OCInit = {0};
     RCC_ClocksPara RCC_ClocksState = {0};
 
-    LOG_I("init timer4 with fm");
+    LOG_D("init timer4 with fm");
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER4);
     TIMER_InternalClockConfig(TIMER4);
     TIMER_Init.TIMER_Period                = \
 		(RCC_ClocksState.APB1_Frequency  << 1 ) / fm_freq - 1;
-	LOG_I("apb1=%u", RCC_ClocksState.APB1_Frequency);
-	LOG_I("apb2=%u", RCC_ClocksState.APB2_Frequency);
-	LOG_I("ahb=%u", RCC_ClocksState.AHB_Frequency);
+	LOG_D("apb1=%u", RCC_ClocksState.APB1_Frequency);
+	LOG_D("apb2=%u", RCC_ClocksState.APB2_Frequency);
+	LOG_D("ahb=%u", RCC_ClocksState.AHB_Frequency);
     TIMER_Init.TIMER_Prescaler             = 0;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
@@ -274,7 +279,7 @@ static int init_timer3_4icg(unsigned int icg_freq)
     TIMER_OCInitPara TIMER_OCInit = {0};
     RCC_ClocksPara RCC_ClocksState = {0};
 
-    LOG_I("init timer3 with icg");
+    LOG_D("init timer3 with icg");
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER3);
@@ -322,7 +327,7 @@ static int init_timer2_4sh(unsigned int sh_freq)
     TIMER_OCInitPara TIMER_OCInit = {0};
     RCC_ClocksPara RCC_ClocksState = {0};
 
-    LOG_I("init timer2 with sh");
+    LOG_D("init timer2 with sh");
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER2);
@@ -371,14 +376,14 @@ static int init_timer0_4adc(unsigned int freq)
     TIMER_OCInitPara TIMER_OCInit = {0};
     RCC_ClocksPara RCC_ClocksState = {0};
 
-    LOG_I("init timer0 with adc");
+    LOG_D("init timer0 with adc");
 
     RCC_GetClocksFreq(&RCC_ClocksState);
     rcu_periph_clock_enable(RCU_TIMER0);
     TIMER_InternalClockConfig(TIMER0);
     TIMER_Init.TIMER_Period                = \
         RCC_ClocksState.APB2_Frequency / freq - 1;
-    LOG_I("timer0 apb2=%u", RCC_ClocksState.APB2_Frequency);
+    LOG_D("timer0 apb2=%u", RCC_ClocksState.APB2_Frequency);
     TIMER_Init.TIMER_Prescaler             = 0;
     TIMER_Init.TIMER_ClockDivision         = TIMER_CDIV_DIV1;
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
@@ -486,7 +491,7 @@ static int check_whether_match_target(drv_tcd1304_target_ans_t *mark, drv_tcd130
         match += (cmp->ans_zone2 - mark->ans_zone2 > COMPARE_THREOLD);
     }
 
-    LOG_I(">--------------no match counts=%d.", match);
+    LOG_D(">--------------no match counts=%d.", match);
 
     return match;
 }
@@ -543,14 +548,14 @@ void DMA0_Channel0_IRQHandler(void)
             rt_memset(&gs_tcd_cmp_target_ans, 0, sizeof(gs_tcd_cmp_target_ans));
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
             /* check whether match */
-            gs_ccd_sync.ans = check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
+            gs_ccd_sync.ans = !!check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
             if (gs_ccd_sync.ans)
             {
-                LOG_I("no match");
+                LOG_D("no match");
             }
             else
             {
-                LOG_W("match to alarm");
+                LOG_D("match to alarm");
             }
             /* 释放信号量 */
             rt_sem_release(&gs_ccd_sync.sem);
@@ -581,7 +586,7 @@ static int init_adc_4tcd(unsigned int freq)
     ret = init_timer0_4adc(freq);
     if (ret)
     {
-        LOG_E("failed init timer0 for adc.");
+        LOG_D("failed init timer0 for adc.");
         return ret;
     }
 
@@ -626,7 +631,7 @@ static int init_adc_4tcd(unsigned int freq)
     ADC_Calibration(ADC0);
     ADC_RegularChannel_Config(ADC0, ADC_CHANNEL_15, 1, ADC_SAMPLETIME_1POINT5);
     ADC_ExternalTrigConv_Enable(ADC0, ENABLE);
-    LOG_I("enable external clock for adc.");
+    LOG_D("enable external clock for adc.");
 
     /* AD 转换完成就会出发 DMA 请求 */
     ADC_DMA_Enable(ADC0, ENABLE);
@@ -652,7 +657,7 @@ static int drv_tcd1304_init(void)
     init_timer3_4icg(4*3694);
     /* init_timer0_4adc */
     init_adc_4tcd(CCD_FM_FREQ / 4);
-    LOG_I("hello red");
+    LOG_D("hello red");
 }
 /* 降低加載的優先級可以正常調試打印 */
 INIT_DEVICE_EXPORT(drv_tcd1304_init);

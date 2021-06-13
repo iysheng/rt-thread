@@ -16,9 +16,14 @@ enum {
     CCD_CALIBRATE_RESPON = 0x04,
 } can_comm_cmd_E;
 
-#define DBG_LVL               DBG_LOG
+#define DBG_LVL               DBG_INFO
 #define DBG_TAG               "thread.CAN"
 #include <rtdbg.h>
+
+#ifdef LOG_HEX
+#undef LOG_HEX
+#define LOG_HEX(a,b,c,d)
+#endif
 
 #define REMOTE_CCD_MAIN_ADDR  0x01
 #define CAN_DEV_NAME       "can0"               /* CAN 设备名称 */
@@ -47,7 +52,7 @@ static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
     if (msg->data[1] < 10)
     {
         /* TODO 采样标定 */
-        LOG_I("times=%d", msg->data[1]);
+        LOG_D("times=%d", msg->data[1]);
         set_tcd1304_device_marktimes(msg->data[1]);
         NVIC_EnableIRQ(TIMER3_IRQn);
         /* 设置标定成功 */
@@ -80,7 +85,7 @@ static int _set_ccd_check(rt_device_t dev, rt_can_msg_t msg)
     ret = times++ % 2;
 #else
     ret = get_ccd_check_ans();
-    LOG_I("<<<<<<< ret=%d.", ret);
+    LOG_D("<<<<<<< ret=%d.", ret);
 #endif
     /* 设置检测结果 */
     msg->data[5] = (unsigned char)ret;
@@ -131,7 +136,7 @@ void can_backend_entry(void * arg)
     struct rt_can_msg msg = {0};
     gs_can_dev = rt_device_find(CAN_DEV_NAME);
 
-    LOG_I("hello can");
+    LOG_D("hello can");
     if (!gs_can_dev)
     {
         LOG_D("Find %s failed!\n", CAN_DEV_NAME);
@@ -198,7 +203,7 @@ void can_backend_entry(void * arg)
         ret = rt_device_read(gs_can_dev, 0, &msg, sizeof(msg));
         if (ret)
         {
-            LOG_I("id=%x ide=%d", msg.id, msg.ide);
+            LOG_D("id=%x ide=%d", msg.id, msg.ide);
             LOG_HEX("can_fram", 8, msg.data, msg.len);
             switch(msg.data[0])
             {
@@ -219,7 +224,7 @@ void can_backend_entry(void * arg)
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
                 default:
-                    LOG_E("Invalid cmd:%x", msg.data[0]);
+                    LOG_D("Invalid cmd:%x", msg.data[0]);
             }
         }
         rt_thread_mdelay(100);
