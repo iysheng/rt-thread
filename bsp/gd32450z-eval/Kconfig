@@ -20,6 +20,7 @@ config PKGS_DIR
 
 source "$RTT_DIR/Kconfig"
 source "$PKGS_DIR/Kconfig"
+source "applications/Kconfig"
 
 config SOC_GD32450Z
     bool 

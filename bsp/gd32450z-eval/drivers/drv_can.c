@@ -452,7 +452,6 @@ static int _can_sendmsg(struct rt_can_device *can, const void *buf, rt_uint32_t 
         txheader.tx_ft = CAN_RTR_REMOTE;
     }
     txheader.tx_dlen = pmsg->len;
-    LOG_I("len=%d\n", txheader.tx_dlen);
     rt_memcpy(txheader.tx_data, pmsg->data, txheader.tx_dlen);
     can_message_transmit(hcan, &txheader);
 

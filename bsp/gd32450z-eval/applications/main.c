@@ -9,9 +9,11 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <drv_gpio.h>
+#include "can_comm.h"
 
 #define DBG_LVL               DBG_LOG
 #define DBG_TAG               "app.MAIN"
@@ -24,13 +26,27 @@
 #define DBG_LED2_PIN     GET_PIN(B, 2)
 
 extern int tc(int argc, char *argv[]);
+extern int encoder_comm_backend_init(void);
+rt_thread_t gs_encoder_backend;
 int main(void)
 {
+    int ret = 0;
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
 
     LOG_I("tc start.");
-    tc(0, NULL);
+    //tc(0, NULL);
     LOG_I("tc end.");
+
+    gs_encoder_backend = rt_thread_create("encoderB", encoder_comm_backend_init, RT_NULL, 0x1000, 5, 10);
+    if (gs_encoder_backend)
+    {
+        ret = rt_thread_startup(gs_encoder_backend);
+        if (ret)
+        {
+            LOG_E("Failed startup encoder backend thread, err=%d", ret);
+        }
+    }
+
     while(1)
     {
         rt_pin_write(HEART_LED_PIN, PIN_HIGH);
@@ -50,31 +66,20 @@ int main(void)
  * 程序功能：通过 CAN 设备发送一帧，并创建一个线程接收数据然后打印输出。
 */
 
+#if 0
 #include <rtthread.h>
 #include "rtdevice.h"
 
 #define CAN_DEV_NAME       "can0"      /* CAN 设备名称 */
 
-static struct rt_semaphore rx_sem;     /* 用于接收消息的信号量 */
 static rt_device_t can_dev;            /* CAN 设备句柄 */
 
-/* 接收数据回调函数 */
-static rt_err_t can_rx_call(rt_device_t dev, rt_size_t size)
-{
-    /* CAN 接收到数据后产生中断，调用此回调函数，然后发送接收信号量 */
-    rt_sem_release(&rx_sem);
-
-    return RT_EOK;
-}
 
 static void can_rx_thread(void *parameter)
 {
     int i;
     rt_err_t res;
     struct rt_can_msg rxmsg = {0};
-
-    /* 设置接收回调函数 */
-    rt_device_set_rx_indicate(can_dev, can_rx_call);
 
 #ifdef RT_CAN_USING_HDR
     struct rt_can_filter_item items[5] =
@@ -90,17 +95,16 @@ static void can_rx_thread(void *parameter)
     res = rt_device_control(can_dev, RT_CAN_CMD_SET_FILTER, &cfg);
     RT_ASSERT(res == RT_EOK);
 #endif
-
     while (1)
     {
         /* hdr 值为 - 1，表示直接从 uselist 链表读取数据 */
         rxmsg.hdr = -1;
         /* 阻塞等待接收信号量 */
-        rt_sem_take(&rx_sem, RT_WAITING_FOREVER);
-        /* 从 CAN 读取一帧数据 */
+        rt_sem_take(&rx_sem, rt_waiting_forever);
+        /* 从 can 读取一帧数据 */
         rt_device_read(can_dev, 0, &rxmsg, sizeof(rxmsg));
-        /* 打印数据 ID 及内容 */
-        rt_kprintf("ID:%x", rxmsg.id);
+        /* 打印数据 id 及内容 */
+        rt_kprintf("id:%x", rxmsg.id);
         for (i = 0; i < 8; i++)
         {
             rt_kprintf("%2x", rxmsg.data[i]);
@@ -110,89 +114,47 @@ static void can_rx_thread(void *parameter)
     }
 }
 
+#endif
 int tc(int argc, char *argv[])
 {
-    struct rt_can_msg msg = {0};
-    rt_err_t res;
-    rt_size_t  size;
-    rt_thread_t thread;
-    int ret;
-    char can_name[RT_NAME_MAX];
+    unsigned char cmd;
+    unsigned int cmd_args = 1;
 
-    if (argc == 2)
+    if (argc < 2)
     {
-        rt_strncpy(can_name, argv[1], RT_NAME_MAX);
+        set_ccd_calibrate(0x01, 3);
     }
-    else
+    else if (argc == 2)
     {
-        rt_strncpy(can_name, CAN_DEV_NAME, RT_NAME_MAX);
+        switch(atoi(argv[1]))
+        {
+            case 1:
+                LOG_I("set ccd calibrate");
+                set_ccd_calibrate(0x01, 3);
+                break;
+            case 2:
+                LOG_I("set ccd check");
+                set_ccd_check(0x01, 0x12345678);
+                break;
+        }
     }
-    /* 查找 CAN 设备 */
-    can_dev = rt_device_find(can_name);
-    if (!can_dev)
+    else if (argc == 3)
     {
-        rt_kprintf("find %s failed!\n", can_name);
-        return RT_ERROR;
-    }
-
-    /* 初始化 CAN 接收信号量 */
-    rt_sem_init(&rx_sem, "rx_sem", 0, RT_IPC_FLAG_FIFO);
-
-    /* 以中断接收及发送方式打开 CAN 设备 */
-    res = rt_device_open(can_dev, RT_DEVICE_FLAG_INT_TX | RT_DEVICE_FLAG_INT_RX);
-    RT_ASSERT(res == RT_EOK);
-#define CAN_BAUD CAN1MBaud
-	  /* 设置 CAN 通信的波特率为 100kbit/s*/
-    ret = rt_device_control(can_dev, RT_CAN_CMD_SET_BAUD, \
-        (void *)CAN_BAUD);
-	LOG_I("baud=%d\n", CAN_BAUD);
-#if 0
-    ret = rt_device_control(can_dev, RT_CAN_CMD_SET_MODE, \
-        (void *)RT_CAN_MODE_LOOPBACK);
-#else
-    ret = rt_device_control(can_dev, RT_CAN_CMD_SET_MODE, \
-        (void *)RT_CAN_MODE_NORMAL);
-#endif
-    /* 只有使能滤波才可以正常收发数据 */
-    ret = rt_device_control(can_dev, RT_CAN_CMD_SET_FILTER, NULL);
-#if 1
-    /* 创建数据接收线程 */
-    thread = rt_thread_create("can_rx", can_rx_thread, RT_NULL, 1024, 25, 10);
-    if (thread != RT_NULL)
-    {
-        rt_thread_startup(thread);
-    }
-    else
-    {
-        rt_kprintf("create can_rx thread failed!\n");
-    }
-#endif
-
-    msg.id = 0x78;              /* ID 为 0x78 */
-    msg.ide = RT_CAN_STDID;     /* 标准格式 */
-    msg.rtr = RT_CAN_DTR;       /* 数据帧 */
-    msg.len = 8;                /* 数据长度为 8 */
-    /* 待发送的 8 字节数据 */
-    msg.data[0] = 0x00;
-    msg.data[1] = 0x11;
-    msg.data[2] = 0x22;
-    msg.data[3] = 0x33;
-    msg.data[4] = 0x44;
-    msg.data[5] = 0x55;
-    msg.data[6] = 0x66;
-    msg.data[7] = 0x77;
-    LOG_I("send data start.");
-    /* 发送一帧 CAN 数据 */
-    size = rt_device_write(can_dev, 0, &msg, sizeof(msg));
-    LOG_I("send data end.");
-    if (size == 0)
-    {
-        rt_kprintf("can dev write data failed!\n");
+        switch(atoi(argv[1]))
+        {
+            case 1:
+                LOG_I("set ccd calibrate");
+                set_ccd_calibrate(0x01, (unsigned char)atoi(argv[2]));
+                break;
+            case 2:
+                LOG_I("set ccd check");
+                set_ccd_check(0x01, (unsigned int)atoi(argv[2]));
+                break;
+        }
     }
 
-    return res;
+    return 0;
 }
 /* 导出到 msh 命令列表中 */
 MSH_CMD_EXPORT(tc, can device sample);
-
 
