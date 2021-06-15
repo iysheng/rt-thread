@@ -22,7 +22,7 @@ enum {
 
 #define CAN_DEV_NAME       "can0"               /* CAN 设备名称 */
 #define CAN_BAUD           CAN1MBaud            /* 使用 1Mb 的速率通讯 */
-#define CAN_RECV_MAX_DELAY (RT_TICK_PER_SECOND / 50)   /* 最长等待时间为 1s */
+#define CAN_RECV_MAX_DELAY (RT_TICK_PER_SECOND / 5)   /* 最长等待时间为 1s */
 
 static struct rt_semaphore gs_can_rx_sem;
 static rt_device_t gs_can_dev;
@@ -117,6 +117,7 @@ static int _set_ccd_check(rt_device_t dev, unsigned char addr, unsigned int id)
     msg.data[4] = id & 0xff;
     /* 异或校验结果 */
     msg.data[7] = CCD_CHECK ^ msg.data[1] ^ msg.data[2] ^ msg.data[3] ^ msg.data[4];
+    ret = rt_sem_control(&gs_can_rx_sem, RT_IPC_CMD_RESET, 0);
     if (sizeof(msg) == rt_device_write(dev, 0, &msg, sizeof(msg)))
     {
         /* 阻塞等待接收信号量 */
@@ -141,8 +142,8 @@ static int _set_ccd_check(rt_device_t dev, unsigned char addr, unsigned int id)
         else if ((CCD_CHECK_RESPON != rx_msg.data[0]) || (rx_msg.data[1] << 24 | rx_msg.data[2] << 16 |
             rx_msg.data[3] << 8 | rx_msg.data[4] != id))
         {
-            LOG_D("Respon no check cmd or id");
-            return -EACCES;
+            LOG_I("Respon no check cmd or id rx_msg.data[0]=%d", rx_msg.data[0]);
+            return CCD_CHECK_RESPON != rx_msg.data[0] ? -EACCES : -EFAULT;
         }
         else
         {

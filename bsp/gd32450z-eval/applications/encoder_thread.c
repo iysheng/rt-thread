@@ -44,17 +44,22 @@ int encoder_comm_backend_init(void)
         {
             ret = set_ccd_check(1, id++);
             LOG_I("ret=%d", ret);
-            if (!ret)
+            if (1 == ret)
             {
                 LOG_I("No match");
                 rt_pin_write(RELAY_PIN0, PIN_HIGH);
                 rt_pin_write(RELAY_PIN1, PIN_HIGH);
+                rt_thread_mdelay(1000);
+                rt_pin_write(RELAY_PIN0, PIN_LOW);
+                rt_pin_write(RELAY_PIN1, PIN_LOW);
             }
-            else if (1 == ret)
+            else if (!ret)
             {
+#if 0
                 LOG_I("Match");
                 rt_pin_write(RELAY_PIN0, PIN_LOW);
                 rt_pin_write(RELAY_PIN1, PIN_LOW);
+#endif
             }
             else
             {
