@@ -172,5 +172,6 @@
 #define BSP_USING_CAN
 #define RT_USING_CAN0
 #define BSP_USING_ENCODER
+#define BSP_USING_ST75256
 
 #endif

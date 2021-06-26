@@ -80,3 +80,7 @@ menuconfig BSP_USING_ENCODER
     default n
     if BSP_USING_ENCODER
     endif
+
+config BSP_USING_ST75256
+    bool "using st75256 lcd chip driver"
+    default n
