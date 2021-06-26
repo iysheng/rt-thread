@@ -183,6 +183,15 @@ void clear_area(uint8_t x_zone, uint8_t y_zone)
     }
 }
 
+void show_partial_zone(uint8_t y_zone_min, uint8_t y_zone_max)
+{
+    /* TODO check zone valid */
+    write_cmd(0x30);
+    write_cmd(0xa8);
+    write_data(y_zone_min);
+    write_data(y_zone_max);
+}
+
 void _st75256_chip_init(void)
 {
     gpio_bit_write(GPIOD, LCD_RSTB_PIN, SET);
@@ -272,10 +281,9 @@ static int rt_hw_st75256_init(void)
 
     _st75256_chip_init();
     clear_area(100, 80);
-#if 0
-    gpio_bit_write(GPIOD, LCD_CS_PIN, SET);
-    gpio_bit_write(GPIOD, LCD_RSTB_PIN, SET);
-#endif
+    show_partial_zone(50, 100);
+    rt_thread_mdelay(1000);
+    write_cmd(0xa9);
 
     LOG_I("Hello screen");
 
