@@ -20,8 +20,8 @@ extern void can_backend_entry(void * arg);
 
 int main(void)
 {
-#if 0
-#define RPA12  GET_PIN(A, 12)
+#if 1
+#define RPA12  GET_PIN(A, 8)
     rt_pin_mode(RPA12, PIN_MODE_OUTPUT);
 #endif
     gs_can_thread = rt_thread_create("canBack", can_backend_entry, RT_NULL, 0x800, 5, 10);
@@ -38,7 +38,7 @@ int main(void)
 
     while (1)
     {
-#if 0
+#if 1
         rt_pin_write(RPA12, PIN_LOW);
         rt_thread_mdelay(500);
         rt_pin_write(RPA12, PIN_HIGH);
