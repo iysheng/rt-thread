@@ -31,9 +31,13 @@
 #define SH_GND1         GET_PIN(C, 4)
 #define ICG_GND0        GET_PIN(B, 9)
 
+/* 原始 AD 数据 */
 static uint16_t g_tcd_convert_data[CCD_DATA_LEN];
+/* 滤波后的 AD 数据 */
 static uint16_t g_tcd_convert_data_filter[VALID_CCD_DATA_LEN];
+/* 用来标记对比的以及滤波后的 AD 数据 */;
 static uint16_t g_tcd_convert_data_filter4mark[VALID_CCD_DATA_LEN];
+/* 实际测试的已经滤波后的 AD 数据 */
 static uint16_t g_tcd_convert_data_filter4cmp[VALID_CCD_DATA_LEN];
 
 typedef struct {
@@ -255,20 +259,16 @@ void TIMER3_IRQHandler(void)
     rt_interrupt_enter();
     TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
     /* 如果需要对采样的数据 AD 转换 */
-    if (g_tcd1304_device_data.should_scan > 0)
-    {
 #if 0
         rt_kprintf("should_scan=%d\n", g_tcd1304_device_data.should_scan);
         if ((g_tcd1304_device_data.mark_times != 0 && g_tcd1304_device_data.should_scan == g_tcd1304_device_data.mark_times) || g_tcd1304_device_data.mark_times == 0)
         {
 #endif
-            g_tcd1304_device_data.should_scan--;
             DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
             TIMER_Enable(TIMER0, ENABLE);
 #if 0
         }
 #endif
-    }
     rt_interrupt_leave();
 }
 
@@ -543,12 +543,13 @@ void DMA0_Channel0_IRQHandler(void)
     else
     {
         do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
-        if (g_tcd1304_device_data.should_scan == 0)
+        if (g_tcd1304_device_data.should_scan > 0)
         {
             rt_memset(&gs_tcd_cmp_target_ans, 0, sizeof(gs_tcd_cmp_target_ans));
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
             /* check whether match */
             gs_ccd_sync.ans = !!check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
+            g_tcd1304_device_data.should_scan = 0;
             if (gs_ccd_sync.ans)
             {
                 LOG_D("no match");
