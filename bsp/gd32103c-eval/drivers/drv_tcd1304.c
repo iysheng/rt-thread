@@ -352,7 +352,7 @@ static int init_timer2_4sh(unsigned int sh_freq)
     TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM2;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
     /* 0.25 * 6 us */
-    TIMER_OCInit.TIMER_Pulse = 5;
+    TIMER_OCInit.TIMER_Pulse = 7;
     TIMER_OCInit.TIMER_OCPolarity = TIMER_OC_POLARITY_HIGH;
     TIMER_OCInit.TIMER_OCIdleState = TIMER_OC_IDLE_STATE_RESET;
     TIMER_OC2_Init(TIMER2, &TIMER_OCInit);
