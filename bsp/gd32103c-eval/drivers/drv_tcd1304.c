@@ -34,7 +34,7 @@
 /* 同步 DMA 处理完成 AD 采样后的 ICG 中断, DMA0 中断完成后,跳过第一个 ICG 中断 */
 static int gs_dma0_dummy4timer3 = 0;
 static uint16_t g_tcd_convert_data[CCD_DATA_LEN];
-static uint16_t g_tcd_convert_data_filter[VALID_CCD_DATA_LEN];
+static uint16_t g_tcd_convert_data_filter[CCD_DATA_LEN];
 static uint16_t g_tcd_convert_data_filter4mark[VALID_CCD_DATA_LEN];
 static uint16_t g_tcd_convert_data_filter4cmp[VALID_CCD_DATA_LEN];
 
@@ -60,10 +60,14 @@ static drv_tcd1304_target_ans_t gs_tcd_cmp_target_ans;
 static uint16_t _get_stand_value(uint16_t *data, int data_len)
 {
     /* 初始化参考的标准值 */
+    uint32_t stand_value = 0;
+    uint32_t value_counts = 0;
+    int i = 0;
+#if 0
+    /* 初始化参考的标准值 */
     double stand_value = 0;
     double value_counts = 0, value4tmp = 0;
     int i = 0;
-
     for (; i < data_len; i++)
     {
         value4tmp = (double)data[i];
@@ -73,6 +77,15 @@ static uint16_t _get_stand_value(uint16_t *data, int data_len)
     stand_value = (uint16_t)sqrt(value_counts);
 
     return stand_value;
+#else
+    for (; i < data_len; i++)
+    {
+        value_counts += data[i];
+    }
+    value_counts /= data_len;
+
+    return value_counts;
+#endif
 }
 
 static int do_format_data(uint16_t *data, int data_len)
@@ -103,6 +116,19 @@ static int do_xor_with_data(uint16_t *target, uint16_t *data, int data_len)
     return 0;
 }
 
+static int do_sum2_with_data(uint16_t *target, uint16_t *data, int data_len)
+{
+    int i = 0;
+
+    for (; i < data_len; i++)
+    {
+        target[i] += data[i];
+        target[i] /= 2;
+    }
+
+    return 0;
+}
+
 /* 统计 0 / 1 数量 */
 static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_ans_t *ans_data)
 {
@@ -127,7 +153,7 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
         }
     }
 
-    LOG_D("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
+    LOG_I("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
     return 0;
 }
 
@@ -220,7 +246,10 @@ static drv_tcd1304_data_t g_tcd1304_device_data = {
  */
 int set_tcd1304_device_data(int data)
 {
-    rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, sizeof(uint16_t) * VALID_CCD_DATA_LEN);
+    if (data != 3)
+    {
+        rt_memset(&g_tcd_convert_data_filter4cmp[0], 0, sizeof(uint16_t) * VALID_CCD_DATA_LEN);
+    }
     g_tcd1304_device_data.should_scan = data;
     return 0;
 }
@@ -259,7 +288,7 @@ void TIMER3_IRQHandler(void)
     rt_interrupt_enter();
     TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
     /* 如果需要对采样的数据 AD 转换 */
-    if (g_tcd1304_device_data.should_scan > 0)
+    if (g_tcd1304_device_data.should_scan & 0x01)
     {
 #if 0
         rt_kprintf("should_scan=%d\n", g_tcd1304_device_data.should_scan);
@@ -273,7 +302,7 @@ void TIMER3_IRQHandler(void)
         }
         else
         {
-            g_tcd1304_device_data.should_scan--;
+            g_tcd1304_device_data.should_scan &= ~0x01;
             DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
             TIMER_SetCounter(TIMER0, 0);
             TIMER_Enable(TIMER0, ENABLE);
@@ -459,14 +488,16 @@ void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
     int i = 1;
     float tmp_data_raw, tmp_data_filter;
 
+#if 0
     /* 提取有效的数据 [33...3680]*/
     rt_memmove(src, src + 33, len);
+#endif
 
     dst[0] = src[0];
     for (; i < len; i++)
     {
         tmp_data_filter = dst[i - 1];
-        tmp_data_raw = src[i];
+        tmp_data_raw = src[33 + i];
         tmp_data_filter = tmp_data_filter + (alpha * (tmp_data_raw - tmp_data_filter));
         dst[i] = tmp_data_filter;
     }
@@ -527,37 +558,44 @@ int get_ccd_check_ans(void)
     }
 }
 
+static int abc;
 void DMA0_Channel0_IRQHandler(void)
 {
     unsigned int voltage = 0;
     /* enter interrupt */
     rt_interrupt_enter();
+
+        rt_pin_write(GET_PIN(A, 8), abc++ % 2);
     TIMER_Enable(TIMER0, DISABLE);
     DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
+    //////////////////
+#if 1
 #if 0
     show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
 #endif
-    do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
+    //do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
 #if 0
     show_voltage("filter", g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
 #endif
-    do_format_data(g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+    do_sum2_with_data(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN);
 #if 1
     /* TODO check whether use filtered data mark stand */
     if (g_tcd1304_device_data.mark_times > 0)
     {
-        do_xor_with_data(g_tcd_convert_data_filter4mark, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+
+            do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN, 0.1);
+            do_format_data(g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN);
         if (--g_tcd1304_device_data.mark_times == 0)
         {
-            rt_memset(&gs_tcd_mark_target_ans, 0, sizeof(gs_tcd_mark_target_ans));
             do_get_target_ans(g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN, &gs_tcd_mark_target_ans);
         }
     }
     else
     {
-        do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
-        if (g_tcd1304_device_data.should_scan == 0)
+        if (g_tcd1304_device_data.should_scan & 0x02)
         {
+            do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, 0.1);
+            do_format_data(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN);
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
             /* check whether match */
             gs_ccd_sync.ans = !!check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
@@ -581,6 +619,7 @@ void DMA0_Channel0_IRQHandler(void)
     show_voltage("filter", g_tcd_convert_data_filter, CCD_DATA_LEN);
 #endif
     /* leave interrupt */
+#endif
     rt_interrupt_leave();
 }
 

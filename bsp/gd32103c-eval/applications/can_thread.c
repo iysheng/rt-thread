@@ -76,15 +76,15 @@ static int _set_ccd_check(rt_device_t dev, rt_can_msg_t msg)
     int ret;
 
     RT_ASSERT(dev);
-    /* TODO 采样标定 */
-    set_tcd1304_device_data(1);
-    NVIC_EnableIRQ(TIMER3_IRQn);
 #if 0
+    NVIC_EnableIRQ(TIMER3_IRQn);
     /* test code need delete  */
     static int times;
     ret = times++ % 2;
 #else
+    set_tcd1304_device_data(3);
     ret = get_ccd_check_ans();
+    set_tcd1304_device_data(1);
     LOG_D("<<<<<<< ret=%d.", ret);
 #endif
     /* 设置检测结果 */
