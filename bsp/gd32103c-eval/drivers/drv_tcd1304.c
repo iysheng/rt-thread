@@ -106,7 +106,9 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
 {
     int i = 0;
     static const int cmp_index_array[2] = {1000, 2647};
-
+    ans_data->ans_zone0 = 0;
+    ans_data->ans_zone1 = 0;
+    ans_data->ans_zone2 = 0;
     for (; i < data_len; i++)
     {
         if (i < cmp_index_array[0])
