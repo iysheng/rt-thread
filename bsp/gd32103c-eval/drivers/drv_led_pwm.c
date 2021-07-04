@@ -20,7 +20,7 @@
 #endif
 static rt_uint32_t g_led_pwm_frq_max = LED_PWM_MAX;
 static rt_uint32_t g_led_pwm_pin_value;
-#define LED_PWM_PIN_NUM    GET_PIN(B, 11)
+#define LED_PWM_PIN_NUM    GET_PIN(A, 15)
 
 /*
  * static int init_timer1_4led
@@ -51,7 +51,7 @@ static int init_timer1_4led(unsigned int freq, unsigned int cycle)
         cycle = 99;
     }
     rcu_periph_clock_enable(RCU_TIMER1);
-    rcu_periph_clock_enable(RCU_GPIOB);
+    rcu_periph_clock_enable(RCU_GPIOA);
     RCC_GetClocksFreq(&RCC_ClocksState);
 
     TIMER_InternalClockConfig(TIMER1);
@@ -67,20 +67,21 @@ static int init_timer1_4led(unsigned int freq, unsigned int cycle)
     TIMER_Init.TIMER_CounterMode           = TIMER_COUNTER_UP;
     TIMER_BaseInit(TIMER1, &TIMER_Init);
 
-    /* remap PB11 to TIMER1_CH3 */
+    /* remap PA15 to TIMER1_CH0 */
     rcu_periph_clock_enable(RCU_AF);
-    GPIO_PinRemapConfig(GPIO_FULL_REMAP_TIMER2, ENABLE);
-    /* 初始化 PB11 */
-    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_11;
+    GPIO_PinRemapConfig(GPIO_REMAP_SWJ_JTAGDISABLE, ENABLE);
+    GPIO_PinRemapConfig(GPIO_PARTIAL_REMAP1_TIMER2, ENABLE);
+    /* 初始化 PA15 */
+    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_15;
     GPIO_InitStructure.GPIO_Mode = GPIO_MODE_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_SPEED_50MHZ;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     TIMER_OCInit.TIMER_OCMode = TIMER_OC_MODE_PWM1;
     TIMER_OCInit.TIMER_OutputState = TIMER_OUTPUT_STATE_ENABLE;
     TIMER_OCInit.TIMER_Pulse = \
         TIMER_Init.TIMER_Period * cycle / 100;
-    TIMER_OC4_Init(TIMER1, &TIMER_OCInit);
+    TIMER_OC1_Init(TIMER1, &TIMER_OCInit);
     /* 開啓計數 */
     TIMER_Enable(TIMER1, ENABLE);
 }
