@@ -31,8 +31,8 @@
 #define SH_GND1         GET_PIN(C, 4)
 #define ICG_GND0        GET_PIN(B, 9)
 
-        static int abc;
-static int dma0_dummy4timer3 = 0;
+/* 同步 DMA 处理完成 AD 采样后的 ICG 中断, DMA0 中断完成后,跳过第一个 ICG 中断 */
+static int gs_dma0_dummy4timer3 = 0;
 static uint16_t g_tcd_convert_data[CCD_DATA_LEN];
 static uint16_t g_tcd_convert_data_filter[VALID_CCD_DATA_LEN];
 static uint16_t g_tcd_convert_data_filter4mark[VALID_CCD_DATA_LEN];
@@ -127,7 +127,7 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
         }
     }
 
-    LOG_I("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
+    LOG_D("target_ans=[%u,%u,%u]", ans_data->ans_zone0, ans_data->ans_zone1, ans_data->ans_zone2);
     return 0;
 }
 
@@ -251,14 +251,13 @@ int set_tcd1304_device_marktimes(int data)
  */
 int get_tcd1304_device_data(void)
 {
-	return g_tcd1304_device_data.should_scan;
+    return g_tcd1304_device_data.should_scan;
 }
 
 void TIMER3_IRQHandler(void)
 {
     rt_interrupt_enter();
     TIMER_ClearIntBitState(TIMER3, TIMER_INT_UPDATE);
-    rt_pin_write(GET_PIN(A, 8), abc++ % 2);
     /* 如果需要对采样的数据 AD 转换 */
     if (g_tcd1304_device_data.should_scan > 0)
     {
@@ -267,18 +266,18 @@ void TIMER3_IRQHandler(void)
         if ((g_tcd1304_device_data.mark_times != 0 && g_tcd1304_device_data.should_scan == g_tcd1304_device_data.mark_times) || g_tcd1304_device_data.mark_times == 0)
         {
 #endif
-
-        if (dma0_dummy4timer3 == 1)
+        /* DMA 中断后为了保持同步,跳过第一个 ICG 中断 */
+        if (gs_dma0_dummy4timer3 == 1)
         {
-            dma0_dummy4timer3 = 0;
+            gs_dma0_dummy4timer3 = 0;
         }
         else
-            {
-                g_tcd1304_device_data.should_scan--;
-                DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
-                TIMER_SetCounter(TIMER0, 0);
-                TIMER_Enable(TIMER0, ENABLE);
-            }
+        {
+            g_tcd1304_device_data.should_scan--;
+            DMA_SetCurrDataCounter(DMA0_CHANNEL1, 0);
+            TIMER_SetCounter(TIMER0, 0);
+            TIMER_Enable(TIMER0, ENABLE);
+        }
 #if 0
         }
 #endif
@@ -574,7 +573,8 @@ void DMA0_Channel0_IRQHandler(void)
             rt_sem_release(&gs_ccd_sync.sem);
         }
         g_tcd1304_device_data.should_scan = 1;
-        dma0_dummy4timer3 = 1;
+        /* 标记 DMA 中断结束 */
+        gs_dma0_dummy4timer3 = 1;
     }
 #endif
 #if 0
