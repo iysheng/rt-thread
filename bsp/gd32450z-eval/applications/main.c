@@ -28,13 +28,23 @@
 extern int tc(int argc, char *argv[]);
 extern int encoder_comm_backend_init(void);
 rt_thread_t gs_encoder_backend;
+
+struct EXTERNAL_GFX_OP
+{
+	void (*draw_pixel)(int x, int y, unsigned int rgb);
+	void (*fill_rect)(int x0, int y0, int x1, int y1, unsigned int rgb);
+}my_gfx_op;
+
+extern void st7525_fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb);
+extern void st7525_draw_point(int x, int y, unsigned int rgb);
+extern void startHelloStar(void* phy_fb, int width, int height, int color_bytes, struct EXTERNAL_GFX_OP* gfx_op);
 int main(void)
 {
     int ret = 0;
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
 
     LOG_I("tc start.");
-    //tc(0, NULL);
+    tc(0, NULL);
     LOG_I("tc end.");
 
     gs_encoder_backend = rt_thread_create("encoderB", encoder_comm_backend_init, RT_NULL, 0x1000, 5, 10);
@@ -46,7 +56,9 @@ int main(void)
             LOG_E("Failed startup encoder backend thread, err=%d", ret);
         }
     }
-
+    //my_gfx_op.fill_rect = st7525_fill_rect;
+    my_gfx_op.draw_pixel = st7525_draw_point;
+    startHelloStar(NULL, 256, 160, 1, &my_gfx_op);
     while(1)
     {
         rt_pin_write(HEART_LED_PIN, PIN_HIGH);

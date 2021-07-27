@@ -4,6 +4,7 @@ from building import *
 
 cwd     = os.path.join(str(Dir('#')), 'applications')
 src	= Glob('main.c')
+src	+= Glob('GUI/UIcode.cpp')
 
 CPPPATH = [cwd, str(Dir('#'))]
 

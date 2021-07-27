@@ -10,6 +10,10 @@
 #include<rtthread.h>
 #include<rtdevice.h>
 
+#define WHITE_RGB_CODE      0x00
+#define BLACK_RGB_CODE      0xff
+unsigned char gs_display_buffer[256][20];
+
 /* PD[0..7] LCD_AD[0..7]
  * PD8      LCD_CS
  * PD9      LCD_A0
@@ -143,7 +147,7 @@ static void _st75256_pin_init(void)
 #endif
 }
 
-void clealddram()
+void clear_dram()
 {
     int i,j;
     write_cmd(0x30);
@@ -158,7 +162,7 @@ void clealddram()
     {
         for(j=0;j<256;j++)
         {
-            write_data(0xff);
+            write_data(WHITE_RGB_CODE);
         }
     }
 }
@@ -190,6 +194,99 @@ void show_partial_zone(uint8_t y_zone_min, uint8_t y_zone_max)
     write_cmd(0xa8);
     write_data(y_zone_min);
     write_data(y_zone_max);
+}
+
+/**
+  * @brief 在指定的位置显示内容
+  * @param int x: 
+  * @param int y: 
+  * @param unsigned char wb_code: 
+  * retval .
+  */
+static void _st75256_display_at_pos(int x, int y, unsigned char wb_code)
+{
+    /* TODO check x and y valid
+     * x must [0, 159]
+     * y must mod 8 ---> y % 8 == 0
+     * */
+    write_cmd(0x30);
+    write_cmd(0x15);    // Column Address Setting
+    write_data(x);
+    write_data(x);
+    write_cmd(0x75);    // Page Address Setting
+    write_data(y / 8);
+    write_data(y / 8);
+    write_cmd(0x5c);
+    write_data(wb_code);
+}
+
+/**
+  * @brief 在指定坐标打点
+  * @param int x: 
+  * @param int y: 
+  * @param unsigned int rgb: 
+  * retval None.
+  */
+void st7525_draw_point(int x, int y, unsigned int rgb)
+{
+    int x_index, y_index, y_index_mod;
+
+    x_index = x;
+    y_index = y / 8;
+    y_index_mod = y % 8;
+    if (!!rgb)
+    {
+        if (0 == (gs_display_buffer[x_index][y_index] & 1 << y_index_mod))
+        {
+            gs_display_buffer[x_index][y_index] |= 1 << y_index_mod;
+            _st75256_display_at_pos(x_index, y_index * 8, gs_display_buffer[x_index][y_index]);
+        }
+    }
+    else
+    {
+        if (0 != (gs_display_buffer[x_index][y_index] & 1 << y_index_mod))
+        {
+            gs_display_buffer[x_index][y_index] &= ~(1 << y_index_mod);
+            _st75256_display_at_pos(x_index, y_index * 8, gs_display_buffer[x_index][y_index]);
+        }
+    }
+
+}
+
+/**
+  * @brief 填充在指定区域
+  * @param int x0: 
+  * @param int y0: 
+  * @param int x1: 
+  * @param int y2: 
+  * @param unsigned int rgb: 
+  * retval .
+  */
+void st7525_fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb)
+{
+    int i,j;
+    /* TODO check x0 < x1 && y0 < y1 */
+    write_cmd(0x30);
+    write_cmd(0x15);    // Column Address Setting
+    write_data(x0 & 0xff);
+    write_data(x1 & 0xff);
+    write_data((y0 / 8 & 0xff) / 8);
+    write_data((y1 / 8 & 0xff) / 8);
+    /* write data to display ram */
+    write_cmd(0x5c);
+    for(i = 0; i < 1 + (y1 - y0) / 8; i++)
+    {
+        for(j = 0; j < x1 - x0 + 1; j++)
+        {
+            write_data(rgb ? BLACK_RGB_CODE : WHITE_RGB_CODE);
+        }
+    }
+#if 0
+    write_cmd(0xa8);
+    write_data(y0);
+    write_data(y1);
+    write_cmd(0xa9);
+#endif
 }
 
 void _st75256_chip_init(void)
@@ -270,7 +367,7 @@ void _st75256_chip_init(void)
     write_cmd(0x31);   //Extension Command2
     write_cmd(0x40);   //Internal Power Supply
     
-    clealddram();
+    clear_dram();
     write_cmd(0xaf);  //Display ON
 }
 
@@ -280,12 +377,11 @@ static int rt_hw_st75256_init(void)
     gpio_bit_write(GPIOD, LCD_CS_PIN, RESET);
 
     _st75256_chip_init();
-    clear_area(100, 80);
-    show_partial_zone(50, 100);
-    rt_thread_mdelay(1000);
     write_cmd(0xa9);
-
     LOG_I("Hello screen");
+    st7525_fill_rect(10, 10, 20, 20, BLACK_RGB_CODE);
+    st7525_draw_point(2, 2, BLACK_RGB_CODE);
 
+    return 0;
 }
 INIT_DEVICE_EXPORT(rt_hw_st75256_init);
