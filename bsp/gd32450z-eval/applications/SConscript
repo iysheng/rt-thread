@@ -16,6 +16,10 @@ if GetDepend('BSP_USING_CAN_COMM'):
 if GetDepend('BSP_USING_ENCODER'):
     src += ['encoder_thread.c']
 
+# add screen backend support
+if GetDepend('BSP_USING_ST75256'):
+    src += ['screen_thread.c']
+
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')

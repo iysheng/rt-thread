@@ -19,7 +19,7 @@
 #define RELAY_PIN1    GET_PIN(E, 3)
 
 extern void *get_sync_obj_encoder(void);
-int encoder_comm_backend_init(void)
+void encoder_comm_backend_init(void)
 {
     unsigned int id = 0;
     int ret;
@@ -28,7 +28,7 @@ int encoder_comm_backend_init(void)
     if (!drv_encoder_sem)
     {
         LOG_E("Failed get encoder sem.");
-        return -ENODEV;
+        return;
     }
 
     /* TODO Init Relay Pin */
@@ -73,6 +73,4 @@ int encoder_comm_backend_init(void)
         }
 #endif
     }
-
-    return 0;
 }

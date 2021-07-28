@@ -252,7 +252,7 @@ void st7525_draw_point(int x, int y, unsigned int rgb)
     }
 
 }
-
+#if 0
 /**
   * @brief 填充在指定区域
   * @param int x0: 
@@ -270,9 +270,18 @@ void st7525_fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb)
     write_cmd(0x15);    // Column Address Setting
     write_data(x0 & 0xff);
     write_data(x1 & 0xff);
-    write_data((y0 / 8 & 0xff) / 8);
-    write_data((y1 / 8 & 0xff) / 8);
+    write_cmd(0x75);    // Page Address Setting
+    write_data((y0 / 8 & 0xff));
+    write_data((y1 / 8 & 0xff));
     /* write data to display ram */
+    if (y0 % 8)
+    {
+
+    }
+    if (y1 % 8)
+    {
+
+    }
     write_cmd(0x5c);
     for(i = 0; i < 1 + (y1 - y0) / 8; i++)
     {
@@ -288,6 +297,7 @@ void st7525_fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb)
     write_cmd(0xa9);
 #endif
 }
+#endif
 
 void _st75256_chip_init(void)
 {
@@ -379,8 +389,6 @@ static int rt_hw_st75256_init(void)
     _st75256_chip_init();
     write_cmd(0xa9);
     LOG_I("Hello screen");
-    st7525_fill_rect(10, 10, 20, 20, BLACK_RGB_CODE);
-    st7525_draw_point(2, 2, BLACK_RGB_CODE);
 
     return 0;
 }

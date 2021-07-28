@@ -26,18 +26,10 @@
 #define DBG_LED2_PIN     GET_PIN(B, 2)
 
 extern int tc(int argc, char *argv[]);
-extern int encoder_comm_backend_init(void);
-rt_thread_t gs_encoder_backend;
+extern void encoder_comm_backend_init(void);
+extern void screen_backend_entry(void);
+static rt_thread_t gs_encoder_backend, gs_screen_backend;
 
-struct EXTERNAL_GFX_OP
-{
-	void (*draw_pixel)(int x, int y, unsigned int rgb);
-	void (*fill_rect)(int x0, int y0, int x1, int y1, unsigned int rgb);
-}my_gfx_op;
-
-extern void st7525_fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb);
-extern void st7525_draw_point(int x, int y, unsigned int rgb);
-extern void startHelloStar(void* phy_fb, int width, int height, int color_bytes, struct EXTERNAL_GFX_OP* gfx_op);
 int main(void)
 {
     int ret = 0;
@@ -56,9 +48,15 @@ int main(void)
             LOG_E("Failed startup encoder backend thread, err=%d", ret);
         }
     }
-    //my_gfx_op.fill_rect = st7525_fill_rect;
-    my_gfx_op.draw_pixel = st7525_draw_point;
-    startHelloStar(NULL, 256, 160, 1, &my_gfx_op);
+    gs_screen_backend = rt_thread_create("screenB", screen_backend_entry, RT_NULL, 0x1000, 5, 10);
+    if (gs_screen_backend)
+    {
+        ret = rt_thread_startup(gs_screen_backend);
+        if (ret)
+        {
+            LOG_E("Failed startup screen backend thread, err=%d", ret);
+        }
+    }
     while(1)
     {
         rt_pin_write(HEART_LED_PIN, PIN_HIGH);
