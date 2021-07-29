@@ -10,13 +10,13 @@ extern "C" void rt_kprintf(const char *fmt, ...);
 #define GL_ARGB(a, r, g, b) ((((unsigned int)(a)) << 24) | (((unsigned int)(r)) << 16) | (((unsigned int)(g)) << 8) | ((unsigned int)(b)))
 #define GL_ARGB_A(rgb) ((((unsigned int)(rgb)) >> 24) & 0xFF)
 
-#define GL_RGB(r, g, b) (!!((r << 11 | g << 5 | b) & 0xffff))
+#define GL_RGB(r, g, b) (!((r << 11 | g << 5 | b) & 0xffff))
 #define GL_RGB_R(rgb) ((((unsigned int)(rgb)) >> 16) & 0xFF)
 #define GL_RGB_G(rgb) ((((unsigned int)(rgb)) >> 8) & 0xFF)
 #define GL_RGB_B(rgb) (((unsigned int)(rgb)) & 0xFF)
 
 #define GL_RGB_32_to_16(rgb) (!!rgb)
-#define GL_RGB_16_to_32(rgb) (!!rgb)
+#define GL_RGB_16_to_32(rgb) (!rgb)
 
 #define ALIGN_HCENTER		0x00000000L
 #define ALIGN_LEFT			0x01000000L

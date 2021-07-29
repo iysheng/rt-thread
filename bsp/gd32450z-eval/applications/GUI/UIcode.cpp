@@ -18,9 +18,6 @@ enum WND_ID
     ID_LABEL_1_1,
     ID_LABEL_2_1,
     ID_LABEL_3_1,
-    ID_CIRCLE,
-    ID_CIRCLE_HAN,
-    ID_LABEL_N,
 };
 
 class c_my_ui : public c_wnd
@@ -35,13 +32,14 @@ class c_my_ui : public c_wnd
 extern const BITMAP_INFO biaopan0_bmp;
 extern const BITMAP_INFO jari_logo_40_bmp;
         c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &jari_logo_40_bmp, 64, 0);
+#if 0
         c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &biaopan0_bmp, 156, 60);
 
         c_label_ptr = (c_label *)get_wnd_ptr(ID_CIRCLE);
         c_label_ptr->set_align_type(ALIGN_HCENTER | ALIGN_VCENTER);
         c_label_ptr = (c_label *)get_wnd_ptr(ID_CIRCLE_HAN);
         c_label_ptr->set_align_type(ALIGN_HCENTER | ALIGN_VCENTER);
-
+#endif
     }
 public:
     static int s_init_my_ui_flag;
@@ -79,10 +77,6 @@ WND_TREE s_main_widgets[] =
 	{ NULL,		ID_LABEL_2_1,	"0.0",	75, 80, 60, 38},
 	/* 风級數值 */
 	{ NULL,		ID_LABEL_3_1,	"0",	75, 120, 175, 38},
-	/* 風向 */
-	{ NULL,		ID_CIRCLE,	"0",	180, 108, 52, 38},
-	{ NULL,		ID_CIRCLE_HAN,	"\xe5\x8c\x97",	180, 77, 52, 38},
-	{ NULL,		ID_LABEL_N,	"\x4e",	197, 36, 17, 24},
 
 	{ NULL, 0 , 0, 0, 0, 0, 0}
 };
@@ -94,7 +88,7 @@ void load_resource()
 {
 	c_theme::add_font(FONT_DEFAULT, &yahei_22);
 	c_theme::add_font(FONT_CUSTOM1, &yahei_16);
-	c_theme::add_color(COLOR_WND_FONT, 0);
+	c_theme::add_color(COLOR_WND_FONT, 1);
 	c_theme::add_color(COLOR_WND_NORMAL, 1);
 }
 
@@ -114,14 +108,6 @@ static inline void widgets_pre_init(WND_TREE *tree)
 	tree[i++].p_wnd = &s_label_2_1;
 	tree[i++].p_wnd = &s_label_3_1;
 
-    s_label_1.set_bg_color(0);
-	s_label_1.set_font_color(1);
-	s_label_direct.set_font_type(&yahei_16);
-	tree[i++].p_wnd = &s_label_direct;
-	s_label_direct_han.set_font_type(&yahei_16);
-	tree[i++].p_wnd = &s_label_direct_han;
-	s_label_N.set_font_type(&yahei_16);
-	tree[i++].p_wnd = &s_label_N;
 
 }
 //////////////////////// start UI ////////////////////////
