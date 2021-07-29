@@ -8,88 +8,141 @@
 static c_surface* s_surface;
 static c_display* s_display;
 
-class c_star {
-public:
-	c_star(){
-		initialize();
-	}
-	void initialize() {
-		m_x = m_start_x = rand() % UI_WIDTH;
-		m_y = m_start_y = rand() % UI_HEIGHT;
-		m_size = 1;
-		m_x_factor = UI_WIDTH;
-		m_y_factor = UI_HEIGHT;
-		m_size_factor = 1;
-	}
-	void move() {
-		s_surface->fill_rect(m_x, m_y, m_x + m_size - 1, m_y + m_size - 1, 0, Z_ORDER_LEVEL_0);//clear star footprint
-
-		m_x_factor -= 6;
-		m_y_factor -= 6;
-		m_size += m_size / 20;
-		if (m_x_factor < 1 || m_y_factor < 1)
-		{
-			return initialize();
-		}
-		if (m_start_x > (UI_WIDTH / 2) && m_start_y > (UI_HEIGHT / 2))
-		{
-			m_x = (UI_WIDTH / 2) + (UI_WIDTH * (m_start_x - (UI_WIDTH / 2)) / m_x_factor);
-			m_y = (UI_HEIGHT / 2) + (UI_HEIGHT * (m_start_y - (UI_HEIGHT / 2)) / m_y_factor);
-		}
-		else if (m_start_x <= (UI_WIDTH / 2) && m_start_y > (UI_HEIGHT / 2))
-		{
-			m_x = (UI_WIDTH / 2) - (UI_WIDTH * ((UI_WIDTH / 2) - m_start_x) / m_x_factor);
-			m_y = (UI_HEIGHT / 2) + (UI_HEIGHT * (m_start_y - (UI_HEIGHT / 2)) / m_y_factor);
-		}
-		else if (m_start_x > (UI_WIDTH / 2) && m_start_y <= (UI_HEIGHT / 2))
-		{
-			m_x = (UI_WIDTH / 2) + (UI_WIDTH * (m_start_x - (UI_WIDTH / 2)) / m_x_factor);
-			m_y = (UI_HEIGHT / 2) - (UI_HEIGHT * ((UI_HEIGHT / 2) - m_start_y) / m_y_factor);
-		}
-		else if (m_start_x <= (UI_WIDTH / 2) && m_start_y <= (UI_HEIGHT / 2))
-		{
-			m_x = (UI_WIDTH / 2) - (UI_WIDTH * ((UI_WIDTH / 2) - m_start_x) / m_x_factor);
-			m_y = (UI_HEIGHT / 2) - (UI_HEIGHT * ((UI_HEIGHT / 2) - m_start_y) / m_y_factor);
-		}
-
-		if (m_x < 0 || (m_x + m_size - 1) >= UI_WIDTH ||
-			m_y < 0 || (m_y + m_size - 1) >= UI_HEIGHT)
-		{
-			return initialize();
-		}
-		s_surface->fill_rect(m_x, m_y, m_x + m_size - 1, m_y + m_size - 1, GL_RGB(255, 255, 255), Z_ORDER_LEVEL_0);//draw star
-	}
-	int m_start_x, m_start_y;
-	float m_x, m_y, m_x_factor, m_y_factor, m_size_factor, m_size;
+enum WND_ID
+{
+    ID_ROOT = 1,
+    ID_TITLE,
+    ID_LABEL_1,
+    ID_LABEL_2,
+    ID_LABEL_3,
+    ID_LABEL_1_1,
+    ID_LABEL_2_1,
+    ID_LABEL_3_1,
+    ID_CIRCLE,
+    ID_CIRCLE_HAN,
+    ID_LABEL_N,
 };
 
+class c_my_ui : public c_wnd
+{
+	virtual void on_init_children()
+	{
+	}
+	virtual void on_paint(void)
+	{
+		c_label * c_label_ptr;
+
+extern const BITMAP_INFO biaopan0_bmp;
+extern const BITMAP_INFO jari_logo_40_bmp;
+        c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &jari_logo_40_bmp, 64, 0);
+        c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &biaopan0_bmp, 156, 60);
+
+        c_label_ptr = (c_label *)get_wnd_ptr(ID_CIRCLE);
+        c_label_ptr->set_align_type(ALIGN_HCENTER | ALIGN_VCENTER);
+        c_label_ptr = (c_label *)get_wnd_ptr(ID_CIRCLE_HAN);
+        c_label_ptr->set_align_type(ALIGN_HCENTER | ALIGN_VCENTER);
+
+    }
+public:
+    static int s_init_my_ui_flag;
+	GL_DECLARE_MESSAGE_MAP()//delcare message
+};
+
+int c_my_ui::s_init_my_ui_flag = 0;
+
+GL_BEGIN_MESSAGE_MAP(c_my_ui)
+GL_END_MESSAGE_MAP()
+
+// Layout Widgets
+static c_my_ui * gs_my_ui;
+static c_surface_no_fb * gs_surface_no_fb;
+
+#define EAST_CODE   "\xe4\xb8\x9c"
+#define NORTH_CODE  "\xe5\x8c\x97"
+#define SOURCE_CODE "\xe5\x8d\x97"
+#define WEST_CODE   "\xE8\xA5\xBF"
+
+WND_TREE s_main_widgets[] =
+{
+	/* 風速仪 */
+	{ NULL,		ID_TITLE,	"\xe9\xa3\x8e\xe9\x80\x9f\xe4\xbb\xaa",	104, 0, 100, 38},
+	/* 平均 */
+	{ NULL,		ID_LABEL_1,	"\xe5\xb9\xb3\xe5\x9d\x87\x3a",	0, 40, 75, 38},
+	/* 瞬時 */
+	{ NULL,		ID_LABEL_2,	"\xe7\x9e\xac\xe6\x97\xb6\x3a",	0, 80, 75, 38},
+	/* 风級 */
+	{ NULL,		ID_LABEL_3,	"\xe7\x9e\xac\xe6\x97\xb6\x3a",	0, 120, 75, 38},
+
+	/* 风速瞬時值 */
+	{ NULL,		ID_LABEL_1_1,	"0.0",	75, 40, 60, 38},
+	/* 风速平均值 */
+	{ NULL,		ID_LABEL_2_1,	"0.0",	75, 80, 60, 38},
+	/* 风級數值 */
+	{ NULL,		ID_LABEL_3_1,	"0",	75, 120, 175, 38},
+	/* 風向 */
+	{ NULL,		ID_CIRCLE,	"0",	180, 108, 52, 38},
+	{ NULL,		ID_CIRCLE_HAN,	"\xe5\x8c\x97",	180, 77, 52, 38},
+	{ NULL,		ID_LABEL_N,	"\x4e",	197, 36, 17, 24},
+
+	{ NULL, 0 , 0, 0, 0, 0, 0}
+};
+
+// Create GUI
+extern const FONT_INFO yahei_22;
+extern const FONT_INFO yahei_16;
+void load_resource()
+{
+	c_theme::add_font(FONT_DEFAULT, &yahei_22);
+	c_theme::add_font(FONT_CUSTOM1, &yahei_16);
+	c_theme::add_color(COLOR_WND_FONT, 0);
+	c_theme::add_color(COLOR_WND_NORMAL, 1);
+}
+
+static inline void widgets_pre_init(WND_TREE *tree)
+{
+    int i = 0;
+    static c_label s_label_1, s_label_2, s_label_3;
+    static c_label s_label_1_1, s_label_2_1, s_label_3_1;
+    static c_label s_label_direct, s_label_direct_han, s_label_title;
+    static c_label s_label_N;
+
+	tree[i++].p_wnd = &s_label_title;
+	tree[i++].p_wnd = &s_label_1;
+	tree[i++].p_wnd = &s_label_2;
+	tree[i++].p_wnd = &s_label_3;
+	tree[i++].p_wnd = &s_label_1_1;
+	tree[i++].p_wnd = &s_label_2_1;
+	tree[i++].p_wnd = &s_label_3_1;
+
+    s_label_1.set_bg_color(0);
+	s_label_1.set_font_color(1);
+	s_label_direct.set_font_type(&yahei_16);
+	tree[i++].p_wnd = &s_label_direct;
+	s_label_direct_han.set_font_type(&yahei_16);
+	tree[i++].p_wnd = &s_label_direct_han;
+	s_label_N.set_font_type(&yahei_16);
+	tree[i++].p_wnd = &s_label_N;
+
+}
 //////////////////////// start UI ////////////////////////
 
-c_star stars[100];
 void create_ui(void* phy_fb, int screen_width, int screen_height, int color_bytes, struct EXTERNAL_GFX_OP* gfx_op) {
-	if (phy_fb)
-	{
-		static c_surface surface(UI_WIDTH, UI_HEIGHT, color_bytes, Z_ORDER_LEVEL_0);
-		static c_display display(phy_fb, screen_width, screen_height, &surface);
-		s_surface = &surface;
-		s_display = &display;
-	}
-	else
-	{//for MCU without framebuffer
-		static c_surface_no_fb surface_no_fb(UI_WIDTH, UI_HEIGHT, color_bytes, gfx_op, Z_ORDER_LEVEL_0);
-		static c_display display(phy_fb, screen_width, screen_height, &surface_no_fb);
-		s_surface = &surface_no_fb;
-		s_display = &display;
-	}
+    gs_my_ui = new c_my_ui();
+    gs_my_ui->set_bg_color(0);
+    gs_my_ui->set_font_color(1);
+    load_resource();
+    widgets_pre_init(s_main_widgets);
 
-	s_surface->fill_rect(0, 0, UI_WIDTH - 1, UI_HEIGHT - 1, 0, Z_ORDER_LEVEL_0);
+    gs_surface_no_fb = new c_surface_no_fb(UI_WIDTH, UI_HEIGHT, color_bytes, gfx_op, Z_ORDER_LEVEL_0);
 
-	while(1) {
-		for (int i = 0; i < sizeof(stars)/sizeof(c_star); i++) {
-			stars[i].move();
-		}
-		thread_sleep(50);
-	}
+    s_display = new c_display(phy_fb, screen_width, screen_height, gs_surface_no_fb);
+
+    /* 设置当前 c_wnd 的 m_surface 成员 */
+    gs_my_ui->set_surface(gs_surface_no_fb);
+    gs_my_ui->connect(NULL, ID_ROOT, 0, 0, 0, UI_WIDTH, UI_HEIGHT, s_main_widgets);
+    gs_my_ui->show_window();
+    /* 標記 GuiLite 初始化完成 */
+    c_my_ui::s_init_my_ui_flag = 1;
 }
 
 //////////////////////// interface for all platform ////////////////////////
@@ -97,6 +150,32 @@ extern "C" void startHelloStar(void* phy_fb, int width, int height, int color_by
 	create_ui(phy_fb, width, height, color_bytes, gfx_op);
 }
 
+extern "C" void display_wind_level(int level)
+{
+    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_3_1);
+    char level_buffer[16] = {0};
+
+    if (!c_my_ui::s_init_my_ui_flag)
+    {
+        rt_kprintf("GuiLite is not ready\n");
+        return;
+    }
+
+    if (wind_level_label)
+    {
+        memset(level_buffer, 0, sizeof level_buffer);
+        if (level != -1)
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "%d", level);
+        }
+        else
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "**");
+        }
+        wind_level_label->set_str(level_buffer);
+        wind_level_label->show_window();
+    }
+}
 void* getUiOfHelloStar(int* width, int* height, bool force_update)
 {
 	if (s_display)

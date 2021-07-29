@@ -4,9 +4,9 @@ from building import *
 
 cwd     = os.path.join(str(Dir('#')), 'applications')
 src	= Glob('main.c')
-src	+= Glob('GUI/UIcode.cpp')
 
 CPPPATH = [cwd, str(Dir('#'))]
+CPPPATH += [cwd + '/GUI']
 
 # add can support
 if GetDepend('BSP_USING_CAN_COMM'):
@@ -19,6 +19,8 @@ if GetDepend('BSP_USING_ENCODER'):
 # add screen backend support
 if GetDepend('BSP_USING_ST75256'):
     src += ['screen_thread.c']
+    src += Glob('GUI/UIcode.cpp')
+    src += Glob('GUI/resource/*.cpp')
 
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 

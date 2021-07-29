@@ -370,7 +370,7 @@ void _st75256_chip_init(void)
     
     write_cmd(0x30);   //Extension Command1    
     write_cmd(0xbc);   //Data Scan Direction
-    write_data(0x00);  //Address direction
+    write_data(0x02);  //Address direction
     
     write_cmd(0xa6);  //Normal display
     

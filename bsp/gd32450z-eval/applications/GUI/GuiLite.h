@@ -1,4 +1,7 @@
-#pragma once
+#ifndef GUILITE_CORE_INCLUDE_API_H
+#define GUILITE_CORE_INCLUDE_API_H
+
+extern "C" void rt_kprintf(const char *fmt, ...);
 
 #define REAL_TIME_TASK_CYCLE_MS		50
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -7,12 +10,13 @@
 #define GL_ARGB(a, r, g, b) ((((unsigned int)(a)) << 24) | (((unsigned int)(r)) << 16) | (((unsigned int)(g)) << 8) | ((unsigned int)(b)))
 #define GL_ARGB_A(rgb) ((((unsigned int)(rgb)) >> 24) & 0xFF)
 
-#define GL_RGB(r, g, b) ((0xFF << 24) | (((unsigned int)(r)) << 16) | (((unsigned int)(g)) << 8) | ((unsigned int)(b)))
+#define GL_RGB(r, g, b) (!!((r << 11 | g << 5 | b) & 0xffff))
 #define GL_RGB_R(rgb) ((((unsigned int)(rgb)) >> 16) & 0xFF)
 #define GL_RGB_G(rgb) ((((unsigned int)(rgb)) >> 8) & 0xFF)
 #define GL_RGB_B(rgb) (((unsigned int)(rgb)) & 0xFF)
-#define GL_RGB_32_to_16(rgb) (((((unsigned int)(rgb)) & 0xFF) >> 3) | ((((unsigned int)(rgb)) & 0xFC00) >> 5) | ((((unsigned int)(rgb)) & 0xF80000) >> 8))
-#define GL_RGB_16_to_32(rgb) ((0xFF << 24) | ((((unsigned int)(rgb)) & 0x1F) << 3) | ((((unsigned int)(rgb)) & 0x7E0) << 5) | ((((unsigned int)(rgb)) & 0xF800) << 8))
+
+#define GL_RGB_32_to_16(rgb) (!!rgb)
+#define GL_RGB_16_to_32(rgb) (!!rgb)
 
 #define ALIGN_HCENTER		0x00000000L
 #define ALIGN_LEFT			0x01000000L
@@ -48,7 +52,7 @@ T_TIME second_to_day(long second);
 T_TIME get_time();
 
 void start_real_timer(void (*func)(void* arg));
-void register_timer(int milli_second, void func(void* param), void* param);
+void register_timer(int milli_second, void func(void* ptmr, void* parg));
 
 unsigned int get_cur_thread_id();
 void create_thread(unsigned long* thread_id, void* attr, void *(*start_routine) (void *), void* arg);
@@ -86,6 +90,7 @@ public:
 		m_right = left + width - 1;
 		m_bottom = top + height -1;
 	}
+	/* 如果 (x,y) 坐标在该控件的矩形范围区域 */
 	bool pt_in_rect(int x, int y) const
 	{
 		return x >= m_left && x <= m_right && y >= m_top && y <= m_bottom;
@@ -97,17 +102,153 @@ public:
 	int width() const { return m_right - m_left + 1; }
 	int height() const { return m_bottom - m_top + 1 ; }
 
+	/* 矩形变量的四个点 */
 	int	    m_left;
 	int     m_top;
 	int     m_right;
 	int     m_bottom;
 };
+#endif
+#ifndef GUILITE_CORE_INCLUDE_CMD_TARGET_H
+#define GUILITE_CORE_INCLUDE_CMD_TARGET_H
+#define MSG_TYPE_INVALID	0xFFFF
+#define MSG_TYPE_WND		0x0001
+#define MSG_TYPE_USR		0x0002
+#define USR_MSG_MAX			32
+class c_cmd_target;
+typedef void (c_cmd_target::*msgCallback)(int, int);
+struct GL_MSG_ENTRY
+{
+	unsigned int		msgType;
+	unsigned int		msgId;
+	c_cmd_target*		object;
+	msgCallback			callBack;
+};
+#define ON_GL_USER_MSG(msgId, func)                    \
+{MSG_TYPE_USR, msgId, 0, msgCallback(&func)},
+#define GL_DECLARE_MESSAGE_MAP()						\
+protected:												\
+	virtual const GL_MSG_ENTRY* get_msg_entries() const;\
+private:                                                \
+	static const GL_MSG_ENTRY m_msg_entries[];
+#define GL_BEGIN_MESSAGE_MAP(theClass)					\
+const GL_MSG_ENTRY* theClass::get_msg_entries() const	\
+{														\
+	return theClass::m_msg_entries;						\
+}														\
+const GL_MSG_ENTRY theClass::m_msg_entries[] =     		\
+{
+#define GL_END_MESSAGE_MAP()                           \
+{MSG_TYPE_INVALID, 0, 0, 0}};
+class c_cmd_target
+{
+public:
+	static int handle_usr_msg(int msg_id, int resource_id, int param)
+	{
+		int i;
+		c_cmd_target* p_wnd = 0;
+		for (i = 0; i < ms_user_map_size; i++)
+		{
+			if (msg_id == ms_usr_map_entries[i].msgId)
+			{
+				p_wnd = (c_cmd_target*)ms_usr_map_entries[i].object;
+				(p_wnd->*ms_usr_map_entries[i].callBack)(resource_id, param);
+			}
+		}
+		return 1;
+	}
+protected:
+	/* 加载命令消息 */
+	void load_cmd_msg()
+	{
+		/* 获取消息的入口指针，简单来说就是消息数组首指针 */
+		const GL_MSG_ENTRY* p_entry = get_msg_entries();
+		/* 如果没有定义消息，直接返回 */
+		if (0 == p_entry)
+		{
+			return;
+		}
+		bool bExist = false;
+		/* 循环遍历所有的消息 */
+		while (MSG_TYPE_INVALID != p_entry->msgType)
+		{
+			if (MSG_TYPE_WND == p_entry->msgType)
+			{
+				p_entry++;
+				continue;
+			}
+			bExist = false;
+			/* 循环遍历，防止加载了重复的消息 */
+			for (int i = 0; i < ms_user_map_size; i++)
+			{
+				//repeat register, return.
+				if (p_entry->msgId == ms_usr_map_entries[i].msgId
+					&& ms_usr_map_entries[i].object == this)
+				{
+					bExist = true;
+					break;
+				}
+			}
+			if (true == bExist)
+			{
+				/* 跳转到下一个消息 */
+				p_entry++;
+				continue;
+			}
+			/* 如果是用户类型的消息，那么加载这个消息 */
+			if (MSG_TYPE_USR == p_entry->msgType)
+			{
+				if (USR_MSG_MAX == ms_user_map_size)
+				{
+					ASSERT(false);
+				}
+				ms_usr_map_entries[ms_user_map_size] = *p_entry;
+				ms_usr_map_entries[ms_user_map_size].object = this;
+				/* 更新用户消息的数量 */
+				ms_user_map_size++;
+			}
+			else
+			{
+				/* 如果不是用户消息类型，则出错 */
+				ASSERT(false);
+				break;
+			}
+			p_entry++;
+		}
+	}
+	const GL_MSG_ENTRY* find_msg_entry(const GL_MSG_ENTRY *pEntry, int msgType, int msgId)
+	{
+		if (MSG_TYPE_INVALID == msgType)
+		{
+			return 0;
+		}
+		while (MSG_TYPE_INVALID != pEntry->msgType)
+		{
+			if ((msgType == pEntry->msgType) && (msgId == pEntry->msgId))
+			{
+				return pEntry;
+			}
+			pEntry++;
+		}
+		return 0;
+	}
+private:
+	static GL_MSG_ENTRY ms_usr_map_entries[USR_MSG_MAX];
+	static unsigned short ms_user_map_size;
+	GL_DECLARE_MESSAGE_MAP()
+};
+#endif
+#ifndef  GUILITE_CORE_INCLUDE_RESOURCE_H
+#define  GUILITE_CORE_INCLUDE_RESOURCE_H
 //BITMAP
 typedef struct struct_bitmap_info
 {
+	/* 位图的宽和高 */
 	unsigned short width;
 	unsigned short height;
+	/* 只支持 16 bit rgb */
 	unsigned short color_bits;//support 16 bits only
+	/* 颜色序列 */
 	const unsigned short* pixel_color_array;
 } BITMAP_INFO;
 //FONT
@@ -115,16 +256,22 @@ typedef struct struct_lattice
 {
 	unsigned int			utf8_code;
 	unsigned char			width;
-	const unsigned char*	pixel_buffer;
+	const unsigned char*	pixel_gray_array;
 } LATTICE;
-typedef struct struct_lattice_font_info
+typedef struct struct_font_info
 {
 	unsigned char	height;
 	unsigned int	count;
 	LATTICE*		lattice_array;
-} LATTICE_FONT_INFO;
+} FONT_INFO;
+#endif
+#ifndef GUILITE_CORE_INCLUDE_THEME_H
+#define GUILITE_CORE_INCLUDE_THEME_H
+typedef struct struct_font_info		FONT_INFO;
+typedef struct struct_color_rect	COLOR_RECT;
+typedef struct struct_bitmap_info	BITMAP_INFO;
 //Rebuild gui library once you change this file
-enum FONT_LIST
+enum FONT_TYPE
 {
 	FONT_NULL,
 	FONT_DEFAULT,
@@ -136,17 +283,17 @@ enum FONT_LIST
 	FONT_CUSTOM6,
 	FONT_MAX
 };
-enum IMAGE_LIST
+enum BITMAP_TYPE
 {
-	IMAGE_CUSTOM1,
-	IMAGE_CUSTOM2,
-	IMAGE_CUSTOM3,
-	IMAGE_CUSTOM4,
-	IMAGE_CUSTOM5,
-	IMAGE_CUSTOM6,
-	IMAGE_MAX
+	BITMAP_CUSTOM1,
+	BITMAP_CUSTOM2,
+	BITMAP_CUSTOM3,
+	BITMAP_CUSTOM4,
+	BITMAP_CUSTOM5,
+	BITMAP_CUSTOM6,
+	BITMAP_MAX
 };
-enum COLOR_LIST
+enum COLOR_TYPE
 {
 	COLOR_WND_FONT,
 	COLOR_WND_NORMAL,
@@ -164,7 +311,7 @@ enum COLOR_LIST
 class c_theme
 {
 public:
-	static int add_font(FONT_LIST index, const void* font)
+	static int add_font(FONT_TYPE index, const FONT_INFO* font)
 	{
 		if (index >= FONT_MAX)
 		{
@@ -174,7 +321,7 @@ public:
 		s_font_map[index] = font;
 		return 0;
 	}
-	static const void* get_font(FONT_LIST index)
+	static const FONT_INFO* get_font(FONT_TYPE index)
 	{
 		if (index >= FONT_MAX)
 		{
@@ -183,27 +330,26 @@ public:
 		}
 		return s_font_map[index];
 	}
-	static int add_image(IMAGE_LIST index, const void* image_info)
+	static int add_bitmap(BITMAP_TYPE index, const BITMAP_INFO* bmp)
 	{
-		if (index >= IMAGE_MAX)
+		if (index >= BITMAP_MAX)
 		{
 			ASSERT(false);
 			return -1;
 		}
-		s_image_map[index] = image_info;
+		s_bmp_map[index] = bmp;
 		return 0;
 	}
-	static const void* get_image(IMAGE_LIST index)
+	static const BITMAP_INFO* get_bmp(BITMAP_TYPE index)
 	{
-		if (index >= IMAGE_MAX)
+		if (index >= BITMAP_MAX)
 		{
 			ASSERT(false);
 			return 0;
 		}
-		return s_image_map[index];
+		return s_bmp_map[index];
 	}
-	
-	static int add_color(COLOR_LIST index, const unsigned int color)
+	static int add_color(COLOR_TYPE index, const unsigned int color)
 	{
 		if (index >= COLOR_MAX)
 		{
@@ -213,7 +359,7 @@ public:
 		s_color_map[index] = color;
 		return 0;
 	}
-	static const unsigned int get_color(COLOR_LIST index)
+	static const unsigned int get_color(COLOR_TYPE index)
 	{
 		if (index >= COLOR_MAX)
 		{
@@ -223,19 +369,22 @@ public:
 		return s_color_map[index];
 	}
 private:
-	static const void* s_font_map[FONT_MAX];
-	static const void* s_image_map[IMAGE_MAX];
+	static const FONT_INFO* s_font_map[FONT_MAX];
+	static const BITMAP_INFO* s_bmp_map[BITMAP_MAX];
 	static unsigned int s_color_map[COLOR_MAX];
 };
+#endif
+#ifndef GUILITE_CORE_INCLUDE_DISPLAY_H
+#define GUILITE_CORE_INCLUDE_DISPLAY_H
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define SURFACE_CNT_MAX	6//root + pages
 typedef enum
 {
-	Z_ORDER_LEVEL_0,//lowest graphic level
-	Z_ORDER_LEVEL_1,//middle graphic level
-	Z_ORDER_LEVEL_2,//highest graphic level
+	Z_ORDER_LEVEL_0,//view/wave/page
+	Z_ORDER_LEVEL_1,//dialog
+	Z_ORDER_LEVEL_2,//editbox/spinbox/listbox/keyboard
 	Z_ORDER_LEVEL_MAX
 }Z_ORDER_LEVEL;
 struct EXTERNAL_GFX_OP
@@ -243,12 +392,19 @@ struct EXTERNAL_GFX_OP
 	void(*draw_pixel)(int x, int y, unsigned int rgb);
 	void(*fill_rect)(int x0, int y0, int x1, int y1, unsigned int rgb);
 };
+/* 一个 c_display 可以有多个 c_surface ，一个 c_surface 表示一个翻页 */
 class c_surface;
+/* c_display 类表示的是显示设备 */
 class c_display {
+	/* c_surface 是 c_display 的友元类，所以 c_surface 的成员函数可以直接
+	 * 访问 c_display 的私有成员 */
 	friend class c_surface;
 public:
+	/* c_display 的两个构造函数 */
 	inline c_display(void* phy_fb, int display_width, int display_height, int surface_width, int surface_height, unsigned int color_bytes, int surface_cnt, EXTERNAL_GFX_OP* gfx_op = 0);//multiple surface or surface_no_fb
+
 	inline c_display(void* phy_fb, int display_width, int display_height, c_surface* surface);//single custom surface
+
 	inline c_surface* alloc_surface(Z_ORDER_LEVEL max_zorder, c_rect layer_rect = c_rect());//for multiple surfaces
 	inline int swipe_surface(c_surface* s0, c_surface* s1, int x0, int x1, int y0, int y1, int offset);
 	int get_width() { return m_width; }
@@ -300,25 +456,32 @@ private:
 	int				m_width;		//in pixels
 	int				m_height;		//in pixels
 	int				m_color_bytes;	//16 bits, 32 bits only
-	void*			m_phy_fb;		//physical framebuffer
+	void*			m_phy_fb;
 	int				m_phy_read_index;
 	int				m_phy_write_index;
 	c_surface*		m_surface_group[SURFACE_CNT_MAX];
-	int				m_surface_cnt;	//surface count
+	int				m_surface_cnt;
 	int				m_surface_index;
 };
 class c_layer
 {
 public:
 	c_layer() { fb = 0; }
-	void* fb;		//framebuffer
-	c_rect 	rect;	//framebuffer area
+	void* fb;
+	c_rect 	rect;
 };
+
+/* c_surface 类 */
 class c_surface {
-	friend class c_display; friend class c_bitmap_operator;
+	friend class c_display; friend class c_bitmap;
 public:
+	/* c_surface 类的构造函数， max_zorder 是一个可省略的参数
+	 * 初始化 m_top_zorder = Z_ORDER_LEVEL_0 */
 	c_surface(unsigned int width, unsigned int height, unsigned int color_bytes, Z_ORDER_LEVEL max_zorder = Z_ORDER_LEVEL_0, c_rect overlpa_rect = c_rect()) : m_width(width), m_height(height), m_color_bytes(color_bytes), m_fb(0), m_is_active(false), m_top_zorder(Z_ORDER_LEVEL_0), m_phy_fb(0), m_phy_write_index(0), m_display(0)
 	{
+		/* 如果是缺省的 overlpa_rect 参数，通过传递
+		 * 的 width 和 heigh 创建一个矩形区域
+		 * 并且会初始化多层显示有关的变量 m_layers[] 数组 */
 		(overlpa_rect == c_rect()) ? set_surface(max_zorder, c_rect(0, 0, width - 1, height - 1)) : set_surface(max_zorder, overlpa_rect);
 	}
 	int get_width() { return m_width; }
@@ -355,17 +518,21 @@ public:
 			ASSERT(false);
 			return;
 		}
+		/* 如果传递的 order 是最多允许层的 order */
 		if (z_order == m_max_zorder)
 		{
+			/* 绘图显示 */
 			return draw_pixel_on_fb(x, y, rgb);
 		}
-		
+		/* 如果传递的 order 比已知最顶层的 order 要高，
+		 * 那么更新 m_top_zorder 的值，为什么要修改这个参数呢？？？ */
 		if (z_order > (unsigned int)m_top_zorder)
 		{
 			m_top_zorder = (Z_ORDER_LEVEL)z_order;
 		}
 		if (m_layers[z_order].rect.pt_in_rect(x, y))
 		{
+			/* 获取指定 c_order 层级的 rect 区域 */
 			c_rect layer_rect = m_layers[z_order].rect;
 			if (m_color_bytes == 4)
 			{
@@ -373,10 +540,12 @@ public:
 			}
 			else
 			{
+				/* cpp 直接对 0 地址赋值竟然可以通过？？？ */
+				/* rt_kprintf("test 0 --------------------\n"); */
 				((unsigned short*)(m_layers[z_order].fb))[(x - layer_rect.m_left) + (y - layer_rect.m_top) * layer_rect.width()] = GL_RGB_32_to_16(rgb);
 			}
 		}
-		
+		/* 如果该控件的 order 是最顶层的 order，那么直接绘图 */
 		if (z_order == m_top_zorder)
 		{
 			return draw_pixel_on_fb(x, y, rgb);
@@ -384,6 +553,7 @@ public:
 		bool be_overlapped = false;
 		for (unsigned int tmp_z_order = Z_ORDER_LEVEL_MAX - 1; tmp_z_order > z_order; tmp_z_order--)
 		{
+			/* 如果指定的坐标在范围内，表示会覆盖，跳出 */
 			if (m_layers[tmp_z_order].rect.pt_in_rect(x, y))
 			{
 				be_overlapped = true;
@@ -395,6 +565,8 @@ public:
 			draw_pixel_on_fb(x, y, rgb);
 		}
 	}
+
+	/* 填充矩形 */
 	virtual void fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb, unsigned int z_order)
 	{
 		x0 = (x0 < 0) ? 0 : x0;
@@ -403,8 +575,11 @@ public:
 		y1 = (y1 > (m_height - 1)) ? (m_height - 1) : y1;
 		if (z_order == m_max_zorder)
 		{
+			/* fill_rect_on_fb 会调用到底层的显示驱动接口函数 */
 			return fill_rect_on_fb(x0, y0, x1, y1, rgb);
 		}
+
+		/* 如果是顶层 order */
 		if (z_order == m_top_zorder)
 		{
 			int x, y;
@@ -529,17 +704,23 @@ public:
 	{
 		ASSERT(z_order >= Z_ORDER_LEVEL_0 && z_order < Z_ORDER_LEVEL_MAX);
 		c_rect layer_rect = m_layers[z_order].rect;
+#if 1
 		ASSERT(rect.m_left >= layer_rect.m_left && rect.m_right <= layer_rect.m_right &&
 			rect.m_top >= layer_rect.m_top && rect.m_bottom <= layer_rect.m_bottom);
-		void* fb = m_layers[z_order].fb;
-		int width = layer_rect.width();
-		for (int y = rect.m_top; y <= rect.m_bottom; y++)
+#endif
+		/* 获取备份层的显存的内存空间，准备还原 */
+    	void* fb = m_layers[z_order].fb;
+		if (fb)
 		{
-			for (int x = rect.m_left; x <= rect.m_right; x++)
-			{
-				unsigned int rgb = (m_color_bytes == 4) ? ((unsigned int*)fb)[(x - layer_rect.m_left) + (y - layer_rect.m_top) * width] : GL_RGB_16_to_32(((unsigned short*)fb)[(x - layer_rect.m_left) + (y - layer_rect.m_top) * width]);
-				draw_pixel_on_fb(x, y, rgb);
-			}
+    		int width = layer_rect.width();
+    		for (int y = rect.m_top; y <= rect.m_bottom; y++)
+    		{
+    			for (int x = rect.m_left; x <= rect.m_right; x++)
+    			{
+    				unsigned int rgb = (m_color_bytes == 4) ? ((unsigned int*)fb)[(x - layer_rect.m_left) + (y - layer_rect.m_top) * width] : GL_RGB_16_to_32(((unsigned short*)fb)[(x - layer_rect.m_left) + (y - layer_rect.m_top) * width]);
+    				draw_pixel_on_fb(x, y, rgb);
+    			}
+    		}
 		}
 		return 0;
 	}
@@ -623,15 +804,23 @@ protected:
 		m_phy_fb = display->m_phy_fb;
 		m_phy_write_index = &display->m_phy_write_index;
 	}
+	/* c_surface 的成员函数，c_surface 的构造函数会调用这个函数 */
 	void set_surface(Z_ORDER_LEVEL max_z_order, c_rect layer_rect)
 	{
+		/* 初始化了成员 m_max_zorder，确定 z 方向上的最大值 */
 		m_max_zorder = max_z_order;
+		/* 分析构造 c_surface 的时候，这个 if 判断为假 */
 		if (m_display && (m_display->m_surface_cnt > 1))
 		{
 			m_fb = calloc(m_width * m_height, m_color_bytes);
 		}
+		/* 会走这里，对 MCU 类型，如果没有显存并且没有涉及到多层显示，判断为假
+		 * 当存在多层显示的情况，那么会初始化对应的层级，成员变量是
+		 * m_layers[] 数组，会在这里给每一曾申请一个内存控件
+		 * */
 		for (int i = Z_ORDER_LEVEL_0; i < m_max_zorder; i++)
 		{//Top layber fb always be 0
+			/* 简单来说就是申请了一段内存 */
 			ASSERT(m_layers[i].fb = calloc(layer_rect.width() * layer_rect.height(), m_color_bytes));
 			m_layers[i].rect = layer_rect;
 		}
@@ -640,17 +829,24 @@ protected:
 	int				m_height;		//in pixels
 	int				m_color_bytes;	//16 bits, 32 bits only
 	void*			m_fb;			//frame buffer you could see
-	c_layer 		m_layers[Z_ORDER_LEVEL_MAX];//all graphic layers
-	bool			m_is_active;	//active flag
-	Z_ORDER_LEVEL	m_max_zorder;	//the highest graphic layer the surface will have
-	Z_ORDER_LEVEL	m_top_zorder;	//the current highest graphic layer the surface have
-	void*			m_phy_fb;		//physical framebufer
+	c_layer 	m_layers[Z_ORDER_LEVEL_MAX];//Top layber fb always be 0
+	bool			m_is_active;
+	Z_ORDER_LEVEL	m_max_zorder;
+	/* 顶层显示的 order ??? */
+	Z_ORDER_LEVEL	m_top_zorder;
+	void*			m_phy_fb;
 	int*			m_phy_write_index;
 	c_display*		m_display;
 };
-class c_surface_no_fb : public c_surface {//No physical framebuffer, render with external graphic interface
+
+/* 没有 fb 的 c_surface 类 */
+class c_surface_no_fb : public c_surface {//No physical framebuffer
+	/* c_display 是 c_surface_no_fb 的友元类， c_display 的长远函数可以访问
+	 * c_surafce_no_fb 的私有变量 */
 	friend class c_display;
 public:
+	/* 调用的还是基类 c_surface 的构造函数，特殊的一点是将 gfx_op 赋值给
+	 * 受保护的成员变量 m_gfx_op */
 	c_surface_no_fb(unsigned int width, unsigned int height, unsigned int color_bytes, struct EXTERNAL_GFX_OP* gfx_op, Z_ORDER_LEVEL max_zorder = Z_ORDER_LEVEL_0, c_rect overlpa_rect = c_rect()) : c_surface(width, height, color_bytes, max_zorder, overlpa_rect), m_gfx_op(gfx_op) {}
 protected:
 	virtual void fill_rect_on_fb(int x0, int y0, int x1, int y1, unsigned int rgb)
@@ -718,6 +914,8 @@ protected:
 	}
 	struct EXTERNAL_GFX_OP* m_gfx_op;//Rendering by external method
 };
+
+/* c_display 构造函数 1 的定义 */
 inline c_display::c_display(void* phy_fb, int display_width, int display_height, int surface_width, int surface_height, unsigned int color_bytes, int surface_cnt, EXTERNAL_GFX_OP* gfx_op) : m_width(display_width), m_height(display_height), m_color_bytes(color_bytes), m_phy_fb(phy_fb), m_phy_read_index(0), m_phy_write_index(0), m_surface_cnt(surface_cnt), m_surface_index(0)
 {
 	ASSERT(color_bytes == 2 || color_bytes == 4);
@@ -730,6 +928,8 @@ inline c_display::c_display(void* phy_fb, int display_width, int display_height,
 		m_surface_group[i]->attach_display(this);
 	}
 }
+
+/* c_display 构造函数 2 的定义 */
 inline c_display::c_display(void* phy_fb, int display_width, int display_height, c_surface* surface) : m_width(display_width), m_height(display_height), m_phy_fb(phy_fb), m_phy_read_index(0), m_phy_write_index(0), m_surface_cnt(1), m_surface_index(0)
 {
 	m_color_bytes = surface->m_color_bytes;
@@ -813,22 +1013,190 @@ inline int c_display::swipe_surface(c_surface* s0, c_surface* s1, int x0, int x1
 	m_phy_write_index++;
 	return 0;
 }
+#endif
+#ifndef GUILITE_CORE_INCLUDE_WORD_H
+#define GUILITE_CORE_INCLUDE_WORD_H
 #include <string.h>
 #include <stdio.h>
-#define VALUE_STR_LEN	16
+#define BUFFER_LEN	16
 class c_surface;
-class c_font_operator
+class c_word
 {
 public:
-	virtual void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color) = 0;
-	virtual void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT) = 0;
-	virtual void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color) = 0;
-	virtual void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT) = 0;
-	virtual int get_str_size(const void* string, const void* font, int& width, int& height) = 0;
-	void get_string_pos(const void* string, const void* font, c_rect rect, unsigned int align_type, int& x, int& y)
+	static void draw_string(c_surface* surface, int z_order, const char *s, int x, int y, const FONT_INFO* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
+	{
+		if (0 == s)
+		{
+			return;
+		}
+		int offset = 0;
+		unsigned int utf8_code;
+		while (*s)
+		{
+			s += get_utf8_code(s, utf8_code);
+			offset += draw_single_char(surface, z_order, utf8_code, (x + offset), y, font, font_color, bg_color);
+		}
+	}
+	/* 显示指定的字符串内容到控件 */
+	static void draw_string_in_rect(c_surface* surface, int z_order, const char *s, c_rect rect, const FONT_INFO* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
+	{
+		if (0 == s)
+		{
+			return;
+		}
+		int x, y;
+		get_string_pos(s, font, rect, align_type, x, y);
+		draw_string(surface, z_order, s, rect.m_left + x, rect.m_top + y, font, font_color, bg_color, ALIGN_LEFT);
+	}
+	static void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const FONT_INFO* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
+	{
+		char buf[BUFFER_LEN];
+		value_2_string(value, dot_position, buf, BUFFER_LEN);
+		draw_string(surface, z_order, buf, x, y, font, font_color, bg_color, align_type);
+	}
+	static void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const FONT_INFO* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
+	{
+		char buf[BUFFER_LEN];
+		value_2_string(value, dot_position, buf, BUFFER_LEN);
+		draw_string_in_rect(surface, z_order, buf, rect, font, font_color, bg_color, align_type);
+	}
+	static void value_2_string(int value, int dot_position, char* buf, int len)
+	{
+		memset(buf, 0, len);
+		switch (dot_position)
+		{
+		case 0:
+			sprintf(buf, "%d", value);
+			break;
+		case 1:
+			sprintf(buf, "%.1f", value * 1.0 / 10);
+			break;
+		case 2:
+			sprintf(buf, "%.2f", value * 1.0 / 100);
+			break;
+		case 3:
+			sprintf(buf, "%.3f", value * 1.0 / 1000);
+			break;
+		default:
+			ASSERT(false);
+			break;
+		}
+	}
+	static int get_str_size(const char *s, const FONT_INFO* font, int& width, int& height)
+	{
+		if (0 == s || 0 == font)
+		{
+			width = height = 0;
+			return -1;
+		}
+		int lattice_width = 0;
+		unsigned int utf8_code;
+		int utf8_bytes;
+		while (*s)
+		{
+			utf8_bytes = get_utf8_code(s, utf8_code);
+			const LATTICE* p_lattice = get_lattice(font, utf8_code);
+			lattice_width += p_lattice ? p_lattice->width : font->height;
+			s += utf8_bytes;
+		}
+		width = lattice_width;
+		height = font->height;
+		return 0;
+	}
+private:
+	static int draw_single_char(c_surface* surface, int z_order, unsigned int utf8_code, int x, int y, const FONT_INFO* font, unsigned int font_color, unsigned int bg_color)
+	{
+		unsigned int error_color = 0xFFFFFFFF;
+		if (font)
+		{
+			const LATTICE* p_lattice = get_lattice(font, utf8_code);
+			if (p_lattice)
+			{
+				draw_lattice(surface, z_order, x, y, p_lattice->width, font->height, p_lattice->pixel_gray_array, font_color, bg_color);
+				return p_lattice->width;
+			}
+		}
+		else
+		{
+			error_color = GL_RGB(255, 0, 0);
+		}
+		//lattice/font not found, draw "X"
+		int len = 16;
+		for (int y_ = 0; y_ < len; y_++)
+		{
+			for (int x_ = 0; x_ < len; x_++)
+			{
+				int diff = (x_ - y_);
+				int sum = (x_ + y_);
+				(diff == 0 || diff == -1 || diff == 1 || sum == len || sum == (len - 1) || sum == (len + 1)) ?
+					surface->draw_pixel((x + x_), (y + y_), error_color, z_order) : surface->draw_pixel((x + x_), (y + y_), 0, z_order);
+			}
+		}
+		return len;
+	}
+	static void draw_lattice(c_surface* surface, int z_order, int x, int y, int width, int height, const unsigned char* p_data, unsigned int font_color, unsigned int bg_color)
+	{
+		unsigned int r, g, b, rgb;
+		unsigned char blk_value = *p_data++;
+		unsigned char blk_cnt = *p_data++;
+		b = (GL_RGB_B(font_color) * blk_value + GL_RGB_B(bg_color) * (255 - blk_value)) >> 8;
+		g = (GL_RGB_G(font_color) * blk_value + GL_RGB_G(bg_color) * (255 - blk_value)) >> 8;
+		r = (GL_RGB_R(font_color) * blk_value + GL_RGB_R(bg_color) * (255 - blk_value)) >> 8;
+		rgb = GL_RGB(r, g, b);
+		for (int y_ = 0; y_ < height; y_++)
+		{
+			for (int x_ = 0; x_ < width; x_++)
+			{
+				ASSERT(blk_cnt);
+				if (0x00 == blk_value)
+				{
+					if (GL_ARGB_A(bg_color))
+					{
+						surface->draw_pixel(x + x_, y + y_, bg_color, z_order);
+					}
+				}
+				else
+				{
+					surface->draw_pixel((x + x_), (y + y_), rgb, z_order);
+				}
+				if (--blk_cnt == 0)
+				{//reload new block
+					blk_value = *p_data++;
+					blk_cnt = *p_data++;
+					b = (GL_RGB_B(font_color) * blk_value + GL_RGB_B(bg_color) * (255 - blk_value)) >> 8;
+					g = (GL_RGB_G(font_color) * blk_value + GL_RGB_G(bg_color) * (255 - blk_value)) >> 8;
+					r = (GL_RGB_R(font_color) * blk_value + GL_RGB_R(bg_color) * (255 - blk_value)) >> 8;
+					rgb = GL_RGB(r, g, b);
+				}
+			}
+		}
+	}
+	
+	static const LATTICE* get_lattice(const FONT_INFO* font, unsigned int utf8_code)
+	{
+		int first = 0;
+		int last = font->count - 1;
+		int middle = (first + last) / 2;
+		while (first <= last)
+		{
+			if (font->lattice_array[middle].utf8_code < utf8_code)
+				first = middle + 1;
+			else if (font->lattice_array[middle].utf8_code == utf8_code)
+			{
+				return &font->lattice_array[middle];
+			}
+			else
+			{
+				last = middle - 1;
+			}
+			middle = (first + last) / 2;
+		}
+		return 0;
+	}
+	static void get_string_pos(const char *s, const FONT_INFO* font, c_rect rect, unsigned int align_type, int &x, int &y)
 	{
 		int x_size, y_size;
-		get_str_size(string, font, x_size, y_size);
+		get_str_size(s, font, x_size, y_size);
 		int height = rect.m_bottom - rect.m_top + 1;
 		int width = rect.m_right - rect.m_left + 1;
 		x = y = 0;
@@ -879,183 +1247,6 @@ public:
 			break;
 		}
 	}
-};
-class c_lattice_font_op : public c_font_operator
-{
-public:
-	void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
-	{
-		const char* s = (const char*)string;
-		if (0 == s)
-		{
-			return;
-		}
-		int offset = 0;
-		unsigned int utf8_code;
-		while (*s)
-		{
-			s += get_utf8_code(s, utf8_code);
-			offset += draw_single_char(surface, z_order, utf8_code, (x + offset), y, (const LATTICE_FONT_INFO*)font, font_color, bg_color);
-		}
-	}
-	void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
-	{
-		const char* s = (const char*)string;
-		if (0 == s)
-		{
-			return;
-		}
-		int x, y;
-		get_string_pos(s, (const LATTICE_FONT_INFO*)font, rect, align_type, x, y);
-		draw_string(surface, z_order, string, rect.m_left + x, rect.m_top + y, font, font_color, bg_color);
-	}
-	void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
-	{
-		char buf[VALUE_STR_LEN];
-		value_2_string(value, dot_position, buf, VALUE_STR_LEN);
-		draw_string(surface, z_order, buf, x, y, (const LATTICE_FONT_INFO*)font, font_color, bg_color);
-	}
-	void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
-	{
-		char buf[VALUE_STR_LEN];
-		value_2_string(value, dot_position, buf, VALUE_STR_LEN);
-		draw_string_in_rect(surface, z_order, buf, rect, (const LATTICE_FONT_INFO*)font, font_color, bg_color, align_type);
-	}
-	int get_str_size(const void *string, const void* font, int& width, int& height)
-	{
-		const char* s = (const char*)string;
-		if (0 == s || 0 == font)
-		{
-			width = height = 0;
-			return -1;
-		}
-		int lattice_width = 0;
-		unsigned int utf8_code;
-		int utf8_bytes;
-		while (*s)
-		{
-			utf8_bytes = get_utf8_code(s, utf8_code);
-			const LATTICE* p_lattice = get_lattice((const LATTICE_FONT_INFO*)font, utf8_code);
-			lattice_width += p_lattice ? p_lattice->width : ((const LATTICE_FONT_INFO*)font)->height;
-			s += utf8_bytes;
-		}
-		width = lattice_width;
-		height = ((const LATTICE_FONT_INFO*)font)->height;
-		return 0;
-	}
-private:
-	void value_2_string(int value, int dot_position, char* buf, int len)
-	{
-		memset(buf, 0, len);
-		switch (dot_position)
-		{
-		case 0:
-			sprintf(buf, "%d", value);
-			break;
-		case 1:
-			sprintf(buf, "%.1f", value * 1.0 / 10);
-			break;
-		case 2:
-			sprintf(buf, "%.2f", value * 1.0 / 100);
-			break;
-		case 3:
-			sprintf(buf, "%.3f", value * 1.0 / 1000);
-			break;
-		default:
-			ASSERT(false);
-			break;
-		}
-	}
-	int draw_single_char(c_surface* surface, int z_order, unsigned int utf8_code, int x, int y, const LATTICE_FONT_INFO* font, unsigned int font_color, unsigned int bg_color)
-	{
-		unsigned int error_color = 0xFFFFFFFF;
-		if (font)
-		{
-			const LATTICE* p_lattice = get_lattice(font, utf8_code);
-			if (p_lattice)
-			{
-				draw_lattice(surface, z_order, x, y, p_lattice->width, font->height, p_lattice->pixel_buffer, font_color, bg_color);
-				return p_lattice->width;
-			}
-		}
-		else
-		{
-			error_color = GL_RGB(255, 0, 0);
-		}
-		//lattice/font not found, draw "X"
-		int len = 16;
-		for (int y_ = 0; y_ < len; y_++)
-		{
-			for (int x_ = 0; x_ < len; x_++)
-			{
-				int diff = (x_ - y_);
-				int sum = (x_ + y_);
-				(diff == 0 || diff == -1 || diff == 1 || sum == len || sum == (len - 1) || sum == (len + 1)) ?
-					surface->draw_pixel((x + x_), (y + y_), error_color, z_order) : surface->draw_pixel((x + x_), (y + y_), 0, z_order);
-			}
-		}
-		return len;
-	}
-	void draw_lattice(c_surface* surface, int z_order, int x, int y, int width, int height, const unsigned char* p_data, unsigned int font_color, unsigned int bg_color)
-	{
-		unsigned int r, g, b, rgb;
-		unsigned char blk_value = *p_data++;
-		unsigned char blk_cnt = *p_data++;
-		b = (GL_RGB_B(font_color) * blk_value + GL_RGB_B(bg_color) * (255 - blk_value)) >> 8;
-		g = (GL_RGB_G(font_color) * blk_value + GL_RGB_G(bg_color) * (255 - blk_value)) >> 8;
-		r = (GL_RGB_R(font_color) * blk_value + GL_RGB_R(bg_color) * (255 - blk_value)) >> 8;
-		rgb = GL_RGB(r, g, b);
-		for (int y_ = 0; y_ < height; y_++)
-		{
-			for (int x_ = 0; x_ < width; x_++)
-			{
-				ASSERT(blk_cnt);
-				if (0x00 == blk_value)
-				{
-					if (GL_ARGB_A(bg_color))
-					{
-						surface->draw_pixel(x + x_, y + y_, bg_color, z_order);
-					}
-				}
-				else
-				{
-					surface->draw_pixel((x + x_), (y + y_), rgb, z_order);
-				}
-				if (--blk_cnt == 0)
-				{//reload new block
-					blk_value = *p_data++;
-					blk_cnt = *p_data++;
-					b = (GL_RGB_B(font_color) * blk_value + GL_RGB_B(bg_color) * (255 - blk_value)) >> 8;
-					g = (GL_RGB_G(font_color) * blk_value + GL_RGB_G(bg_color) * (255 - blk_value)) >> 8;
-					r = (GL_RGB_R(font_color) * blk_value + GL_RGB_R(bg_color) * (255 - blk_value)) >> 8;
-					rgb = GL_RGB(r, g, b);
-				}
-			}
-		}
-	}
-	
-	const LATTICE* get_lattice(const LATTICE_FONT_INFO* font, unsigned int utf8_code)
-	{
-		int first = 0;
-		int last = font->count - 1;
-		int middle = (first + last) / 2;
-		while (first <= last)
-		{
-			if (font->lattice_array[middle].utf8_code < utf8_code)
-				first = middle + 1;
-			else if (font->lattice_array[middle].utf8_code == utf8_code)
-			{
-				return &font->lattice_array[middle];
-			}
-			else
-			{
-				last = middle - 1;
-			}
-			middle = (first + last) / 2;
-		}
-		return 0;
-	}
-	
 	static int get_utf8_code(const char* s, unsigned int& output_utf8_code)
 	{
 		static unsigned char s_utf8_length_table[256] =
@@ -1100,47 +1291,20 @@ private:
 		return utf8_bytes;
 	}
 };
-class c_word
-{
-public:
-	static void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)//string: char or wchar_t
-	{
-		fontOperator->draw_string(surface, z_order, string, x, y, font, font_color, bg_color);
-	}
-	static void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)//string: char or wchar_t
-	{
-		fontOperator->draw_string_in_rect(surface, z_order, string, rect, font, font_color, bg_color, align_type);
-	}
-	static void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
-	{
-		fontOperator->draw_value_in_rect(surface, z_order, value, dot_position, rect, font, font_color, bg_color, align_type);
-	}
-	static void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
-	{
-		fontOperator->draw_value(surface, z_order, value, dot_position, x, y, font, font_color, bg_color);
-	}
-	
-	static int get_str_size(const void* string, const void* font, int& width, int& height)
-	{
-		return fontOperator->get_str_size(string, font, width, height);
-	}
-	static c_font_operator* fontOperator;
-};
+#endif
+#ifndef GUILITE_CORE_INCLUDE_BITMAP_H
+#define GUILITE_CORE_INCLUDE_BITMAP_H
 #define	DEFAULT_MASK_COLOR 0xFF080408
 class c_surface;
-class c_image_operator
+/* 位图类定义，简单来说就是绘图 */
+class c_bitmap
 {
 public:
-	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR) = 0;
-	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR) = 0;
-};
-class c_bitmap_operator : public c_image_operator
-{
-public:
-	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
+	/* 绘图成员函数 */
+	static void draw_bitmap(c_surface* surface, int z_order, const BITMAP_INFO *pBitmap, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
-		ASSERT(image_info);
-		BITMAP_INFO* pBitmap = (BITMAP_INFO*)image_info;
+		/* 断言是否有有效的绘图资源 */
+		ASSERT(pBitmap);
 		unsigned short* lower_fb_16 = 0;
 		unsigned int* lower_fb_32 = 0;
 		int lower_fb_width = 0;
@@ -1176,10 +1340,9 @@ public:
 			}
 		}
 	}
-	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
+	/* 函数重载 */
+	static void draw_bitmap(c_surface* surface, int z_order, const BITMAP_INFO* pBitmap, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
-		ASSERT(image_info);
-		BITMAP_INFO* pBitmap = (BITMAP_INFO*)image_info;
 		if (0 == pBitmap || (src_x + width > pBitmap->width) || (src_y + height > pBitmap->height))
 		{
 			return;
@@ -1219,20 +1382,11 @@ public:
 		}
 	}
 };
-class c_image
-{
-public:
-	static void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
-	{
-		image_operator->draw_image(surface, z_order, image_info, x, y, mask_rgb);
-	}
-	static void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
-	{
-		image_operator->draw_image(surface, z_order, image_info, x, y, src_x, src_y, width, height, mask_rgb);
-	}
-	
-	static c_image_operator* image_operator;
-};
+#endif
+#ifndef GUILITE_CORE_INCLUDE_WND_H
+#define GUILITE_CORE_INCLUDE_WND_H
+typedef struct struct_font_info		FONT_INFO;
+typedef struct struct_color_rect	COLOR_RECT;
 class c_wnd;
 class c_surface;
 typedef enum
@@ -1261,66 +1415,91 @@ typedef enum
 }TOUCH_ACTION;
 typedef struct struct_wnd_tree
 {
-	c_wnd*					p_wnd;//window instance
-	unsigned int			resource_id;//ID
-	const char*				str;//caption
-	short   				x;//position x
-	short   				y;//position y
+	c_wnd*					p_wnd;
+	unsigned int			resource_id;
+	const char*				str;
+	short   				x;
+	short   				y;
 	short   				width;
 	short        			height;
-	struct struct_wnd_tree*	p_child_tree;//sub tree
+	struct struct_wnd_tree*	p_child_tree;
 }WND_TREE;
-typedef void (c_wnd::*WND_CALLBACK)(int, int);
-class c_wnd
+/* 基本的控件类，很多控件都是派生在 c_wnd 类 */
+class c_wnd : public c_cmd_target
 {
+	friend class c_dialog;
 public:
 	c_wnd() : m_status(STATUS_NORMAL), m_attr((WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS)), m_parent(0), m_top_child(0), m_prev_sibling(0), m_next_sibling(0),
 		m_str(0), m_font_color(0), m_bg_color(0), m_id(0), m_z_order(Z_ORDER_LEVEL_0), m_focus_child(0), m_surface(0) {};
 	virtual ~c_wnd() {};
+	/* c_wnd 的 connect 函数 */
 	virtual int connect(c_wnd *parent, unsigned short resource_id, const char* str,
 		short x, short y, short width, short height, WND_TREE* p_child_tree = 0)
 	{
+		/* 资源 ID 类型如果为 0 表示出错 */
 		if (0 == resource_id)
 		{
 			ASSERT(false);
 			return -1;
 		}
+		/* 设置当前 wnd 的 id */
+		/* 将资源 ID 类型赋值给 m_id，即控件 id */
 		m_id = resource_id;
 		set_str(str);
+		/* 设置当前控件的 parent 节点和初始化状态 */
 		m_parent = parent;
 		m_status = STATUS_NORMAL;
+		/* 如果是叶子节点 */
 		if (parent)
 		{
+			/* 继承 parent 节点的 z_order 和 surface */
 			m_z_order = parent->m_z_order;
+			/* 使用 parent 的 m_surface 初始化自己控件的 m_surface 成员 */
 			m_surface = parent->m_surface;
 		}
+		/* 如果当前 wnd 没有 surface，那么报错 */
 		if (0 == m_surface)
 		{
+			/* 断言当前窗口是否设置 surface */
 			ASSERT(false);
 			return -2;
 		}
 		/* (cs.x = x * 1024 / 768) for 1027*768=>800*600 quickly*/
+		/* 初始化当前 wnd 的边界范围 */
 		m_wnd_rect.m_left = x;
 		m_wnd_rect.m_top = y;
 		m_wnd_rect.m_right = (x + width - 1);
 		m_wnd_rect.m_bottom = (y + height - 1);
+		/* 窗口控件的预初始化，一般都是获取一些资源信息，包括颜色等 */
 		pre_create_wnd();
+		/* 如果不是根节点，那么将该节点添加到 parent 节点管理的 child 节点的尾部 */
 		if (0 != parent)
 		{
+			/* 将该 child 添加到 parent 的叶子节点的尾部 */
 			parent->add_child_2_tail(this);
 		}
+		/* 加载 child 节点控件，如果有 child 控件加载就会执行到
+		 * on_init_children() 函数
+		 * */
 		if (load_child_wnd(p_child_tree) >= 0)
 		{
+			/* 加载命令消息，child 控件可以通过 notify_parent 函数发送消息,
+			 * parent 控件受到消息后会回调对应的处理函数，处理函数的其中一
+			 * 个参数包括
+			 * child 控件 ID，这样就可以知道是哪个控件发来的消息了 */
+			load_cmd_msg();
 			on_init_children();
 		}
 		return 0;
 	}
 	void disconnect()
 	{
+		/* 如果当前控件没有关联起来，那么直接返回 */
 		if (0 == m_id)
 		{
 			return;
 		}
+		/* 如果当前控件没有 child 节点 */
 		if (0 != m_top_child)
 		{
 			c_wnd* child = m_top_child;
@@ -1332,10 +1511,13 @@ public:
 				child = next_child;
 			}
 		}
+		/* 如果当前控件的 parent 不为空 */
 		if (0 != m_parent)
 		{
+			/* 将这个控件从 parent 控件删除 */
 			m_parent->unlink_child(this);
 		}
+		/* 重新初始化被 disconnect 的控件 */
 		m_focus_child = 0;
 		m_id = 0;
 	}
@@ -1343,10 +1525,13 @@ public:
 	virtual void on_paint() {}
 	virtual void show_window()
 	{
+		/* 如果这个控件带有 visible 属性 */
 		if (ATTR_VISIBLE == (m_attr & ATTR_VISIBLE))
 		{
+			/* 关键是依据该成员函数绘图 */
 			on_paint();
 			c_wnd* child = m_top_child;
+			/* 遍历所有的 child 节点并绘制 */
 			if (0 != child)
 			{
 				while (child)
@@ -1359,11 +1544,14 @@ public:
 	}
 	unsigned short get_id() const { return m_id; }
 	int get_z_order() { return m_z_order; }
+	/* 查找指定 id 的 child 节点 */
 	c_wnd* get_wnd_ptr(unsigned short id) const
 	{
+		/* 获取第一个 child 节点，类似获取第一个叶子节点 */
 		c_wnd* child = m_top_child;
 		while (child)
 		{
+			/* 如果找到了匹配这个 id 的 child 节点，那么返回这个 child 节点 */
 			if (child->get_id() == id)
 			{
 				break;
@@ -1375,16 +1563,17 @@ public:
 	unsigned int get_attr() const { return m_attr; }
 	void set_str(const char* str) { m_str = str; }
 	void set_attr(WND_ATTRIBUTION attr) { m_attr = attr; }
+	/* c_wnd 默认的构造函数都会带有 ATTR_VISIBLE 和 ATTR_FOCUS 属性 */
 	bool is_focus_wnd() const
 	{
 		return ((m_attr & ATTR_VISIBLE) && (m_attr & ATTR_FOCUS)) ? true : false;
 	}
-	void set_font_color(unsigned int color) { m_font_color = color; }
+	void set_font_color(unsigned int color) { m_font_color = color;}
 	unsigned int get_font_color() { return m_font_color; }
 	void set_bg_color(unsigned int color) { m_bg_color = color; }
 	unsigned int get_bg_color() { return m_bg_color; }
-	void set_font_type(const LATTICE_FONT_INFO *font_type) { m_font = font_type; }
-	const void* get_font_type() { return m_font; }
+	void set_font_type(const FONT_INFO *font_type) { m_font_type = font_type; }
+	const FONT_INFO* get_font_type() { return m_font_type; }
 	void set_wnd_pos(short x, short y, short width, short height)
 	{
 		m_wnd_rect.m_left = x;
@@ -1400,23 +1589,33 @@ public:
 		wnd2screen(l, t);
 		rect.set_rect(l, t, m_wnd_rect.width(), m_wnd_rect.height());
 	}
+	/* 设置新的 focus 节点控件 */
 	c_wnd* set_child_focus(c_wnd *focus_child)
 	{
 		ASSERT(0 != focus_child);
 		ASSERT(focus_child->m_parent == this);
 		c_wnd* old_focus_child = m_focus_child;
+		/* 如果要设置为 focus 的 wnd 具有显示属性和 focus 属性 */
 		if (focus_child->is_focus_wnd())
 		{
+			/* 如果是一个新的要设置为 focus 的窗口 */
 			if (focus_child != old_focus_child)
 			{
+				/* 先释放旧 focus 窗口的 focus 状态 */
 				if (old_focus_child)
 				{
+					/* 取消旧窗口的 focus 状态 */
 					old_focus_child->on_kill_focus();
 				}
+				/* 初始化变量 m_focus_child 为设置的 child 节点指针 */
 				m_focus_child = focus_child;
+				/* 动态联编对应 child 节点的 on_focus 成员函数
+				 * 对 c_button 控件，在 on_focus 成员函数会完成显示效果的绘制
+				 * */
 				m_focus_child->on_focus();
 			}
 		}
+		/* 返回当前的 focus 节点指针 */
 		return m_focus_child;
 	}
 	c_wnd* get_parent() const { return m_parent; }
@@ -1433,8 +1632,10 @@ public:
 		}
 		return child;
 	}
+	/* 从数据结构层面，对数据进行整理 */
 	int	unlink_child(c_wnd *child)
 	{
+		/* 基本检查*/
 		if ((0 == child)
 			|| (this != child->m_parent))
 		{
@@ -1489,14 +1690,37 @@ public:
 	}
 	c_wnd* get_prev_sibling() const { return m_prev_sibling; }
 	c_wnd* get_next_sibling() const { return m_next_sibling; }
+	/* child 控件将消息发送到 parent 控件
+	 * parent 控件会定义支持的消息，一般地都是通过
+	 * GL_DECLARE_MESSAGE_MAP 等相关宏
+	 * */
+	void notify_parent(int msg_id, int param)
+	{
+		if (!m_parent)
+		{
+			return;
+		}
+		/* 根据消息 ID 查找对应的消息 entry */
+		const GL_MSG_ENTRY* entry = m_parent->find_msg_entry(m_parent->get_msg_entries(), MSG_TYPE_WND, msg_id);
+		/* 如果没有找到匹配的消息，那么直接返回 */
+		if (0 == entry)
+		{
+			return;
+		}
+		/* 回调指定消息的处理函数，参数分别是窗口 id 和额外的参数 */
+		(m_parent->*(entry->callBack))(m_id, param);
+	}
+
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		x -= m_wnd_rect.m_left;
 		y -= m_wnd_rect.m_top;
 		c_wnd* priority_wnd = 0;
+		/* 准备遍历所有的 child 节点，首先遍历是否存在带有优先级属性的节点 */
 		c_wnd* tmp_child = m_top_child;
 		while (tmp_child)
 		{
+			/* 如果存在带有优先级属性的控件、并且该控件在可视状态 */
 			if ((tmp_child->m_attr & ATTR_PRIORITY) && (tmp_child->m_attr & ATTR_VISIBLE))
 			{
 				priority_wnd = tmp_child;
@@ -1504,6 +1728,7 @@ public:
 			}
 			tmp_child = tmp_child->m_next_sibling;
 		}
+		/* 如果存在可视的优先级控件，直接使用优先级控件的 on_touch 并返回 */
 		if (priority_wnd)
 		{
 			return priority_wnd->on_touch(x, y, action);
@@ -1511,10 +1736,16 @@ public:
 		c_wnd* child = m_top_child;
 		while (child)
 		{
+			/* 如果当前控件是 focus 状态的控件(即事件的触发源头控件)，
+			 * 那么执行该控件的 on_touch 函数
+			 * */
+			/* 如果该 child 控件带有可视属性和 focus 属性，那么进一步判断 */
 			if (child->is_focus_wnd())
 			{
 				c_rect rect;
+				/* 获取该控件的矩形区域 */
 				child->get_wnd_rect(rect);
+				/* 根据坐标判断是否是该控件触发的事件 */
 				if (true == rect.pt_in_rect(x, y))
 				{
 					return child->on_touch(x, y, action);
@@ -1523,12 +1754,15 @@ public:
 			child = child->m_next_sibling;
 		}
 	}
+	/* 导航函数 */
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		c_wnd* priority_wnd = 0;
+		/* 获取当前窗口的第一个 child 节点 */
 		c_wnd* tmp_child = m_top_child;
 		while (tmp_child)
 		{
+			/* 初步分析只有 dialog list_box edit 这些控件带有这些属性 */
 			if ((tmp_child->m_attr & ATTR_PRIORITY) && (tmp_child->m_attr & ATTR_VISIBLE))
 			{
 				priority_wnd = tmp_child;
@@ -1536,16 +1770,22 @@ public:
 			}
 			tmp_child = tmp_child->m_next_sibling;
 		}
+		/* 如果存在优先级更高的窗口，那么执行更高优先级的 on_navigate 成员函数 */
 		if (priority_wnd)
 		{
 			return priority_wnd->on_navigate(key);
 		}
+
+		/* 如果当前窗口不带有 ATTR_FOCUS 或 ATTR_VISIBLE 属性，那么返回 */
 		if (!is_focus_wnd())
 		{
 			return;
 		}
+		/* 如果既不是向前导航，也不是向后导航，那么执行 focus_child 窗口
+		 * 控件的导航函数 */
 		if (key != NAV_BACKWARD && key != NAV_FORWARD)
 		{
+			/* 如果有 focus child 窗口 */
 			if (m_focus_child)
 			{
 				m_focus_child->on_navigate(key);
@@ -1553,14 +1793,21 @@ public:
 			return;
 		}
 		// Move focus
+		/* 获取当前窗口的 focus 节点控件 */
 		c_wnd* old_focus_wnd = m_focus_child;
 		// No current focus wnd, new one.
+		/* 如果当前窗口没有 focus 节点 */
 		if (!old_focus_wnd)
 		{
 			c_wnd* child = m_top_child;
 			c_wnd* new_focus_wnd = 0;
+			/* 设置新的 focus 节点 */
 			while (child)
 			{
+				/* 遍历当前窗口的所有 child 节点，判断是否处在 focus 状态
+				 * 如果当前节点带有 ATTR_VISIBLE 和 ATTR_FOCUS 属性，那么遍历
+				 * 这个节点的 child 节点并设置为 focus 状态，直到为 NULL
+				 * */
 				if (child->is_focus_wnd())
 				{
 					new_focus_wnd = child;
@@ -1570,44 +1817,67 @@ public:
 				}
 				child = child->m_next_sibling;
 			}
+			/* 设置完 focus 节点后就直接返回了 */
 			return;
 		}
 		// Move focus from old wnd to next wnd
+		/* 如果已经有 focus 节点
+		 * 如果是 NAV_FORWARD 按键，那么切换 focus 窗口为下一个兄弟节点
+		 * 如果是 NAV_BACKWARD 按键，那么切换 focus 窗口为上一个兄弟节点
+		 * */
 		c_wnd* next_focus_wnd = (key == NAV_FORWARD) ? old_focus_wnd->m_next_sibling : old_focus_wnd->m_prev_sibling;
 		while (next_focus_wnd && (!next_focus_wnd->is_focus_wnd()))
 		{// Search neighbor of old focus wnd
 			next_focus_wnd = (key == NAV_FORWARD) ? next_focus_wnd->m_next_sibling : next_focus_wnd->m_prev_sibling;
 		}
+		/* 如果下一个 next_focus_wnd 节点为空，即遍历到结尾了 */
 		if (!next_focus_wnd)
 		{// Search whole brother wnd
+			/* 继续从 parent 节点的第一个 child 节点开始遍历 */
 			next_focus_wnd = (key == NAV_FORWARD) ? old_focus_wnd->m_parent->m_top_child : old_focus_wnd->m_parent->get_last_child();
 			while (next_focus_wnd && (!next_focus_wnd->is_focus_wnd()))
 			{
 				next_focus_wnd = (key == NAV_FORWARD) ? next_focus_wnd->m_next_sibling : next_focus_wnd->m_prev_sibling;
 			}
 		}
+		/* 设置新的 child 节点为 focus 状态 */
 		if (next_focus_wnd)
 		{
 			next_focus_wnd->m_parent->set_child_focus(next_focus_wnd);
 		}
 	}
 	c_surface* get_surface() { return m_surface; }
+	/* 通过该函数初始化 wnd 的 m_surface 成员
+	 * m_surface 和显示相关，可以理解为显示设备的层数
+	 * */
 	void set_surface(c_surface* surface) { m_surface = surface; }
 protected:
 	virtual void pre_create_wnd() {};
+	/* 将 child 控件指针添加到整个窗口控件树型尾部
+	 * 简单来说，就是将新的 child 节点关联到当前对象窗口的叶子节点中 */
 	void add_child_2_tail(c_wnd *child)
 	{
 		if (0 == child)return;
+		/* 如果这个 child 节点已经添加到了这个窗口控件，那么返回 */
 		if (child == get_wnd_ptr(child->m_id))return;
+		/* 如果目前当前窗口的第一个 child 节点为空，那么将这个 child 节点赋值
+		 * 为当前窗口的第一个 child，也可以认为是第一个叶子节点 */
 		if (0 == m_top_child)
 		{
+			/* 赋值这个 child 为 m_top_child，当前节点的第一个叶子节点 */
 			m_top_child = child;
+			/* 初始化第一个叶子节点的兄弟姐妹为空 */
 			child->m_prev_sibling = 0;
 			child->m_next_sibling = 0;
 		}
+		/* 如果已经存在了第一个叶子节点，那么将新添加的 child 节点，关联到这个
+		 * 树形结构 */
 		else
 		{
+			/* 获取最后一个添加的叶子节点，也就是 child 节点，将新添加 child
+			 * 节点关联到这个最后一个添加的 child 节点，作为兄弟节点 */
 			c_wnd* last_child = get_last_child();
+			/* 如果没有找到最后一个 child 节点，说明出错 */
 			if (0 == last_child)
 			{
 				ASSERT(false);
@@ -1617,12 +1887,15 @@ protected:
 			child->m_next_sibling = 0;
 		}
 	}
+
 	void wnd2screen(int &x, int &y) const
 	{
+		/* 获取 parent 节点 */
 		c_wnd* parent = m_parent;
 		c_rect rect;
 		x += m_wnd_rect.m_left;
 		y += m_wnd_rect.m_top;
+		/* 循环遍历，确认当前窗口的绝对位置？？？ */
 		while (0 != parent)
 		{
 			parent->get_wnd_rect(rect);
@@ -1631,16 +1904,21 @@ protected:
 			parent = parent->m_parent;
 		}
 	}
+
+	/* parent 节点在 connect 的时候，会通过该函数加载所有的 child 节点 */
 	int load_child_wnd(WND_TREE *p_child_tree)
 	{
+		/* 如果指向的 child 节点链表为空，那么直接返回 */
 		if (0 == p_child_tree)
 		{
 			return 0;
 		}
 		int sum = 0;
 		WND_TREE* p_cur = p_child_tree;
+		/* 循环遍历节点数组 */
 		while (p_cur->p_wnd)
 		{
+		/* 如果当前控件的 id 不为 0，说明已经被加载（初始化）过了 */
 			if (0 != p_cur->p_wnd->m_id)
 			{//This wnd has been used! Do not share!
 				ASSERT(false);
@@ -1648,65 +1926,107 @@ protected:
 			}
 			else
 			{
+        		/* 递归调用该 child 节点的 child 节点
+        		 * this 指针是该 child 节点的 parent 节点
+        		 * */
+				/* 调试发现，c_dialog 相关的控件在 connect 后 m_z_order 就从 0 变为了 1 */
 				p_cur->p_wnd->connect(this, p_cur->resource_id, p_cur->str,
 					p_cur->x, p_cur->y, p_cur->width, p_cur->height, p_cur->p_child_tree);
 			}
 			p_cur++;
 			sum++;
 		}
+		/* 返回加载的 child 资源的数量 */
 		return sum;
 	}
 	void set_active_child(c_wnd* child) { m_focus_child = child; }
 	virtual void on_focus() {};
 	virtual void on_kill_focus() {};
 protected:
-	unsigned short	m_id;
 	WND_STATUS		m_status;
 	WND_ATTRIBUTION	m_attr;
-	c_rect			m_wnd_rect;		//position relative to parent window.
-	c_wnd*			m_parent;		//parent window
-	c_wnd*			m_top_child;	//the first sub window would be navigated
-	c_wnd*			m_prev_sibling;	//previous brother
-	c_wnd*			m_next_sibling;	//next brother
-	c_wnd*			m_focus_child;	//current focused window
-	const char*		m_str;			//caption
-	const void*		m_font;			//font face
-	unsigned int	m_font_color;
-	unsigned int	m_bg_color;
-	int				m_z_order;		//the graphic level for rendering
-	c_surface*		m_surface;
+	/* 相对 parent 窗口的位置 */
+	c_rect			m_wnd_rect;// position relative to parent wnd.
+	c_wnd*			m_parent;
+	/* 第一个 child 窗口控件指针 */
+	c_wnd*			m_top_child;
+	c_wnd*			m_prev_sibling;
+	c_wnd*			m_next_sibling;
+	const char*		m_str;
+	const FONT_INFO*	m_font_type;
+	unsigned int		m_font_color;
+	unsigned int		m_bg_color;
+	/* 控件的 id */
+	unsigned short		m_id;
+	/* 默认 z_order 都是 Z_ORDER_LEVEL_0
+	 * 表示当前控件所在的层级
+	 * */
+	int					m_z_order;
+	c_wnd*				m_focus_child;//current focused wnd
+	c_surface*			m_surface;
+private:
+	c_wnd(const c_wnd &win);
+	c_wnd& operator=(const c_wnd &win);
 };
-class c_button : public c_wnd
+#endif
+#ifndef GUILITE_CORE_INCLUDE_AUDIO_H
+#define GUILITE_CORE_INCLUDE_AUDIO_H
+enum AUDIO_TYPE
+{
+	AUDIO_HEART_BEAT,
+	AUDIO_ALARM,
+	AUDIO_MAX
+};
+class c_audio
 {
 public:
-	void set_on_click(WND_CALLBACK on_click) { this->on_click = on_click; }
+	static int play(AUDIO_TYPE type);
+private:
+	static void init();
+};
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_BUTTON_H
+#define GUILITE_WIDGETS_INCLUDE_BUTTON_H
+#define GL_BN_CLICKED							0x1111
+#define ON_GL_BN_CLICKED(func)                                       \
+{MSG_TYPE_WND, GL_BN_CLICKED, 0, msgCallback(&func)},
+typedef struct struct_bitmap_info BITMAP_INFO;
+class c_button : public c_wnd
+{
 protected:
+	/* 当前 button 的绘图成员函数 */
 	virtual void on_paint()
 	{
 		c_rect rect;
+		/* 对象引用作为参数 */
 		get_screen_rect(rect);
 		switch (m_status)
 		{
+		/* 如果是 normal 状态 */
 		case STATUS_NORMAL:
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
 			if (m_str)
 			{
-				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
+				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
 			}
 			break;
+		/* 如果是 focused 状态 */
 		case STATUS_FOCUSED:
+			/* 填充这个区域为 focus 的色彩 */
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_FOCUS), m_z_order);
+			/* 如果存在 m_str，那么显示这串字符 */
 			if (m_str)
 			{
-				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
+				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
 			}
 			break;
+		/* 如果是 pushed 状态 */
 		case STATUS_PUSHED:
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_PUSHED), m_z_order);
 			m_surface->draw_rect(rect, c_theme::get_color(COLOR_WND_BORDER), 2, m_z_order);
 			if (m_str)
 			{
-				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER);
+				c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER);
 			}
 			break;
 		default:
@@ -1714,41 +2034,55 @@ protected:
 			break;
 		}
 	}
+	/* button 控件的 focus 函数
+	 * 修改状态为 focus，并完成 focus 状态的绘图
+	 * */
 	virtual void on_focus()
 	{
+		/* 标记当前控件为 focused 状态 */
 		m_status = STATUS_FOCUSED;
 		on_paint();
 	}
 	virtual void on_kill_focus()
 	{
+		/* 标记当前控件为 normal 状态 */
 		m_status = STATUS_NORMAL;
 		on_paint();
 	}
+	/* button */
 	virtual void pre_create_wnd()
 	{
-		on_click = 0;
+		/* 创建窗口控件的预初始化函数
+		 * 获取控件的属性、字体类型、字体颜色
+		 * */
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_font_type = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		if (action == TOUCH_DOWN)
 		{
+			/* 设置当前窗口为 focus 状态
+			 * 需要通过 parent wnd 做一些检查并做一些前期的准备工作
+			 * 比如释放旧 focus 窗口的 focus 状态
+			 * */
 			m_parent->set_child_focus(this);
+			/* 设置 pushed 状态的绘图 */
 			m_status = STATUS_PUSHED;
 			on_paint();
 		}
 		else
 		{
-			m_status = STATUS_FOCUSED;
+			/* 这个是直接修改当前窗口为 focus 状态 */
+			m_status = STATUS_NORMAL;
+			/* 再次完成 focus 状态的绘图 */
 			on_paint();
-			if(on_click)
-			{
-				(m_parent->*(on_click))(m_id, 0);
-			}
+			/* 将消息发送到 parent 窗口控件 */
+			notify_parent(GL_BN_CLICKED, 0);
 		}
 	}
+	/* c_button 的导航函数 */
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		switch (key)
@@ -1763,8 +2097,10 @@ protected:
 		}
 		return c_wnd::on_navigate(key);
 	}
-	WND_CALLBACK on_click;
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_DIALOG_H
+#define GUILITE_WIDGETS_INCLUDE_DIALOG_H
 class c_surface;
 class c_dialog;
 typedef struct
@@ -1772,10 +2108,12 @@ typedef struct
 	c_dialog* 	dialog;
 	c_surface*	surface;
 } DIALOG_ARRAY;
+
+/* dialog 控件类 */
 class c_dialog : public c_wnd
 {
 public:
-	static int open_dialog(c_dialog* p_dlg, bool modal_mode = true)
+	static int open_dialog(c_dialog* p_dlg, c_wnd* ctrl_wnd, bool modal_mode = true)
 	{
 		if (0 == p_dlg)
 		{
@@ -1783,19 +2121,23 @@ public:
 			return 0;
 		}
 		c_dialog* cur_dlg = get_the_dialog(p_dlg->get_surface());
+		/* 如果当前层的 dialog 就是指定的 dialog，那么返回 1 */
 		if (cur_dlg == p_dlg)
 		{
 			return 1;
 		}
+		/* 否则的话，清空指定 dialog 的属性值 */
 		if (cur_dlg)
 		{
 			cur_dlg->set_attr(WND_ATTRIBUTION(0));
 		}
+		/* 设置指定的 dialog 控件的属性 */
 		p_dlg->set_attr(modal_mode ? (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS | ATTR_PRIORITY) : (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS));
 		p_dlg->show_window();
 		p_dlg->set_me_the_dialog();
 		return 1;
 	}
+	/* c_dialog 的退出函数 */
 	static int close_dialog(c_surface* surface)
 	{
 		c_dialog* dlg = get_the_dialog(surface);
@@ -1806,6 +2148,7 @@ public:
 		c_rect rc;
 		dlg->get_screen_rect(rc);
 		dlg->set_attr(WND_ATTRIBUTION(0));
+		/* 显示 c_dialog 下一层 c_surface */
 		surface->show_layer(rc, dlg->m_z_order -  1);
 		//clear the dialog
 		for (int i = 0; i < SURFACE_CNT_MAX; i++)
@@ -1819,10 +2162,12 @@ public:
 		ASSERT(false);
 		return -1;
 	}
+	/* 返回当前 surface 的 dialog */
 	static c_dialog* get_the_dialog(c_surface* surface)
 	{
 		for (int i = 0; i < SURFACE_CNT_MAX; i++)
 		{
+			/* 从保存的 private 成雁 ms_the_dialogs 数组找到匹配的 dialog */
 			if (ms_the_dialogs[i].surface == surface)
 			{
 				return ms_the_dialogs[i].dialog;
@@ -1834,9 +2179,12 @@ protected:
 	virtual void pre_create_wnd()
 	{
 		m_attr = WND_ATTRIBUTION(0);// no focus/visible
+		/* 在这里将 c_dialog 的 z_order 修改为 1 */
 		m_z_order = Z_ORDER_LEVEL_1;
 		m_bg_color = GL_RGB(33, 42, 53);
 	}
+
+	/* c_dialog 的绘图程序 */
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -1844,12 +2192,13 @@ protected:
 		m_surface->fill_rect(rect, m_bg_color, m_z_order);
 		if (m_str)
 		{
-			c_word::draw_string(m_surface, m_z_order, m_str, rect.m_left + 35, rect.m_top, c_theme::get_font(FONT_DEFAULT), GL_RGB(255, 255, 255), GL_ARGB(0, 0, 0, 0));
+			c_word::draw_string(m_surface, m_z_order, m_str, rect.m_left + 35, rect.m_top, c_theme::get_font(FONT_DEFAULT), GL_RGB(255, 255, 255), GL_ARGB(0, 0, 0, 0), ALIGN_LEFT);
 		}
 	}
 private:
 	int set_me_the_dialog()
 	{
+		/* 初始化控件的 ms_the_dialogs 数组 */
 		c_surface* surface = get_surface();
 		for (int i = 0; i < SURFACE_CNT_MAX; i++)
 		{
@@ -1871,8 +2220,12 @@ private:
 		ASSERT(false);
 		return -2;
 	}
+	/* 这个数组成员表示的是什么？？？ */
 	static DIALOG_ARRAY ms_the_dialogs[SURFACE_CNT_MAX];
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_KEYBOARD_H
+#define GUILITE_WIDGETS_INCLUDE_KEYBOARD_H
 #include <string.h>
 //Changing key width/height will change the width/height of keyboard
 #define KEY_WIDTH          65
@@ -1911,9 +2264,12 @@ typedef enum
 }CLICK_STATUS;
 extern WND_TREE g_key_board_children[];
 extern WND_TREE g_number_board_children[];
+
+/* 键盘类 */
 class c_keyboard: public c_wnd
 {
 public:
+	/* keyboard 的 connect 成员函数 */
 	virtual int connect(c_wnd *user, unsigned short resource_id, KEYBOARD_STYLE style)
 	{
 		c_rect user_rect;
@@ -1934,27 +2290,14 @@ public:
 		}
 		return -1;
 	}
-	virtual void on_init_children()
-	{
-		c_wnd* child = m_top_child;
-		if (0 != child)
-		{
-			while (child)
-			{
-				((c_button*)child)->set_on_click(WND_CALLBACK(&c_keyboard::on_key_clicked));
-				child = child->get_next_sibling();
-			}
-		}
-	}
 	KEYBOARD_STATUS get_cap_status(){return m_cap_status;}
 	char* get_str() { return m_str; }
-	void set_on_click(WND_CALLBACK on_click) { this->on_click = on_click; }
 protected:
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 		m_cap_status = STATUS_UPPERCASE;
-		memset(m_str, 0, sizeof(m_str));
+    	        memset(m_str, 0, sizeof(m_str));
 		m_str_len = 0;
 	}
 	virtual void on_paint()
@@ -2005,7 +2348,7 @@ protected:
 		ASSERT(false);
 	InputChar:
 		m_str[m_str_len++] = id;
-		(m_parent->*(on_click))(m_id, CLICK_CHAR);
+		notify_parent(KEYBORAD_CLICK, CLICK_CHAR);
 	}
 	void on_del_clicked(int id, int param)
 	{
@@ -2014,7 +2357,7 @@ protected:
 			return;
 		}
 		m_str[--m_str_len] = 0;
-		(m_parent->*(on_click))(m_id, CLICK_CHAR);
+		notify_parent(KEYBORAD_CLICK, CLICK_CHAR);
 	}
 	void on_caps_clicked(int id, int param)
 	{
@@ -2024,18 +2367,19 @@ protected:
 	void on_enter_clicked(int id, int param)
 	{
 		memset(m_str, 0, sizeof(m_str));
-		(m_parent->*(on_click))(m_id, CLICK_ENTER);
+		return notify_parent(KEYBORAD_CLICK, CLICK_ENTER);
 	}
 	void on_esc_clicked(int id, int param)
 	{
 		memset(m_str, 0, sizeof(m_str));
-		(m_parent->*(on_click))(m_id, CLICK_ESC);
+		notify_parent(KEYBORAD_CLICK, CLICK_ESC);
 	}
+	GL_DECLARE_MESSAGE_MAP()
 private:
+	/* 定义了一个字符串数组 */
 	char m_str[32];
 	int	 m_str_len;
 	KEYBOARD_STATUS m_cap_status;
-	WND_CALLBACK on_click;
 };
 class c_keyboard_button : public c_button
 {
@@ -2062,31 +2406,31 @@ protected:
 		}
 		if (m_id == 0x14)
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "Caps", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "Caps", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == 0x1B)
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "Esc", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "Esc", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == ' ')
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "Space", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "Space", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == '\n')
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "Enter", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "Enter", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == '.')
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, ".", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, ".", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == 0x7F)
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "Back", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "Back", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		else if (m_id == 0x90)
 		{
-			return c_word::draw_string_in_rect(m_surface, m_z_order, "?123", rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+			return c_word::draw_string_in_rect(m_surface, m_z_order, "?123", rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 		}
 		char letter[] = { 0, 0 };
 		if (m_id >= 'A' && m_id <= 'Z')
@@ -2097,9 +2441,12 @@ protected:
 		{
 			letter[0] = (char)m_id;
 		}
-		c_word::draw_string_in_rect(m_surface, m_z_order, letter, rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
+		c_word::draw_string_in_rect(m_surface, m_z_order, letter, rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_attr);
 	}
 };
+#endif /* KEYBOARD_H_ */
+#ifndef GUILITE_WIDGETS_INCLUDE_EDIT_H
+#define GUILITE_WIDGETS_INCLUDE_EDIT_H
 #include <string.h>
 #define MAX_EDIT_STRLEN		32
 #define IDD_KEY_BOARD		0x1
@@ -2115,6 +2462,7 @@ public:
 			strcpy(m_str, str);
 		}
 	}
+	/* 设置键盘类型 */
 	void set_keyboard_style(KEYBOARD_STYLE kb_sytle) { m_kb_style = kb_sytle; }
 	
 protected:
@@ -2122,7 +2470,7 @@ protected:
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 		m_kb_style = STYLE_ALL_BOARD;
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_font_type = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 		memset(m_str_input, 0, sizeof(m_str_input));
 		memset(m_str, 0, sizeof(m_str));
@@ -2144,7 +2492,7 @@ protected:
 				m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 			}
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
 			break;
 		case STATUS_FOCUSED:
 			if (m_z_order > m_parent->get_z_order())
@@ -2155,7 +2503,7 @@ protected:
 				m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 			}
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_FOCUS), m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
 			break;
 		case STATUS_PUSHED:
 			if (m_z_order == m_parent->get_z_order())
@@ -2166,13 +2514,14 @@ protected:
 			}
 			m_surface->fill_rect(rect.m_left, rect.m_top, rect.m_right, rect.m_bottom, c_theme::get_color(COLOR_WND_PUSHED), m_parent->get_z_order());
 			m_surface->draw_rect(rect.m_left, rect.m_top, rect.m_right, rect.m_bottom, c_theme::get_color(COLOR_WND_BORDER), m_parent->get_z_order(), 2);
-			strlen(m_str_input) ? c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str_input, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER) :
-				c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER);
+			strlen(m_str_input) ? c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str_input, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER) :
+				c_word::draw_string_in_rect(m_surface, m_parent->get_z_order(), m_str, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_PUSHED), ALIGN_HCENTER | ALIGN_VCENTER);
 			break;
 		default:
 			ASSERT(false);
 		}
 	}
+	/* 设置为 focus 状态 */
 	virtual void on_focus()
 	{
 		m_status = STATUS_FOCUSED;
@@ -2225,11 +2574,11 @@ protected:
 			break;
 		}
 	}
+	GL_DECLARE_MESSAGE_MAP()
 private:
 	void show_keyboard()
 	{
 		s_keyboard.connect(this, IDD_KEY_BOARD, m_kb_style);
-		s_keyboard.set_on_click(WND_CALLBACK(&c_edit::on_key_board_click));
 		s_keyboard.show_window();
 	}
 	void on_touch_down(int x, int y)
@@ -2247,6 +2596,7 @@ private:
 				m_parent->set_child_focus(this);
 			}
 		}
+		/* 如果点击的是键盘范围 */
 		else if (kb_rect_relate_2_edit_parent.pt_in_rect(x, y))
 		{//click key board
 			c_wnd::on_touch(x, y, TOUCH_DOWN);
@@ -2264,6 +2614,7 @@ private:
 	{
 		if (STATUS_FOCUSED == m_status)
 		{
+			/* 如果之前是 focused 状态，更新为 pushed 状态 */
 			m_status = STATUS_PUSHED;
 			on_paint();
 		}
@@ -2285,36 +2636,56 @@ private:
 	char m_str_input[MAX_EDIT_STRLEN];
 	char m_str[MAX_EDIT_STRLEN];
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_LABEL_H
+#define GUILITE_WIDGETS_INCLUDE_LABEL_H
 class c_label : public c_wnd
 {
 public:
+	void set_align_type(unsigned int align_type)
+	{
+		m_align_type = align_type;
+	}
 	virtual void on_paint()
 	{
 		c_rect rect;
-		unsigned int bg_color = m_bg_color ? m_bg_color : m_parent->get_bg_color();
+		unsigned int bg_color = m_bg_color ? m_bg_color \
+			: m_parent->get_bg_color();
 		get_screen_rect(rect);
 		if (m_str)
 		{
 			m_surface->fill_rect(rect.m_left, rect.m_top, rect.m_right, rect.m_bottom, bg_color, m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font, m_font_color, bg_color, ALIGN_LEFT | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_z_order, m_str, rect, m_font_type, m_font_color, bg_color, m_align_type);
 		}
 	}
+
 protected:
+	/* label 控件的预初始化函数 */
 	virtual void pre_create_wnd()
 	{
 		m_attr = ATTR_VISIBLE;
-		m_font_color = c_theme::get_color(COLOR_WND_FONT);
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_align_type = ALIGN_HCENTER | ALIGN_LEFT;
+    		m_font_color = c_theme::get_color(COLOR_WND_FONT);
+			if (!m_font_type)
+			{
+        		m_font_type = c_theme::get_font(FONT_DEFAULT);
+			}
 	}
+private:
+	unsigned int m_align_type;
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_LIST_BOX_H
+#define GUILITE_WIDGETS_INCLUDE_LIST_BOX_H
 #include <string.h>
 #define MAX_ITEM_NUM			4
+#define GL_LIST_CONFIRM			0x1
 #define ITEM_HEIGHT				45
+#define ON_LIST_CONFIRM(func) \
+{MSG_TYPE_WND, GL_LIST_CONFIRM, 0, msgCallback(&func)},
 class c_list_box : public c_wnd
 {
 public:
-	void set_on_change(WND_CALLBACK on_change) { this->on_change = on_change; }
-	short get_item_count() { return m_item_total; }
 	int add_item(char* str)
 	{
 		if (m_item_total >= MAX_ITEM_NUM)
@@ -2332,6 +2703,7 @@ public:
 		memset(m_item_array, 0, sizeof(m_item_array));
 		update_list_size();
 	}
+	short get_item_count() { return m_item_total; }
 	void  select_item(short index)
 	{
 		if (index < 0 || index >= m_item_total)
@@ -2348,7 +2720,7 @@ protected:
 		memset(m_item_array, 0, sizeof(m_item_array));
 		m_item_total = 0;
 		m_selected_item = 0;
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_font_type = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
 	virtual void on_paint()
@@ -2365,7 +2737,7 @@ protected:
 				m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 			}
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
 			break;
 		case STATUS_FOCUSED:
 			if (m_z_order > m_parent->get_z_order())
@@ -2375,12 +2747,12 @@ protected:
 				m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
 			}
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_FOCUS), m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
 			break;
 		case STATUS_PUSHED:
 			m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_PUSHED), m_z_order);
 			m_surface->draw_rect(rect, c_theme::get_color(COLOR_WND_BORDER), 2, m_z_order);
-			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font, GL_RGB(2, 124, 165), GL_ARGB(0, 0, 0, 0), ALIGN_HCENTER | ALIGN_VCENTER);
+			c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[m_selected_item], rect, m_font_type, GL_RGB(2, 124, 165), GL_ARGB(0, 0, 0, 0), ALIGN_HCENTER | ALIGN_VCENTER);
 			//draw list
 			if (m_item_total > 0)
 			{
@@ -2458,12 +2830,12 @@ private:
 			if (m_selected_item == i)
 			{
 				m_surface->fill_rect(tmp_rect, c_theme::get_color(COLOR_WND_FOCUS), m_z_order);
-				c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[i], tmp_rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
+				c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[i], tmp_rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_FOCUS), ALIGN_HCENTER | ALIGN_VCENTER);
 			}
 			else
 			{
 				m_surface->fill_rect(tmp_rect, GL_RGB(17, 17, 17), m_z_order);
-				c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[i], tmp_rect, m_font, m_font_color, GL_RGB(17, 17, 17), ALIGN_HCENTER | ALIGN_VCENTER);
+				c_word::draw_string_in_rect(m_surface, m_z_order, m_item_array[i], tmp_rect, m_font_type, m_font_color, GL_RGB(17, 17, 17), ALIGN_HCENTER | ALIGN_VCENTER);
 			}
 		}
 	}
@@ -2486,10 +2858,7 @@ private:
 			{
 				m_status = STATUS_FOCUSED;
 				on_paint();
-				if(on_change)
-				{
-					(m_parent->*(on_change))(m_id, m_selected_item);
-				}
+				notify_parent(GL_LIST_CONFIRM, m_selected_item);
 			}
 		}
 	}
@@ -2512,10 +2881,7 @@ private:
 				m_status = STATUS_FOCUSED;
 				select_item((y - m_list_wnd_rect.m_top) / ITEM_HEIGHT);
 				on_paint();
-				if(on_change)
-				{
-					(m_parent->*(on_change))(m_id, m_selected_item);
-				}
+				notify_parent(GL_LIST_CONFIRM, m_selected_item);
 			}
 			else
 			{
@@ -2528,8 +2894,10 @@ private:
 	char*			m_item_array[MAX_ITEM_NUM];
 	c_rect			m_list_wnd_rect;	//rect relative to parent wnd.
 	c_rect			m_list_screen_rect;	//rect relative to physical screen(frame buffer)
-	WND_CALLBACK 	on_change;
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_SLIDE_GROUP_H
+#define GUILITE_WIDGETS_INCLUDE_SLIDE_GROUP_H
 #include <stdlib.h>
 #define MAX_PAGES	5
 class c_gesture;
@@ -2865,8 +3233,14 @@ inline void c_slide_group::on_touch(int x, int y, TOUCH_ACTION action)
 		}
 	}
 }
-#define ID_BT_ARROW_UP      	0x1111
-#define ID_BT_ARROW_DOWN    	0x2222
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_SPINBOX_H
+#define GUILITE_WIDGETS_INCLUDE_SPINBOX_H
+#define ID_BT_ARROW_UP      0x1111
+#define ID_BT_ARROW_DOWN    0x2222
+#define	GL_SPIN_CHANGE		0x3333
+#define ON_SPIN_CHANGE(func) \
+{MSG_TYPE_WND, GL_SPIN_CHANGE, 0, msgCallback(&func)},
 class c_spin_box;
 class c_spin_button : public c_button
 {
@@ -2887,7 +3261,6 @@ public:
 	short get_step() { return m_step; }
 	void set_value_digit(short digit) { m_digit = digit; }
 	short get_value_digit() { return m_digit; }
-	void set_on_change(WND_CALLBACK on_change) { this->on_change = on_change; }
 protected:
 	virtual void on_paint()
 	{
@@ -2895,12 +3268,12 @@ protected:
 		get_screen_rect(rect);
 		rect.m_right = rect.m_left + (rect.width() * 2 / 3);
 		m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
-		c_word::draw_value_in_rect(m_surface, m_parent->get_z_order(), m_cur_value, m_digit, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
+		c_word::draw_value_in_rect(m_surface, m_parent->get_z_order(), m_cur_value, m_digit, rect, m_font_type, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
 	}
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE);
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_font_type = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 		m_max = 6;
 		m_min = 1;
@@ -2920,10 +3293,7 @@ protected:
 			return;
 		}
 		m_cur_value += m_step;
-		if(on_change)
-		{
-			(m_parent->*(on_change))(m_id, m_cur_value);
-		}
+		notify_parent(GL_SPIN_CHANGE, m_cur_value);
 		on_paint();
 	}
 	void on_arrow_down_bt_click()
@@ -2933,10 +3303,7 @@ protected:
 			return;
 		}
 		m_cur_value -= m_step;
-		if(on_change)
-		{
-			(m_parent->*(on_change))(m_id, m_cur_value);
-		}
+		notify_parent(GL_SPIN_CHANGE, m_cur_value);
 		on_paint();
 	}
 	short			m_cur_value;
@@ -2947,7 +3314,6 @@ protected:
 	short			m_digit;
 	c_spin_button  	m_bt_up;
 	c_spin_button  	m_bt_down;
-	WND_CALLBACK 	on_change;
 };
 inline void c_spin_button::on_touch(int x, int y, TOUCH_ACTION action)
 {
@@ -2957,6 +3323,9 @@ inline void c_spin_button::on_touch(int x, int y, TOUCH_ACTION action)
 	}
 	c_button::on_touch(x, y, action);
 }
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_TABLE_H
+#define GUILITE_WIDGETS_INCLUDE_TABLE_H
 #define  MAX_COL_NUM  30
 #define  MAX_ROW_NUM  30
 class c_table: public c_wnd
@@ -3040,21 +3409,24 @@ protected:
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE);
-		m_font = c_theme::get_font(FONT_DEFAULT);
+		m_font_type = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
 	void draw_item(int row, int col, const char* str, unsigned int color)
 	{
 		c_rect rect = get_item_rect(row, col);
 		m_surface->fill_rect(rect.m_left + 1, rect.m_top + 1, rect.m_right - 1, rect.m_bottom - 1, color, m_z_order);
-		c_word::draw_string_in_rect(m_surface, m_z_order, str, rect, m_font, m_font_color, GL_ARGB(0, 0, 0, 0), m_align_type);
+		c_word::draw_string_in_rect(m_surface, m_z_order, str, rect, m_font_type, m_font_color, GL_ARGB(0, 0, 0, 0), m_align_type);
 	}
-	unsigned int m_align_type;	
+	unsigned int m_align_type;
 	unsigned int m_row_num;
 	unsigned int m_col_num;
 	unsigned int m_row_height[MAX_ROW_NUM];
 	unsigned int m_col_width[MAX_COL_NUM];
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_WAVE_BUFFER_H
+#define GUILITE_WIDGETS_INCLUDE_WAVE_BUFFER_H
 #include <string.h>
 #include <stdio.h>
 #define WAVE_BUFFER_LEN	1024
@@ -3080,10 +3452,13 @@ public:
 			//log_out("wave buf full\n");
 			return BUFFER_FULL;
 		}
+		/* 填充数据到 m_wave_buf 环形缓冲区的尾部 */
 		m_wave_buf[m_tail] = data;
 		m_tail = (m_tail + 1) % WAVE_BUFFER_LEN;
 		return 1;
 	}
+
+	/* 根据 frame 的值获取 wave value */
 	int read_wave_data_by_frame(short &max, short &min, short frame_len, unsigned int sequence, short offset)
 	{
 		if (m_refresh_sequence != sequence)
@@ -3106,12 +3481,17 @@ public:
 		i = 0;
 		while (i++ < frame_len)
 		{
+			/* 读取波形数据 */
 			data = read_data();
+			/* 如果没有波形数据可以读取直接返回 */
 			if (BUFFER_EMPTY == data)
 			{
 				break;
 			}
+
+			/* 赋值这一帧最后一个数据的值 */
 			m_last_data = data;
+			/* 获取最低值和最高值 */
 			if (data < tmp_min) { tmp_min = data; }
 			if (data > tmp_max) { tmp_max = data; }
 		}
@@ -3144,13 +3524,18 @@ private:
 			//log_out("wave buf empty\n");
 			return BUFFER_EMPTY;
 		}
+		/* 从首指针读取数据 */
 		int ret = m_wave_buf[m_head];
 		m_head = (m_head + 1) % WAVE_BUFFER_LEN;
 		return ret;
 	}
+	/* 这应该是一个环形缓冲区 */
 	short m_wave_buf[WAVE_BUFFER_LEN];
+	/* 环形缓冲区的头指针、尾指针 */
 	short m_head;
 	short m_tail;
+
+	/* 这些值表示的都是什么？？？ */
 	int m_min_old;
 	int m_max_old;
 	int m_min_older;
@@ -3162,6 +3547,9 @@ private:
 	short	m_read_cache_sum;
 	unsigned int m_refresh_sequence;
 };
+#endif
+#ifndef GUILITE_WIDGETS_INCLUDE_WAVE_CTRL_H
+#define GUILITE_WIDGETS_INCLUDE_WAVE_CTRL_H
 #include <stdlib.h>
 #include <string.h>
 #define CORRECT(x, high_limit, low_limit)	{\
@@ -3180,6 +3568,7 @@ class c_wave_buffer;
 class c_wave_ctrl : public c_wnd
 {
 public:
+	/* 波形控制控件 */
 	c_wave_ctrl()
 	{
 		m_wave = 0;
@@ -3192,7 +3581,9 @@ public:
 		m_wave_data_rate = 0;
 		m_wave_refresh_rate = 1000;
 		m_frame_len_map_index = 0;
+		/* 设置默认的一些颜色，有函数可以修改这些颜色值 */
 		m_wave_name_color = m_wave_unit_color = m_wave_color = GL_RGB(255, 0, 0);
+		/* 背景颜色为黑色 */
 		m_back_color = GL_RGB(0, 0, 0);
 	}
 	virtual void on_init_children()//should be pre_create
@@ -3212,15 +3603,15 @@ public:
 		get_screen_rect(rect);
 		m_surface->fill_rect(rect, m_back_color, m_z_order);
 		//show name
-		c_word::draw_string(m_surface, m_z_order, m_wave_name, m_wave_left + 10, rect.m_top, m_wave_name_font, m_wave_name_color, GL_ARGB(0, 0, 0, 0));
+		c_word::draw_string(m_surface, m_z_order, m_wave_name, m_wave_left + 10, rect.m_top, m_wave_name_font, m_wave_name_color, GL_ARGB(0, 0, 0, 0), ALIGN_LEFT);
 		//show unit
-		c_word::draw_string(m_surface, m_z_order, m_wave_unit, m_wave_left + 60, rect.m_top, m_wave_unit_font, m_wave_unit_color, GL_ARGB(0, 0, 0, 0));
+		c_word::draw_string(m_surface, m_z_order, m_wave_unit, m_wave_left + 60, rect.m_top, m_wave_unit_font, m_wave_unit_color, GL_ARGB(0, 0, 0, 0), ALIGN_LEFT);
 		save_background();
 	}
 	void set_wave_name(char* wave_name){ m_wave_name = wave_name;}
 	void set_wave_unit(char* wave_unit){ m_wave_unit = wave_unit;}
-	void set_wave_name_font(const LATTICE_FONT_INFO* wave_name_font_type){ m_wave_name_font = wave_name_font_type;}
-	void set_wave_unit_font(const LATTICE_FONT_INFO* wave_unit_font_type){ m_wave_unit_font = wave_unit_font_type;}
+	void set_wave_name_font(const FONT_INFO* wave_name_font_type){ m_wave_name_font = wave_name_font_type;}
+	void set_wave_unit_font(const FONT_INFO* wave_unit_font_type){ m_wave_unit_font = wave_unit_font_type;}
 	void set_wave_name_color(unsigned int wave_name_color){ m_wave_name_color = wave_name_color;}
 	void set_wave_unit_color(unsigned int wave_unit_color){ m_wave_unit_color = wave_unit_color;}
 	void set_wave_color(unsigned int color){ m_wave_color = color;}
@@ -3266,6 +3657,8 @@ public:
 		}
 		return (m_wave->get_cnt() - m_frame_len_map[m_frame_len_map_index] * m_wave_speed);
 	}
+
+	/* 刷新波形函数 */
 	void refresh_wave(unsigned char frame)
 	{
 		if (m_wave == 0)
@@ -3282,6 +3675,7 @@ public:
 				frame, offset);
 			m_frame_len_map_index %= sizeof(m_frame_len_map);
 			//map to wave ctrl
+			/* 绘制波形 */
 			int y_min, y_max;
 			if (m_max_data == m_min_data)
 			{
@@ -3290,6 +3684,8 @@ public:
 			y_max = m_wave_bottom + WAVE_LINE_WIDTH - (m_wave_bottom - m_wave_top) * (min - m_min_data) / (m_max_data - m_min_data);
 			y_min = m_wave_bottom - WAVE_LINE_WIDTH - (m_wave_bottom - m_wave_top) * (max - m_min_data) / (m_max_data - m_min_data);
 			mid = m_wave_bottom - (m_wave_bottom - m_wave_top) * (mid - m_min_data) / (m_max_data - m_min_data);
+
+			/* 修正最低、最高和中间值 */
 			CORRECT(y_min, m_wave_bottom, m_wave_top);
 			CORRECT(y_max, m_wave_bottom, m_wave_top);
 			CORRECT(mid, m_wave_bottom, m_wave_top);
@@ -3304,6 +3700,7 @@ public:
 	}
 	void clear_wave()
 	{
+		/* 填充一个举行区域、开始绘图 */
 		m_surface->fill_rect(m_wave_left, m_wave_top, m_wave_right, m_wave_bottom, m_back_color, m_z_order);
 		m_wave_cursor = m_wave_left;
 	}	
@@ -3375,14 +3772,15 @@ protected:
 		{
 			for (int x = rect.m_left; x <= rect.m_right; x++)
 			{
+				/* 获取当前位置像素的值保存大缓冲区 */
 				*p_des++ = m_surface->get_pixel(x, y, m_z_order);
 			}
 		}
 	}
 	char* m_wave_name;
 	char* m_wave_unit;
-	const LATTICE_FONT_INFO* m_wave_name_font;
-	const LATTICE_FONT_INFO* m_wave_unit_font;
+	const FONT_INFO* m_wave_name_font;
+	const FONT_INFO* m_wave_unit_font;
 	unsigned int m_wave_name_color;
 	unsigned int m_wave_unit_color;
 	unsigned int m_wave_color;
@@ -3404,24 +3802,368 @@ private:
 	unsigned char 	m_frame_len_map[64];
 	unsigned char 	m_frame_len_map_index;
 };
+#endif
 #ifdef GUILITE_ON
-c_bitmap_operator the_bitmap_op = c_bitmap_operator();
-c_image_operator* c_image::image_operator = &the_bitmap_op;
+GL_MSG_ENTRY c_cmd_target::ms_usr_map_entries[USR_MSG_MAX];
+unsigned short c_cmd_target::ms_user_map_size;
+GL_BEGIN_MESSAGE_MAP(c_cmd_target)
+GL_END_MESSAGE_MAP()
 #endif
 
 #ifdef GUILITE_ON
 
-const void* c_theme::s_font_map[FONT_MAX];
-const void* c_theme::s_image_map[IMAGE_MAX];
+const FONT_INFO* c_theme::s_font_map[FONT_MAX];
+const BITMAP_INFO* c_theme::s_bmp_map[BITMAP_MAX];
 unsigned int c_theme::s_color_map[COLOR_MAX];
 
 #endif
-
 #ifdef GUILITE_ON
-
-c_lattice_font_op the_lattice_font_op = c_lattice_font_op();
-c_font_operator* c_word::fontOperator = &the_lattice_font_op;
-
+#if (defined __linux__) || (defined __APPLE__)
+#include <unistd.h>
+#include <pthread.h>
+#include <string.h>
+#include <time.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <sys/times.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/stat.h>
+#include <semaphore.h>
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define MAX_TIMER_CNT 10
+#define TIMER_UNIT 50//ms
+static void(*do_assert)(const char* file, int line);
+static void(*do_log_out)(const char* log);
+void register_debug_function(void(*my_assert)(const char* file, int line), void(*my_log_out)(const char* log))
+{
+	do_assert = my_assert;
+	do_log_out = my_log_out;
+}
+void _assert(const char* file, int line)
+{
+	if(do_assert)
+	{
+		do_assert(file, line);
+	}
+	else
+	{
+		printf("assert@ file:%s, line:%d, error no: %d\n", file, line, errno);
+	}
+}
+void log_out(const char* log)
+{
+	if (do_log_out)
+	{
+		do_log_out(log);
+	}
+	else
+	{
+		printf("%s", log);
+		fflush(stdout);
+	}
+}
+typedef struct _timer_manage
+{
+    struct  _timer_info
+    {
+        int state; /* on or off */
+        int interval;
+        int elapse; /* 0~interval */
+        void (* timer_proc) (void* ptmr, void* parg);
+    }timer_info[MAX_TIMER_CNT];
+    void (* old_sigfunc)(int);
+    void (* new_sigfunc)(int);
+}_timer_manage_t;
+static struct _timer_manage timer_manage;
+static void* timer_routine(void*)
+{
+    int i;
+    while(true)
+    {
+    	for(i = 0; i < MAX_TIMER_CNT; i++)
+		{
+			if(timer_manage.timer_info[i].state == 0)
+			{
+				continue;
+			}
+			timer_manage.timer_info[i].elapse++;
+			if(timer_manage.timer_info[i].elapse == timer_manage.timer_info[i].interval)
+			{
+				timer_manage.timer_info[i].elapse = 0;
+				timer_manage.timer_info[i].timer_proc(0, 0);
+			}
+		}
+    	usleep(1000 * TIMER_UNIT);
+    }
+    return NULL;
+}
+static int init_mul_timer()
+{
+	static bool s_is_init = false;
+	if(s_is_init == true)
+	{
+		return 0;
+	}
+    memset(&timer_manage, 0, sizeof(struct _timer_manage));
+    pthread_t pid;
+    pthread_create(&pid, NULL, timer_routine, NULL);
+    s_is_init = true;
+    return 1;
+}
+static int set_a_timer(int interval, void (* timer_proc) (void* ptmr, void* parg))
+{
+	init_mul_timer();
+	int i;
+    if(timer_proc == NULL || interval <= 0)
+    {
+        return (-1);
+    }
+    for(i = 0; i < MAX_TIMER_CNT; i++)
+    {
+        if(timer_manage.timer_info[i].state == 1)
+        {
+            continue;
+        }
+        memset(&timer_manage.timer_info[i], 0, sizeof(timer_manage.timer_info[i]));
+        timer_manage.timer_info[i].timer_proc = timer_proc;
+        timer_manage.timer_info[i].interval = interval;
+        timer_manage.timer_info[i].elapse = 0;
+        timer_manage.timer_info[i].state = 1;
+        break;
+    }
+    if(i >= MAX_TIMER_CNT)
+    {
+    	ASSERT(false);
+        return (-1);
+    }
+    return (i);
+}
+typedef void (*EXPIRE_ROUTINE)(void* arg);
+EXPIRE_ROUTINE s_expire_function;
+static c_fifo s_real_timer_fifo;
+static void* real_timer_routine(void*)
+{
+	char dummy;
+	while(1)
+	{
+		if(s_real_timer_fifo.read(&dummy, 1) > 0)
+		{
+			if(s_expire_function)s_expire_function(0);
+		}
+		else
+		{
+			ASSERT(false);
+		}
+	}
+	return 0;
+}
+static void expire_real_timer(int sigo)
+{
+	char dummy = 0x33;
+	if(s_real_timer_fifo.write(&dummy, 1) <= 0)
+	{
+		ASSERT(false);
+	}
+}
+void start_real_timer(void (*func)(void* arg))
+{
+	if(NULL == func)
+	{
+		return;
+	}
+	s_expire_function = func;
+	signal(SIGALRM, expire_real_timer);
+	struct itimerval value, ovalue;
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_usec = REAL_TIME_TASK_CYCLE_MS * 1000;
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = REAL_TIME_TASK_CYCLE_MS * 1000;
+	setitimer(ITIMER_REAL, &value, &ovalue);
+	static pthread_t s_pid;
+	if(s_pid == 0)
+	{
+		pthread_create(&s_pid, NULL, real_timer_routine, NULL);
+	}
+}
+unsigned int get_cur_thread_id()
+{
+	return (unsigned long)pthread_self();
+}
+void register_timer(int milli_second,void func(void* ptmr, void* parg))
+{
+	set_a_timer(milli_second/TIMER_UNIT,func);
+}
+long get_time_in_second()
+{
+	return time(NULL);         /* + 8*60*60*/
+}
+T_TIME get_time()
+{
+	T_TIME ret = {0};
+	struct tm *fmt;
+	time_t timer;
+	timer = get_time_in_second();
+	fmt = localtime(&timer);
+	ret.year   = fmt->tm_year + 1900;
+	ret.month  = fmt->tm_mon + 1;
+	ret.day    = fmt->tm_mday;
+	ret.hour   = fmt->tm_hour;
+	ret.minute = fmt->tm_min;
+	ret.second = fmt->tm_sec;
+	return ret;
+}
+T_TIME second_to_day(long second)
+{
+	T_TIME ret = {0};
+	struct tm *fmt;
+	fmt = localtime(&second);
+	ret.year   = fmt->tm_year + 1900;
+	ret.month  = fmt->tm_mon + 1;
+	ret.day    = fmt->tm_mday;
+	ret.hour   = fmt->tm_hour;
+	ret.minute = fmt->tm_min;
+	ret.second = fmt->tm_sec;
+	return ret;
+}
+void create_thread(unsigned long* thread_id, void* attr, void *(*start_routine) (void *), void* arg)
+{
+    pthread_create((pthread_t*)thread_id, (pthread_attr_t const*)attr, start_routine, arg);
+}
+void thread_sleep(unsigned int milli_seconds)
+{
+	usleep(milli_seconds * 1000);
+}
+typedef struct {
+	unsigned short	bfType;
+	unsigned int   	bfSize;
+	unsigned short  bfReserved1;
+	unsigned short  bfReserved2;
+	unsigned int   	bfOffBits;
+}__attribute__((packed))FileHead;
+typedef struct{
+	unsigned int  	biSize;
+	int 			biWidth;
+	int       		biHeight;
+	unsigned short	biPlanes;
+	unsigned short  biBitCount;
+	unsigned int    biCompress;
+	unsigned int    biSizeImage;
+	int       		biXPelsPerMeter;
+	int       		biYPelsPerMeter;
+	unsigned int 	biClrUsed;
+	unsigned int    biClrImportant;
+	unsigned int 	biRedMask;
+	unsigned int 	biGreenMask;
+	unsigned int 	biBlueMask;
+}__attribute__((packed))Infohead;
+int build_bmp(const char *filename, unsigned int width, unsigned int height, unsigned char *data)
+{
+	FileHead bmp_head;
+	Infohead bmp_info;
+	int size = width * height * 2;
+	//initialize bmp head.
+	bmp_head.bfType = 0x4d42;
+	bmp_head.bfSize = size + sizeof(FileHead) + sizeof(Infohead);
+	bmp_head.bfReserved1 = bmp_head.bfReserved2 = 0;
+	bmp_head.bfOffBits = bmp_head.bfSize - size;
+	//initialize bmp info.
+	bmp_info.biSize = 40;
+	bmp_info.biWidth = width;
+	bmp_info.biHeight = height;
+	bmp_info.biPlanes = 1;
+	bmp_info.biBitCount = 16;
+	bmp_info.biCompress = 3;
+	bmp_info.biSizeImage = size;
+	bmp_info.biXPelsPerMeter = 0;
+	bmp_info.biYPelsPerMeter = 0;
+	bmp_info.biClrUsed = 0;
+	bmp_info.biClrImportant = 0;
+	//RGB565
+	bmp_info.biRedMask = 0xF800;
+	bmp_info.biGreenMask = 0x07E0;
+	bmp_info.biBlueMask = 0x001F;
+	//copy the data
+	FILE *fp;
+	if(!(fp=fopen(filename,"wb")))
+	{
+		return -1;
+	}
+	fwrite(&bmp_head, 1, sizeof(FileHead),fp);
+	fwrite(&bmp_info, 1, sizeof(Infohead),fp);
+	//fwrite(data, 1, size, fp);//top <-> bottom
+	for (int i = (height - 1); i >= 0; --i)
+	{
+		fwrite(&data[i * width * 2], 1, width * 2, fp);
+	}
+	
+	fclose(fp);
+	return 0;
+}
+c_fifo::c_fifo()
+{
+	m_head = m_tail = 0;
+	m_read_sem = malloc(sizeof(sem_t));
+	m_write_mutex = malloc(sizeof(pthread_mutex_t));
+	
+	sem_init((sem_t*)m_read_sem, 0, 0);
+	pthread_mutex_init((pthread_mutex_t*)m_write_mutex, 0);
+}
+int c_fifo::read(void* buf, int len)
+{
+	unsigned char* pbuf = (unsigned char*)buf;
+	int i = 0;
+	while(i < len)
+	{
+		if (m_tail == m_head)
+		{//empty
+			sem_wait((sem_t*)m_read_sem);
+			continue;
+		}
+		*pbuf++ = m_buf[m_head];
+		m_head = (m_head + 1) % FIFO_BUFFER_LEN;
+		i++;
+	}
+	if(i != len)
+	{
+		ASSERT(false);
+	}
+	return i;
+}
+int c_fifo::write(void* buf, int len)
+{
+	unsigned char* pbuf = (unsigned char*)buf;
+	int i = 0;
+	int tail = m_tail;
+	pthread_mutex_lock((pthread_mutex_t*)m_write_mutex);
+	while(i < len)
+	{
+		if ((m_tail + 1) % FIFO_BUFFER_LEN == m_head)
+		{//full, clear data has been written;
+			m_tail = tail;
+			log_out("Warning: fifo full\n");
+			pthread_mutex_unlock((pthread_mutex_t*)m_write_mutex);
+			return 0;
+		}
+		m_buf[m_tail] = *pbuf++;
+		m_tail = (m_tail + 1) % FIFO_BUFFER_LEN;
+		i++;
+	}
+	pthread_mutex_unlock((pthread_mutex_t*)m_write_mutex);
+	if(i != len)
+	{
+		ASSERT(false);
+	}
+	else
+	{
+		sem_post((sem_t*)m_read_sem);
+	}
+	return i;
+}
+#endif
 #endif
 #ifdef GUILITE_ON
 #if (!defined _WIN32) && (!defined WIN32) && (!defined _WIN64) && (!defined WIN64) && (!defined __linux__) && (!defined __APPLE__)
@@ -3491,10 +4233,10 @@ void create_thread(unsigned long* thread_id, void* attr, void *(*start_routine) 
     log_out("Not support now");
 }
 
-extern "C" void rt_thread_mdelay(int nms);
+extern "C" void rt_thread_mdelay(unsigned short nms);
 void thread_sleep(unsigned int milli_seconds)
 {//MCU alway implemnet driver code in APP.
-		rt_thread_mdelay((int)milli_seconds);
+    rt_thread_mdelay(milli_seconds);
 }
 
 int build_bmp(const char *filename, unsigned int width, unsigned int height, unsigned char *data)
@@ -3559,75 +4301,622 @@ int c_fifo::write(void* buf, int len)
 #endif
 #endif
 #ifdef GUILITE_ON
-DIALOG_ARRAY c_dialog::ms_the_dialogs[SURFACE_CNT_MAX];
-#endif
-#ifdef GUILITE_ON
-c_keyboard  c_edit::s_keyboard;
-#endif
-#ifdef GUILITE_ON
-static c_keyboard_button s_key_0, s_key_1, s_key_2, s_key_3, s_key_4, s_key_5, s_key_6, s_key_7, s_key_8, s_key_9;
-static c_keyboard_button s_key_A, s_key_B, s_key_C, s_key_D, s_key_E, s_key_F, s_key_G, s_key_H, s_key_I, s_key_J;
-static c_keyboard_button s_key_K, s_key_L, s_key_M, s_key_N, s_key_O, s_key_P, s_key_Q, s_key_R, s_key_S, s_key_T;
-static c_keyboard_button s_key_U, s_key_V, s_key_W, s_key_X, s_key_Y, s_key_Z;
-static c_keyboard_button s_key_dot, s_key_caps, s_key_space, s_key_enter, s_key_del, s_key_esc, s_key_num_switch;
-WND_TREE g_key_board_children[] =
+#if (defined _WIN32) || (defined WIN32) || (defined _WIN64) || (defined WIN64)
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
+#include <conio.h>
+#include <windows.h>
+#include <assert.h>
+#define MAX_TIMER_CNT 10
+#define TIMER_UNIT 50//ms
+static void(*do_assert)(const char* file, int line);
+static void(*do_log_out)(const char* log);
+void register_debug_function(void(*my_assert)(const char* file, int line), void(*my_log_out)(const char* log))
 {
-	//Row 1
-	{&s_key_Q, 'Q', 0, POS_X(0), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_W, 'W', 0, POS_X(1), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_E, 'E', 0, POS_X(2), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_R, 'R', 0, POS_X(3), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_T, 'T', 0, POS_X(4), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_Y, 'Y', 0, POS_X(5), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_U, 'U', 0, POS_X(6), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_I, 'I', 0, POS_X(7), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_O, 'O', 0, POS_X(8), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_P, 'P', 0, POS_X(9), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	//Row 2 
-	{&s_key_A, 'A', 0, ((KEY_WIDTH / 2) + POS_X(0)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_S, 'S', 0, ((KEY_WIDTH / 2) + POS_X(1)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_D, 'D', 0, ((KEY_WIDTH / 2) + POS_X(2)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_F, 'F', 0, ((KEY_WIDTH / 2) + POS_X(3)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_G, 'G', 0, ((KEY_WIDTH / 2) + POS_X(4)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_H, 'H', 0, ((KEY_WIDTH / 2) + POS_X(5)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_J, 'J', 0, ((KEY_WIDTH / 2) + POS_X(6)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_K, 'K', 0, ((KEY_WIDTH / 2) + POS_X(7)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_L, 'L', 0, ((KEY_WIDTH / 2) + POS_X(8)), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	//Row 3
-	{&s_key_caps, 0x14,	0, POS_X(0),						POS_Y(2), CAPS_WIDTH,	KEY_HEIGHT},
-	{&s_key_Z,	'Z',	0, ((KEY_WIDTH / 2) + POS_X(1)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_X,	'X',	0, ((KEY_WIDTH / 2) + POS_X(2)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_C,	'C',	0, ((KEY_WIDTH / 2) + POS_X(3)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_V,	'V',	0, ((KEY_WIDTH / 2) + POS_X(4)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_B,	'B',	0, ((KEY_WIDTH / 2) + POS_X(5)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_N,	'N',	0, ((KEY_WIDTH / 2) + POS_X(6)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_M,	'M',	0, ((KEY_WIDTH / 2) + POS_X(7)),	POS_Y(2), KEY_WIDTH,	KEY_HEIGHT},
-	{&s_key_del,	0x7F,	0, ((KEY_WIDTH / 2) + POS_X(8)),	POS_Y(2), DEL_WIDTH,	KEY_HEIGHT},
-	//Row 4
-	{&s_key_esc,			0x1B,	0, POS_X(0),						POS_Y(3), ESC_WIDTH,	KEY_HEIGHT},
-	{&s_key_num_switch,	0x90,	0, POS_X(2),						POS_Y(3), SWITCH_WIDTH,	KEY_HEIGHT},
-	{&s_key_space,		' ',	0, ((KEY_WIDTH / 2) + POS_X(3)),	POS_Y(3), SPACE_WIDTH,	KEY_HEIGHT},
-	{&s_key_dot,			'.',	0, ((KEY_WIDTH / 2) + POS_X(6)),	POS_Y(3), DOT_WIDTH,	KEY_HEIGHT},
-	{&s_key_enter,		'\n',	0, POS_X(8),						POS_Y(3), ENTER_WIDTH,	KEY_HEIGHT},
-	{0,0,0,0,0,0,0}
-};
-WND_TREE g_number_board_children[] =
+	do_assert = my_assert;
+	do_log_out = my_log_out;
+}
+void _assert(const char* file, int line)
 {
-	{&s_key_1,	'1',	0, POS_X(0), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_2,	'2',	0, POS_X(1), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_3,	'3',	0, POS_X(2), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_4,	'4',	0, POS_X(0), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_5,	'5',	0, POS_X(1), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_6,	'6',	0, POS_X(2), POS_Y(1), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_7,	'7',	0, POS_X(0), POS_Y(2), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_8,	'8',	0, POS_X(1), POS_Y(2), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_9,	'9',	0, POS_X(2), POS_Y(2), KEY_WIDTH, KEY_HEIGHT},
+	static char s_buf[192];
+	if (do_assert)
+	{
+		do_assert(file, line);
+	}
+	else
+	{
+		memset(s_buf, 0, sizeof(s_buf));
+		sprintf_s(s_buf, sizeof(s_buf), "vvvvvvvvvvvvvvvvvvvvvvvvvvvv\n\nAssert@ file = %s, line = %d\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n", file, line);
+		OutputDebugStringA(s_buf);
+		printf("%s", s_buf);
+		fflush(stdout);
+		assert(false);
+	}
+}
+void log_out(const char* log)
+{
+	if (do_log_out)
+	{
+		do_log_out(log);
+	}
+	else
+	{
+		printf("%s", log);
+		fflush(stdout);
+		OutputDebugStringA(log);
+	}
+}
+typedef struct _timer_manage
+{
+    struct  _timer_info
+    {
+        int state; /* on or off */
+        int interval;
+        int elapse; /* 0~interval */
+        void (* timer_proc) (void* ptmr, void* parg);
+    }timer_info[MAX_TIMER_CNT];
+    void (* old_sigfunc)(int);
+    void (* new_sigfunc)(int);
+}_timer_manage_t;
+static struct _timer_manage timer_manage;
+DWORD WINAPI timer_routine(LPVOID lpParam)
+{
+    int i;
+    while(true)
+    {
+    	for(i = 0; i < MAX_TIMER_CNT; i++)
+		{
+			if(timer_manage.timer_info[i].state == 0)
+			{
+				continue;
+			}
+			timer_manage.timer_info[i].elapse++;
+			if(timer_manage.timer_info[i].elapse == timer_manage.timer_info[i].interval)
+			{
+				timer_manage.timer_info[i].elapse = 0;
+				timer_manage.timer_info[i].timer_proc(0, 0);
+			}
+		}
+		Sleep(TIMER_UNIT);
+    }
+    return 0;
+}
+static int init_mul_timer()
+{
+	static bool s_is_init = false;
+	if(s_is_init == true)
+	{
+		return 0;
+	}
+    memset(&timer_manage, 0, sizeof(struct _timer_manage));
+    DWORD pid;
+	CreateThread(0, 0, timer_routine, 0, 0, &pid);
+    s_is_init = true;
+    return 1;
+}
+static int set_a_timer(int interval, void (* timer_proc) (void* ptmr, void* parg))
+{
+	init_mul_timer();
+	int i;
+    if(timer_proc == 0 || interval <= 0)
+    {
+        return (-1);
+    }
+    for(i = 0; i < MAX_TIMER_CNT; i++)
+    {
+        if(timer_manage.timer_info[i].state == 1)
+        {
+            continue;
+        }
+        memset(&timer_manage.timer_info[i], 0, sizeof(timer_manage.timer_info[i]));
+        timer_manage.timer_info[i].timer_proc = timer_proc;
+        timer_manage.timer_info[i].interval = interval;
+        timer_manage.timer_info[i].elapse = 0;
+        timer_manage.timer_info[i].state = 1;
+        break;
+    }
+    if(i >= MAX_TIMER_CNT)
+    {
+		ASSERT(false);
+        return (-1);
+    }
+    return (i);
+}
+typedef void (*EXPIRE_ROUTINE)(void* arg);
+EXPIRE_ROUTINE s_expire_function;
+static c_fifo s_real_timer_fifo;
+static DWORD WINAPI fire_real_timer(LPVOID lpParam)
+{
+	char dummy;
+	while(1)
+	{
+		if(s_real_timer_fifo.read(&dummy, 1) > 0)
+		{
+			if(s_expire_function)s_expire_function(0);
+		}
+		else
+		{
+			ASSERT(false);
+		}
+	}
+	return 0;
+}
+/*Win32 desktop only
+static void CALLBACK trigger_real_timer(UINT, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR)
+{
+	char dummy = 0x33;
+	s_real_timer_fifo.write(&dummy, 1);
+}
+*/
+static DWORD WINAPI trigger_real_timer(LPVOID lpParam)
+{
+	char dummy = 0x33;
+	while (1)
+	{
+		s_real_timer_fifo.write(&dummy, 1);
+		Sleep(REAL_TIME_TASK_CYCLE_MS);
+	}
+	return 0;
+}
+void start_real_timer(void (*func)(void* arg))
+{
+	if(0 == func)
+	{
+		return;
+	}
+	s_expire_function = func;
+	//timeSetEvent(REAL_TIME_TASK_CYCLE_MS, 0, trigger_real_timer, 0, TIME_PERIODIC);//Win32 desktop only
+	static DWORD s_pid;
+	if(s_pid == 0)
+	{
+		CreateThread(0, 0, trigger_real_timer, 0, 0, &s_pid);
+		CreateThread(0, 0, fire_real_timer, 0, 0, &s_pid);
+	}
+}
+unsigned int get_cur_thread_id()
+{
+	return GetCurrentThreadId();
+}
+void register_timer(int milli_second,void func(void* ptmr, void* parg))
+{
+	set_a_timer(milli_second/TIMER_UNIT,func);
+}
+long get_time_in_second()
+{
+	return (long)time(0);
+}
+T_TIME get_time()
+{
+	T_TIME ret = {0};
 	
-	{&s_key_esc,	0x1B,	0, POS_X(0), POS_Y(3), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_0,	'0',	0, POS_X(1), POS_Y(3), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_dot,	'.',	0, POS_X(2), POS_Y(3), KEY_WIDTH, KEY_HEIGHT},
-	{&s_key_del, 0x7F,	0, POS_X(3), POS_Y(0), KEY_WIDTH, KEY_HEIGHT * 2 + 2},
-	{&s_key_enter,'\n',	0, POS_X(3), POS_Y(2), KEY_WIDTH, KEY_HEIGHT * 2 + 2},
-	{0,0,0,0,0,0,0}
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	ret.year = time.wYear;
+	ret.month = time.wMonth;
+	ret.day = time.wDay;
+	ret.hour = time.wHour;
+	ret.minute = time.wMinute;
+	ret.second = time.wSecond;
+	return ret;
+}
+T_TIME second_to_day(long second)
+{
+	T_TIME ret;
+	ret.year = 1999;
+	ret.month = 10;
+	ret.date = 1;
+	ret.second = second % 60;
+	second /= 60;
+	ret.minute = second % 60;
+	second /= 60;
+	ret.hour = (second + 8) % 24;//China time zone.
+	return ret;
+}
+void create_thread(unsigned long* thread_id, void* attr, void *(*start_routine) (void *), void* arg)
+{
+	DWORD pid = 0;
+	CreateThread(0, 0, LPTHREAD_START_ROUTINE(start_routine), arg, 0, &pid);
+	*thread_id = pid;
+}
+void thread_sleep(unsigned int milli_seconds)
+{
+	Sleep(milli_seconds);
+}
+#pragma pack(push,1)
+typedef struct {
+	unsigned short	bfType;
+	unsigned int   	bfSize;
+	unsigned short  bfReserved1;
+	unsigned short  bfReserved2;
+	unsigned int   	bfOffBits;
+}FileHead;
+typedef struct {
+	unsigned int  	biSize;
+	int 			biWidth;
+	int       		biHeight;
+	unsigned short	biPlanes;
+	unsigned short  biBitCount;
+	unsigned int    biCompress;
+	unsigned int    biSizeImage;
+	int       		biXPelsPerMeter;
+	int       		biYPelsPerMeter;
+	unsigned int 	biClrUsed;
+	unsigned int    biClrImportant;
+	unsigned int 	biRedMask;
+	unsigned int 	biGreenMask;
+	unsigned int 	biBlueMask;
+}Infohead;
+#pragma pack(pop)
+int build_bmp(const char *filename, unsigned int width, unsigned int height, unsigned char *data)
+{
+	FileHead bmp_head;
+	Infohead bmp_info;
+	int size = width * height * 2;
+	//initialize bmp head.
+	bmp_head.bfType = 0x4d42;
+	bmp_head.bfSize = size + sizeof(FileHead) + sizeof(Infohead);
+	bmp_head.bfReserved1 = bmp_head.bfReserved2 = 0;
+	bmp_head.bfOffBits = bmp_head.bfSize - size;
+	//initialize bmp info.
+	bmp_info.biSize = 40;
+	bmp_info.biWidth = width;
+	bmp_info.biHeight = height;
+	bmp_info.biPlanes = 1;
+	bmp_info.biBitCount = 16;
+	bmp_info.biCompress = 3;
+	bmp_info.biSizeImage = size;
+	bmp_info.biXPelsPerMeter = 0;
+	bmp_info.biYPelsPerMeter = 0;
+	bmp_info.biClrUsed = 0;
+	bmp_info.biClrImportant = 0;
+	//RGB565
+	bmp_info.biRedMask = 0xF800;
+	bmp_info.biGreenMask = 0x07E0;
+	bmp_info.biBlueMask = 0x001F;
+	//copy the data
+	FILE *fp;
+	if (!(fp = fopen(filename, "wb")))
+	{
+		return -1;
+	}
+	fwrite(&bmp_head, 1, sizeof(FileHead), fp);
+	fwrite(&bmp_info, 1, sizeof(Infohead), fp);
+	//fwrite(data, 1, size, fp);//top <-> bottom
+	for (int i = (height - 1); i >= 0; --i)
+	{
+		fwrite(&data[i * width * 2], 1, width * 2, fp);
+	}
+	fclose(fp);
+	return 0;
+}
+c_fifo::c_fifo()
+{
+	m_head = m_tail = 0;
+	m_read_sem = CreateSemaphore(0,	// default security attributes
+		0,		// initial count
+		1,		// maximum count
+		0);	// unnamed semaphore
+	m_write_mutex = CreateMutex(0, false, 0);
+}
+int c_fifo::read(void* buf, int len)
+{
+	unsigned char* pbuf = (unsigned char*)buf;
+	int i = 0;
+	while (i < len)
+	{
+		if (m_tail == m_head)
+		{//empty
+			WaitForSingleObject(m_read_sem, INFINITE);
+			continue;
+		}
+		*pbuf++ = m_buf[m_head];
+		m_head = (m_head + 1) % FIFO_BUFFER_LEN;
+		i++;
+	}
+	if (i != len)
+	{
+		ASSERT(false);
+	}
+	return i;
+}
+int c_fifo::write(void* buf, int len)
+{
+	unsigned char* pbuf = (unsigned char*)buf;
+	int i = 0;
+	int tail = m_tail;
+	WaitForSingleObject(m_write_mutex, INFINITE);
+	while (i < len)
+	{
+		if ((m_tail + 1) % FIFO_BUFFER_LEN == m_head)
+		{//full, clear data has been written;
+			m_tail = tail;
+			log_out("Warning: fifo full\n");
+			ReleaseMutex(m_write_mutex);
+			return 0;
+		}
+		m_buf[m_tail] = *pbuf++;
+		m_tail = (m_tail + 1) % FIFO_BUFFER_LEN;
+		i++;
+	}
+	ReleaseMutex(m_write_mutex);
+	if (i != len)
+	{
+		ASSERT(false);
+	}
+	else
+	{
+		ReleaseSemaphore(m_read_sem, 1, 0);
+	}
+	return i;
+}
+#endif
+#endif
+#ifdef GUILITE_ON
+#if (defined __linux__) || (defined __APPLE__)
+#include <unistd.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <stdio.h>
+typedef void(*ANDROID_PLAY_WAV)(const char* fileName);
+ANDROID_PLAY_WAV gAndroidPlayWav;
+typedef struct
+{
+	AUDIO_TYPE type;
+}AUDIO_REQUEST;
+static c_fifo s_request_fifo;
+static void* render_thread(void* param)
+{
+	while (true)
+	{
+		AUDIO_REQUEST request;
+		s_request_fifo.read(&request, sizeof(request));
+		
+		if (AUDIO_MAX <= request.type)
+		{
+			continue;
+		}
+		if(gAndroidPlayWav)
+		{
+			gAndroidPlayWav("heart_beat.wav");
+		}
+	}
+}
+void c_audio::init()
+{
+	static bool s_flag = false;
+	if (s_flag)
+	{
+		return;
+	}
+	unsigned long pid;
+	create_thread(&pid, 0, render_thread, 0);
+	s_flag = true;
+}
+int c_audio::play(AUDIO_TYPE type)
+{
+	if (AUDIO_MAX <= type)
+	{
+		return -1;
+	}
+	init();
+	AUDIO_REQUEST request;
+	request.type = type;
+	s_request_fifo.write(&request, sizeof(request));
+	return 0;
+}
+#endif
+#endif
+#ifdef GUILITE_ON
+#if (defined _WIN32) || (defined WIN32) || (defined _WIN64) || (defined WIN64)
+#include <windows.h>
+#include <Audioclient.h>
+#include <mmdeviceapi.h>
+#ifndef AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
+	#define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM 0x80000000
+#endif
+#define AUDIO_CHANNELS_MONO     1
+#define AUDIO_SAMPLE_RATE       44000
+#define AUDIO_BITS              16
+#define AUDIO_BLOCK_ALIGN       (AUDIO_CHANNELS_MONO * (AUDIO_BITS >> 3))
+#define AUDIO_BYTE_RATE         (AUDIO_SAMPLE_RATE * AUDIO_BLOCK_ALIGN)
+#define AUDIO_OUTPUT_BUF_LEN	(10000000 * 5)	//5 seconds long.
+#define CHECK_ERROR(ret) if(ret != 0){ASSERT(false);}
+typedef struct
+{
+	AUDIO_TYPE type;
+}AUDIO_REQUEST;
+typedef struct
+{
+	BYTE* p_data;
+	int size;
+}WAV_RESOURCE;
+static WAV_RESOURCE s_wav_resource[AUDIO_MAX];
+static c_fifo s_request_fifo;
+static IAudioClient* s_audio_client;
+static IAudioRenderClient* s_audio_render_client;
+static HANDLE s_audio_event;
+//Should be call by UWP, and UWP create audio client.
+void set_audio_client(IAudioClient* audio_client)
+{
+	s_audio_client = audio_client;
+}
+static WAVEFORMATEX s_wav_format = {
+	WAVE_FORMAT_PCM,
+	AUDIO_CHANNELS_MONO,
+	AUDIO_SAMPLE_RATE,
+	AUDIO_BYTE_RATE,
+	AUDIO_BLOCK_ALIGN,
+	AUDIO_BITS,
+	0
 };
+static int register_wav_resouce(AUDIO_TYPE type, const wchar_t* wav_path)
+{
+	if (s_wav_resource[type].p_data)
+	{
+		return 0;
+	}
+
+	void* hFile = CreateFile(wav_path, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (INVALID_HANDLE_VALUE == hFile)
+	{
+		log_out("Open wave file failed\n");
+		return -1;
+	}
+	LARGE_INTEGER ret;
+	GetFileSizeEx(hFile, &ret);
+	int size = ret.LowPart;
+	if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0x2C, 0, FILE_BEGIN))
+	{
+		ASSERT(false);
+		return -2;
+	}
+	size -= 0x2C;
+	BYTE* p_data = (BYTE*)malloc(size);
+	DWORD read_num;
+	ReadFile(hFile, p_data, size, &read_num, 0);
+	s_wav_resource[type].p_data = p_data;
+	s_wav_resource[type].size = size;
+	return 0;
+}
+static int load_wav_chunk(BYTE* p_des, int des_size, BYTE* p_src, int src_size)
+{
+	if (des_size <= 0 || src_size <= 0)
+	{
+		return -1;
+	}
+	int write_size = (src_size > des_size) ? des_size : src_size;
+	memcpy(p_des, p_src, write_size);
+	memset(p_des + write_size, 0, (des_size - write_size));
+	return write_size;
+}
+static int play_wav(BYTE* p_data, int size)
+{
+	if (0 == p_data || 0 >= size)
+	{
+		return -1;
+	}
+	UINT32 bufferFrameCount;
+	UINT32 numFramesAvailable;
+	UINT32 numFramesPadding;
+	BYTE* p_buffer = 0;
+	int ret = s_audio_client->GetBufferSize(&bufferFrameCount);
+	CHECK_ERROR(ret);
+	
+	int offset = 0;
+	while (WaitForSingleObject(s_audio_event, INFINITE) == WAIT_OBJECT_0)
+	{
+		ret = s_audio_client->GetCurrentPadding(&numFramesPadding);
+		CHECK_ERROR(ret);
+		numFramesAvailable = bufferFrameCount - numFramesPadding;
+		if (numFramesAvailable < 1600)
+		{
+			Sleep(10);
+			continue;
+		}
+		ret = s_audio_render_client->GetBuffer(numFramesAvailable, &p_buffer);
+		CHECK_ERROR(ret);
+		ret = load_wav_chunk(p_buffer, numFramesAvailable * s_wav_format.nBlockAlign, p_data + offset, (size - offset));
+		if (ret > 0)
+		{
+			s_audio_render_client->ReleaseBuffer((ret / s_wav_format.nBlockAlign), 0);
+			offset += ret;
+		}
+		else
+		{
+			s_audio_render_client->ReleaseBuffer(0, AUDCLNT_BUFFERFLAGS_SILENT);
+			break;
+		}
+	}	
+	return 0;
+}
+static void* render_thread(void* param)
+{
+	s_audio_client->Start();
+	while (true)
+	{
+		AUDIO_REQUEST request;
+		s_request_fifo.read(&request, sizeof(request));
+		
+		if (AUDIO_MAX <= request.type)
+		{
+			ASSERT(false);
+			continue;
+		}
+		play_wav(s_wav_resource[request.type].p_data, s_wav_resource[request.type].size);
+	}
+	s_audio_client->Stop();
+}
+static int init_audio_client()
+{
+	if (s_audio_client)
+	{
+		return 0;
+	}
+	//For desktop only, could not pass Windows Store certification.
+	/*
+	int ret = CoInitializeEx(0, COINIT_MULTITHREADED);
+	CHECK_ERROR(ret);
+	IMMDeviceEnumerator *pEnumerator = nullptr;
+	ret = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0,
+	CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
+	(void**)&pEnumerator);
+	CHECK_ERROR(ret);
+	IMMDevice* audio_output_device;
+	pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &audio_output_device);
+	if (0 == audio_output_device)
+	{
+	ASSERT(false);
+	}
+	ret = audio_output_device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, 0, (void**)&s_audio_client);
+	CHECK_ERROR(ret);
+	return 0;
+	*/
+	return -1;
+}
+void c_audio::init()
+{
+	static bool s_flag = false;
+	if (s_flag)
+	{
+		return;
+	}
+	register_wav_resouce(AUDIO_HEART_BEAT, L"heart_beat.wav");
+	
+	if (0 > init_audio_client())
+	{
+		return;
+	}
+	int ret = s_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED,
+									AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+									AUDIO_OUTPUT_BUF_LEN * 2, 0, &s_wav_format,	0);
+	CHECK_ERROR(ret);
+	//s_audio_event = CreateEventEx(0, 0, 0, EVENT_ALL_ACCESS);
+	s_audio_event = CreateEvent(0, 0, 0, 0);
+	ret = s_audio_client->SetEventHandle(s_audio_event);
+	CHECK_ERROR(ret);
+	ret = s_audio_client->GetService(__uuidof(IAudioRenderClient), (void**)&s_audio_render_client);
+	CHECK_ERROR(ret);
+	unsigned long pid;
+	create_thread(&pid, 0, render_thread, 0);
+	s_flag = true;
+}
+int c_audio::play(AUDIO_TYPE type)
+{
+	if (AUDIO_MAX <= type)
+	{
+		return -1;
+	}
+	init();
+	if (!s_audio_client || !s_audio_render_client)
+	{
+		return -2;
+	}
+	AUDIO_REQUEST request;
+	request.type = type;
+	s_request_fifo.write(&request, sizeof(request));
+	return 0;
+}
+#endif
 #endif
