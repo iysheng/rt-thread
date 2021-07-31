@@ -12,12 +12,17 @@ enum WND_ID
 {
     ID_ROOT = 1,
     ID_TITLE,
-    ID_LABEL_1,
-    ID_LABEL_2,
-    ID_LABEL_3,
-    ID_LABEL_1_1,
-    ID_LABEL_2_1,
-    ID_LABEL_3_1,
+    ID_LABEL_CANKAO,
+    ID_LABEL_ZONGBAOJING,
+    ID_LABEL_SHIFOUBAOJING,
+    ID_LABEL_ZONGJIANCE,
+    ID_LABEL_JIANCE,
+    ID_LABEL_CANKAOZHI,
+    ID_LABEL_ZONGBAOJINGZHI,
+    ID_LABEL_SHIFOUBAOJINGZHI,
+    ID_LABEL_ZONGJIANCEZHI,
+    ID_LABEL_JIANCEZHI,
+    ID_LABEL_MAX
 };
 
 class c_my_ui : public c_wnd
@@ -31,7 +36,6 @@ class c_my_ui : public c_wnd
 
 extern const BITMAP_INFO biaopan0_bmp;
 extern const BITMAP_INFO jari_logo_40_bmp;
-        c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &jari_logo_40_bmp, 64, 0);
 #if 0
         c_bitmap::draw_bitmap(m_surface, Z_ORDER_LEVEL_0, &biaopan0_bmp, 156, 60);
 
@@ -62,21 +66,23 @@ static c_surface_no_fb * gs_surface_no_fb;
 
 WND_TREE s_main_widgets[] =
 {
-	/* 風速仪 */
-	{ NULL,		ID_TITLE,	"\xe9\xa3\x8e\xe9\x80\x9f\xe4\xbb\xaa",	104, 0, 100, 38},
-	/* 平均 */
-	{ NULL,		ID_LABEL_1,	"\xe5\xb9\xb3\xe5\x9d\x87\x3a",	0, 40, 75, 38},
-	/* 瞬時 */
-	{ NULL,		ID_LABEL_2,	"\xe7\x9e\xac\xe6\x97\xb6\x3a",	0, 80, 75, 38},
-	/* 风級 */
-	{ NULL,		ID_LABEL_3,	"\xe7\x9e\xac\xe6\x97\xb6\x3a",	0, 120, 75, 38},
+	/* 参考 */
+	{ NULL,		ID_LABEL_CANKAO,	"\xe5\x8f\x82\xe8\x80\x83\x3a",	0, 0, 75, 38},
+	/* 总报警 */
+	{ NULL,		ID_LABEL_ZONGBAOJING,	"\xe6\x80\xbb\xe6\x8a\xa5\xe8\xad\xa6\x3a",	0, 40, 115, 38},
+	/* 总检测 */
+	{ NULL,		ID_LABEL_ZONGJIANCE,	"\xe6\x80\xbb\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 80, 115, 38},
+	/* 检测 */
+	{ NULL,		ID_LABEL_JIANCE,	"\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 120, 75, 38},
 
-	/* 风速瞬時值 */
-	{ NULL,		ID_LABEL_1_1,	"0.0",	75, 40, 60, 38},
-	/* 风速平均值 */
-	{ NULL,		ID_LABEL_2_1,	"0.0",	75, 80, 60, 38},
-	/* 风級數值 */
-	{ NULL,		ID_LABEL_3_1,	"0",	75, 120, 175, 38},
+	/* 参考值 */
+	{ NULL,		ID_LABEL_CANKAOZHI,	"1.2.3",	75, 0, 60, 38},
+	/* 总报警次数 */
+	{ NULL,		ID_LABEL_ZONGBAOJINGZHI,	"0",	115, 40, 150, 38},
+	/* 总检测次数 */
+	{ NULL,		ID_LABEL_ZONGJIANCEZHI,	"0",	115, 80, 150, 38},
+	/* 检测详细 */
+	{ NULL,		ID_LABEL_JIANCEZHI,	"4.5.6",	75, 120, 175, 38},
 
 	{ NULL, 0 , 0, 0, 0, 0, 0}
 };
@@ -92,23 +98,17 @@ void load_resource()
 	c_theme::add_color(COLOR_WND_NORMAL, 1);
 }
 
+static c_label gs_label4dispaly[ID_LABEL_MAX];
+
 static inline void widgets_pre_init(WND_TREE *tree)
 {
     int i = 0;
-    static c_label s_label_1, s_label_2, s_label_3;
-    static c_label s_label_1_1, s_label_2_1, s_label_3_1;
-    static c_label s_label_direct, s_label_direct_han, s_label_title;
-    static c_label s_label_N;
 
-	tree[i++].p_wnd = &s_label_title;
-	tree[i++].p_wnd = &s_label_1;
-	tree[i++].p_wnd = &s_label_2;
-	tree[i++].p_wnd = &s_label_3;
-	tree[i++].p_wnd = &s_label_1_1;
-	tree[i++].p_wnd = &s_label_2_1;
-	tree[i++].p_wnd = &s_label_3_1;
-
-
+    while (tree[i].resource_id)
+    {
+        tree[i].p_wnd = &gs_label4dispaly[i];
+        i++;
+    }
 }
 //////////////////////// start UI ////////////////////////
 
@@ -136,9 +136,52 @@ extern "C" void startHelloStar(void* phy_fb, int width, int height, int color_by
 	create_ui(phy_fb, width, height, color_bytes, gfx_op);
 }
 
-extern "C" void display_wind_level(int level)
+extern const BITMAP_INFO alarm_bmp;
+extern "C" void display_check_ans(int alarm, unsigned int check_value)
 {
-    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_3_1);
+    static unsigned int s_total_alram_counts;
+    static unsigned int s_total_check_counts;
+    c_label * wind_alarm_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_ZONGBAOJINGZHI);
+    c_label * wind_check_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_ZONGJIANCEZHI);
+    char alarm_buffer[16] = {0};
+    if (!c_my_ui::s_init_my_ui_flag)
+    {
+        rt_kprintf("GuiLite is not ready\n");
+        return;
+    }
+
+    s_total_check_counts++;
+    if (alarm == 1)
+    {
+        s_total_alram_counts++;
+        c_bitmap::draw_bitmap(gs_surface_no_fb , Z_ORDER_LEVEL_0, &alarm_bmp, 216, 0);
+    }
+    else
+    {
+        c_bitmap::hide_bitmap(gs_surface_no_fb , Z_ORDER_LEVEL_0, &alarm_bmp, 216, 0);
+    }
+
+    if (wind_alarm_label)
+    {
+        if (alarm > 0)
+        {
+            snprintf(alarm_buffer, sizeof(alarm_buffer), "%u", s_total_alram_counts);
+            wind_alarm_label->set_str(alarm_buffer);
+            wind_alarm_label->show_window();
+        }
+    }
+    if (wind_check_label)
+    {
+        memset(alarm_buffer, 0, sizeof alarm_buffer);
+        snprintf(alarm_buffer, sizeof(alarm_buffer), "%u", s_total_check_counts);
+        wind_check_label->set_str(alarm_buffer);
+        wind_check_label->show_window();
+    }
+}
+
+extern "C" void display_check_value(unsigned int level)
+{
+    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_CANKAOZHI);
     char level_buffer[16] = {0};
 
     if (!c_my_ui::s_init_my_ui_flag)
@@ -150,7 +193,7 @@ extern "C" void display_wind_level(int level)
     if (wind_level_label)
     {
         memset(level_buffer, 0, sizeof level_buffer);
-        if (level != -1)
+        if (level >= 0)
         {
             snprintf(level_buffer, sizeof(level_buffer), "%d", level);
         }
@@ -162,6 +205,7 @@ extern "C" void display_wind_level(int level)
         wind_level_label->show_window();
     }
 }
+
 void* getUiOfHelloStar(int* width, int* height, bool force_update)
 {
 	if (s_display)

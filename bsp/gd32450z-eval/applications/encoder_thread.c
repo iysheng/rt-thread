@@ -18,6 +18,7 @@
 #define RELAY_PIN0    GET_PIN(E, 2)
 #define RELAY_PIN1    GET_PIN(E, 3)
 
+extern void display_check_ans(int alarm, unsigned int check_value);
 extern void *get_sync_obj_encoder(void);
 void encoder_comm_backend_init(void)
 {
@@ -43,6 +44,7 @@ void encoder_comm_backend_init(void)
         if (!rt_sem_take(drv_encoder_sem, RT_TICK_PER_SECOND))
         {
             ret = set_ccd_check(1, id++);
+            display_check_ans(ret, id);
             LOG_I("ret=%d", ret);
             if (1 == ret)
             {

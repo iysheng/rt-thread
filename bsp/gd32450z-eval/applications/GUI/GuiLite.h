@@ -1300,6 +1300,33 @@ class c_surface;
 class c_bitmap
 {
 public:
+	static void hide_bitmap(c_surface* surface, int z_order, const BITMAP_INFO *pBitmap, int x, int y)
+	{
+		/* 断言是否有有效的绘图资源 */
+		ASSERT(pBitmap);
+		unsigned short* lower_fb_16 = 0;
+		unsigned int* lower_fb_32 = 0;
+		int lower_fb_width = 0;
+		c_rect lower_fb_rect;
+		if (z_order >= Z_ORDER_LEVEL_1)
+		{
+			lower_fb_16 = (unsigned short*)surface->m_layers[z_order - 1].fb;
+			lower_fb_32 = (unsigned int*)surface->m_layers[z_order - 1].fb;
+			lower_fb_rect = surface->m_layers[z_order - 1].rect;
+			lower_fb_width = lower_fb_rect.width();
+		}
+		int xsize = pBitmap->width;
+		int ysize = pBitmap->height;
+		const unsigned short* pData = (const unsigned short*)pBitmap->pixel_color_array;
+		int color_bytes = surface->m_color_bytes;
+		for (int y_ = y; y_ < y + ysize; y_++)
+		{
+			for (int x_ = x; x_ < x + xsize; x_++)
+			{
+    			surface->draw_pixel(x_, y_, 0, z_order);
+			}
+		}
+	}
 	/* 绘图成员函数 */
 	static void draw_bitmap(c_surface* surface, int z_order, const BITMAP_INFO *pBitmap, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{

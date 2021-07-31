@@ -23,17 +23,14 @@ static struct EXTERNAL_GFX_OP
 };
 
 extern void startHelloStar(void* phy_fb, int width, int height, int color_bytes, struct EXTERNAL_GFX_OP* gfx_op);
-extern void display_wind_level(int level);
 
 void screen_backend_entry(void)
 {
-    int i = 0;
     LOG_I("Hello screen");
     startHelloStar(NULL, 256, 160, 2, &gs_gui_ops);
 
     while (1)
     {
         rt_thread_mdelay(1000);
-        display_wind_level(i++);
     }
 }
