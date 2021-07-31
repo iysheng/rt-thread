@@ -73,13 +73,13 @@ WND_TREE s_main_widgets[] =
 	{ NULL,		ID_LABEL_JIANCE,	"\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 120, 75, 38},
 
 	/* 参考值 */
-	{ NULL,		ID_LABEL_CANKAOZHI,	"1,2,3",	75, 0, 175, 38},
+	{ NULL,		ID_LABEL_CANKAOZHI,	",,",	75, 0, 175, 38},
 	/* 总报警次数 */
 	{ NULL,		ID_LABEL_ZONGBAOJINGZHI,	"0",	115, 40, 150, 38},
 	/* 总检测次数 */
 	{ NULL,		ID_LABEL_ZONGJIANCEZHI,	"0",	115, 80, 150, 38},
 	/* 检测详细 */
-	{ NULL,		ID_LABEL_JIANCEZHI,	"4,5,6",	75, 120, 175, 38},
+	{ NULL,		ID_LABEL_JIANCEZHI,	",,",	75, 120, 175, 38},
 
 	{ NULL, 0 , 0, 0, 0, 0, 0}
 };
