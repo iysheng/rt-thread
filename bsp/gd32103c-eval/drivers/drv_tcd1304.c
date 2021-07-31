@@ -57,6 +57,52 @@ drv_tcd1304_target_ans_t gs_tcd_mark_target_ans;
 /* 存储标记的区域像素信息 */
 static drv_tcd1304_target_ans_t gs_tcd_cmp_target_ans;
 
+/**
+  * @brief 
+  * @param unsigned char *value: 
+  * @param unsigned char len: 
+  * retval .
+  */
+int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check len valid len must == 6 */
+    if (gs_tcd_mark_target_ans.ans_zone0 || gs_tcd_mark_target_ans.ans_zone1 || gs_tcd_mark_target_ans.ans_zone2)
+    {
+        value[0] = gs_tcd_mark_target_ans.ans_zone0 >> 8;
+        value[1] = gs_tcd_mark_target_ans.ans_zone0 ;
+        value[2] = gs_tcd_mark_target_ans.ans_zone1 >> 8;
+        value[3] = gs_tcd_mark_target_ans.ans_zone1 ;
+        value[4] = gs_tcd_mark_target_ans.ans_zone2 >> 8;
+        value[5] = gs_tcd_mark_target_ans.ans_zone2 ;
+        return 0;
+    }
+    return -1;
+}
+
+/**
+  * @brief 
+  * @param unsigned char *value: 
+  * @param unsigned char len: 
+  * retval .
+  */
+int get_tcd1304_check_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check len valid len must == 6
+     * And whether should check these values
+     * */
+    if (gs_tcd_cmp_target_ans.ans_zone0 || gs_tcd_cmp_target_ans.ans_zone1 || gs_tcd_cmp_target_ans.ans_zone2)
+    {
+        value[0] = gs_tcd_cmp_target_ans.ans_zone0 >> 8;
+        value[1] = gs_tcd_cmp_target_ans.ans_zone0 ;
+        value[2] = gs_tcd_cmp_target_ans.ans_zone1 >> 8;
+        value[3] = gs_tcd_cmp_target_ans.ans_zone1 ;
+        value[4] = gs_tcd_cmp_target_ans.ans_zone2 >> 8;
+        value[5] = gs_tcd_cmp_target_ans.ans_zone2 ;
+        return 0;
+    }
+    return -1;
+}
+
 static uint16_t _get_stand_value(uint16_t *data, int data_len)
 {
     /* 初始化参考的标准值 */

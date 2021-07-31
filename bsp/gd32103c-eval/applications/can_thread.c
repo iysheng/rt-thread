@@ -14,6 +14,10 @@ enum {
     CCD_CHECK_RESPON = 0x02,
     CCD_CALIBRATE = 0x03,
     CCD_CALIBRATE_RESPON = 0x04,
+    CCD_CALIBRATE_INFO = 0x05,
+    CCD_CALIBRATE_INFO_RESPON = 0x06,
+    CCD_CHECK_INFO = 0x07,
+    CCD_CHECK_INFO_RESPON = 0x08,
 } can_comm_cmd_E;
 
 #define DBG_LVL               DBG_INFO
@@ -105,6 +109,34 @@ static int _set_ccd_check(rt_device_t dev, rt_can_msg_t msg)
 int set_ccd_calibrate(rt_can_msg_t msg)
 {
     return _set_ccd_calibrate(gs_can_dev, msg);
+}
+
+/**
+  * @brief 获取 CCD 的标定结果信息
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int get_ccd_calibrate_info(rt_can_msg_t msg)
+{
+extern int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
+    return get_tcd1304_calibrate_info(&msg->data[1], 6);
+}
+
+/**
+  * @brief 获取 CCD 的检测结果信息
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示获取到有效的检测结果
+  */
+int get_ccd_check_info(rt_can_msg_t msg)
+{
+extern int get_tcd1304_check_info(unsigned char *value, unsigned char len);
+    return get_tcd1304_check_info(&msg->data[1], 6);
 }
 
 /**
@@ -220,6 +252,22 @@ void can_backend_entry(void * arg)
                     set_ccd_calibrate(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_CALIBRATE_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_CALIBRATE_INFO:
+                    /* TODO check wether match */
+                    get_ccd_calibrate_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_CALIBRATE_INFO_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_CHECK_INFO:
+                    /* TODO calibrate */
+                    get_ccd_check_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_CHECK_INFO_RESPON;
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
