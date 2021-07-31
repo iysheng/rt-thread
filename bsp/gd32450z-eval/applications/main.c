@@ -29,14 +29,25 @@ extern int tc(int argc, char *argv[]);
 extern void encoder_comm_backend_init(void);
 extern void screen_backend_entry(void);
 static rt_thread_t gs_encoder_backend, gs_screen_backend;
-
+extern void display_calibrate_value(unsigned char * level, unsigned char len);
+extern void display_check_value(unsigned char * level, unsigned char len);
+extern int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len);
 int main(void)
 {
     int ret = 0;
+    unsigned char calibrate_info_buffer[6] = {0};
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
 
     LOG_I("tc start.");
     tc(0, NULL);
+    if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
+    {
+        LOG_I("Get calibrate info success");
+    }
+    else
+    {
+        LOG_E("Failed Get Calibrate info");
+    }
     LOG_I("tc end.");
 
     gs_encoder_backend = rt_thread_create("encoderB", encoder_comm_backend_init, RT_NULL, 0x1000, 5, 10);
@@ -63,6 +74,7 @@ int main(void)
         rt_thread_mdelay(500);
         rt_pin_write(HEART_LED_PIN, PIN_LOW);
         rt_thread_mdelay(500);
+        display_calibrate_value(calibrate_info_buffer, 6);
     }
 
     return 0;

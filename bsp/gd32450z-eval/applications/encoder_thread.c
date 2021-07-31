@@ -8,6 +8,7 @@
 
 #include <rtthread.h>
 #include <rtdevice.h>
+#include <string.h>
 #include "can_comm.h"
 #include "drv_gpio.h"
 
@@ -25,6 +26,7 @@ void encoder_comm_backend_init(void)
     unsigned int id = 0;
     int ret;
     rt_sem_t drv_encoder_sem = get_sync_obj_encoder();
+    unsigned char value[6] = {0};
 
     if (!drv_encoder_sem)
     {
@@ -44,6 +46,11 @@ void encoder_comm_backend_init(void)
         if (!rt_sem_take(drv_encoder_sem, RT_TICK_PER_SECOND))
         {
             ret = set_ccd_check(1, id++);
+            if (!get_ccd_check_info(1, value, 6))
+            {
+                display_check_value(value, 6);
+                memset(value, 0, 6);
+            }
             display_check_ans(ret, id);
             LOG_I("ret=%d", ret);
             if (1 == ret)

@@ -8,12 +8,17 @@
 
 #include <rtthread.h>
 #include <rtdevice.h>
+#include <string.h>
 
 enum {
     CCD_CHECK = 0x01,
     CCD_CHECK_RESPON = 0x02,
     CCD_CALIBRATE = 0x03,
     CCD_CALIBRATE_RESPON = 0x04,
+    CCD_CALIBRATE_INFO = 0x05,
+    CCD_CALIBRATE_INFO_RESPON = 0x06,
+    CCD_CHECK_INFO = 0x07,
+    CCD_CHECK_INFO_RESPON = 0x08,
 } can_comm_cmd_E;
 
 #define DBG_LVL               DBG_INFO
@@ -158,6 +163,132 @@ static int _set_ccd_check(rt_device_t dev, unsigned char addr, unsigned int id)
 }
 
 /**
+  * @brief 控制 CCD 设备获取标记的详细信息
+  *
+  * @param rt_device_t dev:
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  */
+static int _get_ccd_calibrate_info(rt_device_t dev, unsigned char addr, unsigned char *value, unsigned char len)
+{
+    int ret = -1;
+    struct rt_can_msg msg = {0};
+    struct rt_can_msg rx_msg = {0};
+
+    RT_ASSERT(dev);
+    msg.id = addr;
+    msg.ide = RT_CAN_STDID;     /* 标准格式 */
+    msg.rtr = RT_CAN_DTR;       /* 数据帧 */
+    msg.len = 8;                /* 数据长度为 8 */
+    /* 发送校验次数 */
+    msg.data[0] = CCD_CALIBRATE_INFO;
+    /* 异或校验结果 */
+    msg.data[7] = ~CCD_CALIBRATE_INFO;
+
+    if (sizeof(msg) == rt_device_write(dev, 0, &msg, sizeof(msg)))
+    {
+        /* 阻塞等待接收信号量 */
+        ret = rt_sem_take(&gs_can_rx_sem, CAN_RECV_MAX_DELAY);
+        if (ret != RT_EOK)
+        {
+            LOG_D("Failed take gs can sem. err=%d", ret);
+            return ret;
+        }
+        /* 从 can 读取一帧数据 */
+        ret = rt_device_read(gs_can_dev, 0, &rx_msg, sizeof(rx_msg));
+        if (ret != sizeof(rx_msg))
+        {
+            LOG_D("Failed get respon of calibrate");
+            return -EINVAL;
+        }
+        else if ((unsigned char)rx_msg.id != addr)
+        {
+            LOG_D("Respon no match addr");
+            return -ENODEV;
+        }
+        else if (rx_msg.data[0] != CCD_CALIBRATE_INFO_RESPON)
+        {
+            LOG_D("Respon no match calibrate info respon");
+            return -EACCES;
+        }
+        else
+        {
+            memcpy(value, &rx_msg.data[1], len < 6 ? len : 6);
+            ret = 0;
+        }
+        /* 打印数据 id 及内容 */
+        LOG_D("id:%x", rx_msg.id);
+        LOG_HEX("ccdCalInfo", 8, rx_msg.data, 8);
+    }
+
+    return ret;
+}
+
+/**
+  * @brief 控制 CCD 设备获取检测的详细信息
+  *
+  * @param rt_device_t dev:
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  */
+static int _get_ccd_check_info(rt_device_t dev, unsigned char addr, unsigned char *value, unsigned char len)
+{
+    int ret = -1;
+    struct rt_can_msg msg = {0};
+    struct rt_can_msg rx_msg = {0};
+
+    RT_ASSERT(dev);
+    msg.id = addr;
+    msg.ide = RT_CAN_STDID;     /* 标准格式 */
+    msg.rtr = RT_CAN_DTR;       /* 数据帧 */
+    msg.len = 8;                /* 数据长度为 8 */
+    /* 发送校验次数 */
+    msg.data[0] = CCD_CHECK_INFO;
+    /* 异或校验结果 */
+    msg.data[7] = ~CCD_CHECK_INFO;
+
+    if (sizeof(msg) == rt_device_write(dev, 0, &msg, sizeof(msg)))
+    {
+        /* 阻塞等待接收信号量 */
+        ret = rt_sem_take(&gs_can_rx_sem, CAN_RECV_MAX_DELAY);
+        if (ret != RT_EOK)
+        {
+            LOG_D("Failed take gs can sem. err=%d", ret);
+            return ret;
+        }
+        /* 从 can 读取一帧数据 */
+        ret = rt_device_read(gs_can_dev, 0, &rx_msg, sizeof(rx_msg));
+        if (ret != sizeof(rx_msg))
+        {
+            LOG_D("Failed get respon of check");
+            return -EINVAL;
+        }
+        else if ((unsigned char)rx_msg.id != addr)
+        {
+            LOG_D("Respon no match addr");
+            return -ENODEV;
+        }
+        else if (rx_msg.data[0] != CCD_CHECK_INFO_RESPON)
+        {
+            LOG_D("Respon no match check info respon");
+            return -EACCES;
+        }
+        else
+        {
+            memcpy(value, &rx_msg.data[1], len < 6 ? len : 6);
+            ret = 0;
+        }
+        /* 打印数据 id 及内容 */
+        LOG_D("id:%x", rx_msg.id);
+        LOG_HEX("ccdCheckInfo", 8, rx_msg.data, 8);
+    }
+
+    return ret;
+}
+
+/**
   * @brief 控制 CCD 进行标定
   *
   * @param unsigned char addr:
@@ -168,6 +299,32 @@ static int _set_ccd_check(rt_device_t dev, unsigned char addr, unsigned int id)
 int set_ccd_calibrate(unsigned char addr, unsigned char times)
 {
     return _set_ccd_calibrate(gs_can_dev, addr, times);
+}
+
+/**
+  * @brief 获取 CCD 的校准信息
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len)
+{
+    return _get_ccd_calibrate_info(gs_can_dev, addr, value, len);
+}
+
+/**
+  * @brief 获取 CCD 的采样信息
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int get_ccd_check_info(unsigned char addr, unsigned char *value, unsigned char len)
+{
+    return _get_ccd_check_info(gs_can_dev, addr, value, len);
 }
 
 /**

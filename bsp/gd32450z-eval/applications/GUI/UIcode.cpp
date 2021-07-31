@@ -11,15 +11,12 @@ static c_display* s_display;
 enum WND_ID
 {
     ID_ROOT = 1,
-    ID_TITLE,
     ID_LABEL_CANKAO,
     ID_LABEL_ZONGBAOJING,
-    ID_LABEL_SHIFOUBAOJING,
     ID_LABEL_ZONGJIANCE,
     ID_LABEL_JIANCE,
     ID_LABEL_CANKAOZHI,
     ID_LABEL_ZONGBAOJINGZHI,
-    ID_LABEL_SHIFOUBAOJINGZHI,
     ID_LABEL_ZONGJIANCEZHI,
     ID_LABEL_JIANCEZHI,
     ID_LABEL_MAX
@@ -76,13 +73,13 @@ WND_TREE s_main_widgets[] =
 	{ NULL,		ID_LABEL_JIANCE,	"\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 120, 75, 38},
 
 	/* 参考值 */
-	{ NULL,		ID_LABEL_CANKAOZHI,	"1.2.3",	75, 0, 60, 38},
+	{ NULL,		ID_LABEL_CANKAOZHI,	"1,2,3",	75, 0, 175, 38},
 	/* 总报警次数 */
 	{ NULL,		ID_LABEL_ZONGBAOJINGZHI,	"0",	115, 40, 150, 38},
 	/* 总检测次数 */
 	{ NULL,		ID_LABEL_ZONGJIANCEZHI,	"0",	115, 80, 150, 38},
 	/* 检测详细 */
-	{ NULL,		ID_LABEL_JIANCEZHI,	"4.5.6",	75, 120, 175, 38},
+	{ NULL,		ID_LABEL_JIANCEZHI,	"4,5,6",	75, 120, 175, 38},
 
 	{ NULL, 0 , 0, 0, 0, 0, 0}
 };
@@ -104,6 +101,8 @@ static inline void widgets_pre_init(WND_TREE *tree)
 {
     int i = 0;
 
+    gs_label4dispaly[ID_LABEL_CANKAOZHI-2].set_font_type(&yahei_16);
+    gs_label4dispaly[ID_LABEL_JIANCEZHI-2].set_font_type(&yahei_16);
     while (tree[i].resource_id)
     {
         tree[i].p_wnd = &gs_label4dispaly[i];
@@ -179,7 +178,7 @@ extern "C" void display_check_ans(int alarm, unsigned int check_value)
     }
 }
 
-extern "C" void display_check_value(unsigned int level)
+extern "C" void display_calibrate_value(unsigned char * level, unsigned char len)
 {
     c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_CANKAOZHI);
     char level_buffer[16] = {0};
@@ -192,15 +191,44 @@ extern "C" void display_check_value(unsigned int level)
 
     if (wind_level_label)
     {
-        memset(level_buffer, 0, sizeof level_buffer);
         if (level >= 0)
         {
-            snprintf(level_buffer, sizeof(level_buffer), "%d", level);
+            snprintf(level_buffer, sizeof(level_buffer), "%hu,%hu,%hu", level[0] << 8 | level[1], \
+                level[2] << 8 | level[3], \
+                level[4] << 8 | level[5]);
         }
         else
         {
-            snprintf(level_buffer, sizeof(level_buffer), "**");
+            snprintf(level_buffer, sizeof(level_buffer), "*,*,*");
         }
+        wind_level_label->set_str(level_buffer);
+        wind_level_label->show_window();
+    }
+}
+extern "C" void display_check_value(unsigned char * level, unsigned char len)
+{
+    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_JIANCEZHI);
+    char level_buffer[16] = {0};
+
+    if (!c_my_ui::s_init_my_ui_flag)
+    {
+        rt_kprintf("GuiLite is not ready\n");
+        return;
+    }
+
+    if (wind_level_label)
+    {
+        if (level >= 0)
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "%hu,%hu,%hu", level[0] << 8 | level[1], \
+                level[2] << 8 | level[3], \
+                level[4] << 8 | level[5]);
+        }
+        else
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "*,*,*");
+        }
+        rt_kprintf("%s\r\n", level_buffer);
         wind_level_label->set_str(level_buffer);
         wind_level_label->show_window();
     }
