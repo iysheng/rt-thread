@@ -12,7 +12,7 @@
 #include <rtdevice.h>
 #include <math.h>
 
-#define DBG_LVL    DBG_INFO
+#define DBG_LVL    DBG_WARNING
 #define DBG_TAG    "drv.CCD"
 #include <rtdbg.h>
 
@@ -611,7 +611,7 @@ void DMA0_Channel0_IRQHandler(void)
     /* enter interrupt */
     rt_interrupt_enter();
 
-        rt_pin_write(GET_PIN(A, 8), abc++ % 2);
+    rt_pin_write(GET_PIN(A, 8), abc++ % 2);
     TIMER_Enable(TIMER0, DISABLE);
     DMA_ClearIntBitState(DMA1_INT_GL1 | DMA1_INT_TC1 | DMA1_INT_ERR1);
     //////////////////
