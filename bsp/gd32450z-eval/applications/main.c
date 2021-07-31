@@ -20,6 +20,7 @@
 #include <rtdbg.h>
 
 #define HEART_LED_PIN    GET_PIN(A, 3)
+#define TEST_CALIBRATE_PIN    GET_PIN(B, 15)
 
 #define DBG_LED0_PIN     GET_PIN(B, 0)
 #define DBG_LED1_PIN     GET_PIN(B, 1)
@@ -37,11 +38,13 @@ int main(void)
     int ret = 0;
     unsigned char calibrate_info_buffer[6] = {0};
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
+    rt_pin_mode(TEST_CALIBRATE_PIN, PIN_MODE_INPUT);
 
     LOG_I("tc start.");
     tc(0, NULL);
     if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
     {
+        display_calibrate_value(calibrate_info_buffer, 6);
         LOG_I("Get calibrate info success");
     }
     else
@@ -74,7 +77,16 @@ int main(void)
         rt_thread_mdelay(500);
         rt_pin_write(HEART_LED_PIN, PIN_LOW);
         rt_thread_mdelay(500);
-        display_calibrate_value(calibrate_info_buffer, 6);
+        if (PIN_LOW == rt_pin_read(TEST_CALIBRATE_PIN))
+        {
+            /* 触发校准 */
+            tc(0, NULL);
+            if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
+            {
+                display_calibrate_value(calibrate_info_buffer, 6);
+                LOG_I("Get calibrate info success");
+            }
+        }
     }
 
     return 0;

@@ -21,7 +21,7 @@ enum {
     CCD_CHECK_INFO_RESPON = 0x08,
 } can_comm_cmd_E;
 
-#define DBG_LVL               DBG_INFO
+#define DBG_LVL               DBG_WARNING
 #define DBG_TAG               "com.CAN"
 #include <rtdbg.h>
 
@@ -29,6 +29,12 @@ enum {
 #define CAN_BAUD           CAN1MBaud            /* 使用 1Mb 的速率通讯 */
 #define CAN_RECV_MAX_DELAY (RT_TICK_PER_SECOND / 5)   /* 最长等待时间为 1s */
 
+#if (DBG_LVL < DBG_INFO)
+#ifdef  LOG_HEX
+#undef LOG_HEX
+#define LOG_HEX(a,b,c,d)  do {}while(0)
+#endif
+#endif
 static struct rt_semaphore gs_can_rx_sem;
 static rt_device_t gs_can_dev;
 

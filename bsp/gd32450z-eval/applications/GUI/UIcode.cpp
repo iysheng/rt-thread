@@ -228,7 +228,6 @@ extern "C" void display_check_value(unsigned char * level, unsigned char len)
         {
             snprintf(level_buffer, sizeof(level_buffer), "*,*,*");
         }
-        rt_kprintf("%s\r\n", level_buffer);
         wind_level_label->set_str(level_buffer);
         wind_level_label->show_window();
     }

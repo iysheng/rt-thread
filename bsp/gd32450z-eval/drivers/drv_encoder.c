@@ -12,7 +12,7 @@
 #include <drv_gpio.h>
 #include "can_comm.h"
 
-#define DBG_LEVEL  DBG_LOG
+#define DBG_LEVEL  DBG_INFO
 #define DBG_TAG    "drv.encoder"
 #include <rtdbg.h>
 

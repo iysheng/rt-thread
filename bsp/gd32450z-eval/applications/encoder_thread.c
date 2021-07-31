@@ -52,7 +52,6 @@ void encoder_comm_backend_init(void)
                 memset(value, 0, 6);
             }
             display_check_ans(ret, id);
-            LOG_I("ret=%d", ret);
             if (1 == ret)
             {
                 LOG_I("No match");
