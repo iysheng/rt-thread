@@ -1,15 +1,16 @@
 /******************************************************************************
 * File:             drv_keyboard.c
 *
-* Author:           iysheng@163.com  
-* Created:          08/01/21 
+* Author:           iysheng@163.com
+* Created:          08/01/21
 *                   按键板驱动
 *****************************************************************************/
 
 #include <rtdevice.h>
 #include <drv_gpio.h>
+#include "drv_keyboard.h"
 
-#define DBG_LEVEL DBG_INFO
+#define DBG_LEVEL DBG_WARNING
 #define DBG_TAG   "drv.key"
 #include <rtdbg.h>
 
@@ -20,12 +21,36 @@
 #define KEYBOARD_S2    GET_PIN(E, 14)
 #define KEYBOARD_S3    GET_PIN(E, 15)
 
-static unsigned char gs_keyboard_keyvalue[16];;
+
+typedef struct {
+    unsigned short key_value;
+    unsigned short key_value_index;
+    unsigned char key_value_buffer[16];
+} keyboard_key_t;
+static keyboard_key_t gs_keyboard_value;
+
 static rt_timer_t gs_timer4keyboard;
 
 /**
+  * @brief
+  * @param uint32_t *value:
+  * retval .
+  */
+int get_keyboard_keydown(uint32_t *value)
+{
+    /* TODO check value whether valid */
+    if (gs_keyboard_value.key_value_index)
+    {
+        *value = gs_keyboard_value.key_value_buffer[--gs_keyboard_value.key_value_index];
+        return 0;
+    }
+
+    return -1;
+}
+
+/**
   * @brief 设置按键的数值
-  * @param uint32_t value: 
+  * @param uint32_t value:
   * retval .
   */
 static void set_key_marix_value(uint32_t value)
@@ -38,11 +63,12 @@ static void scan_func4keybaord(void *parameter)
 {
     if (PIN_HIGH == rt_pin_read(KEYBOARD_COM))
     {
-        LOG_I("Wow key=%hu", gs_keyboard_keyvalue[0]);
+        LOG_I("Wow key=%hu", gs_keyboard_value.key_value);
+        gs_keyboard_value.key_value_buffer[gs_keyboard_value.key_value_index++] = gs_keyboard_value.key_value;
     }
-    ++gs_keyboard_keyvalue[0];
-    gs_keyboard_keyvalue[0] = gs_keyboard_keyvalue[0] & 0xf;
-    set_key_marix_value(gs_keyboard_keyvalue[0]);
+    gs_keyboard_value.key_value++;
+    gs_keyboard_value.key_value &= 0xf;
+    set_key_marix_value(gs_keyboard_value.key_value);
     //LOG_I("scan key value");
 }
 
@@ -63,7 +89,7 @@ int rt_hw_keyboard_init(void)
                              RT_NULL, RT_TICK_PER_SECOND / 70,
                              RT_TIMER_FLAG_PERIODIC);
 
-    set_key_marix_value(gs_keyboard_keyvalue[0]);
+    set_key_marix_value(gs_keyboard_value.key_value);
     /* 启动定时器 1 */
     if (gs_timer4keyboard != RT_NULL) rt_timer_start(gs_timer4keyboard);
 
