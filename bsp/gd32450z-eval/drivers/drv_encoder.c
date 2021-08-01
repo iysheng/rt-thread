@@ -12,7 +12,7 @@
 #include <drv_gpio.h>
 #include "can_comm.h"
 
-#define DBG_LEVEL  DBG_INFO
+#define DBG_LEVEL  DBG_WARNING
 #define DBG_TAG    "drv.encoder"
 #include <rtdbg.h>
 
@@ -30,8 +30,8 @@ void *get_sync_obj_encoder(void)
 static void catch_encoder(void *args)
 {
     static int times;
-    LOG_I("just catch encoder interrupt:%d.\n", times++);
-    if (times % 5 == 1)
+    LOG_I("just catch encoder interrupt:%d.\n", times);
+    if (times++ % 5 == 1)
     {
         rt_sem_release(&gs_encoder4backend_sem);
     }
