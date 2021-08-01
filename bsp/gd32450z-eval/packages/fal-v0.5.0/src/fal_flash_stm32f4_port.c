@@ -1,5 +1,5 @@
 /*
- * File      : fal_flash_stm32f2_port.c
+ * File      : fal_flash_gd32f4_port.c
  * This file is part of FAL (Flash Abstraction Layer) package
  * COPYRIGHT (C) 2006 - 2018, RT-Thread Development Team
  *
@@ -59,7 +59,7 @@
  *
  * @return The sector of a given address
  */
-static uint32_t stm32_get_sector(uint32_t address)
+static uint32_t gd32f4_get_sector(uint32_t address)
 {
     uint32_t sector = 0;
 
@@ -170,7 +170,7 @@ static uint32_t stm32_get_sector(uint32_t address)
  *
  * @return sector size
  */
-static uint32_t stm32_get_sector_size(uint32_t sector) {
+static uint32_t gd32f4_get_sector_size(uint32_t sector) {
     switch (sector) {
     case CTL_SECTOR_NUMBER_0: return 16 * 1024;
     case CTL_SECTOR_NUMBER_1: return 16 * 1024;
@@ -207,7 +207,7 @@ static int init(void)
 static int read(long offset, uint8_t *buf, size_t size)
 {
     size_t i;
-    uint32_t addr = stm32f2_onchip_flash.addr + offset;
+    uint32_t addr = gd32f4_onchip_flash.addr + offset;
     for (i = 0; i < size; i++, addr++, buf++)
     {
         *buf = *(uint8_t *) addr;
@@ -220,7 +220,7 @@ static int write(long offset, const uint8_t *buf, size_t size)
 {
     size_t i;
     uint32_t read_data;
-    uint32_t addr = stm32f2_onchip_flash.addr + offset;
+    uint32_t addr = gd32f4_onchip_flash.addr + offset;
 
     fmc_unlock();
     fmc_flag_clear(
@@ -231,6 +231,7 @@ static int write(long offset, const uint8_t *buf, size_t size)
         /* write data */
         fmc_byte_program(addr, *buf);
         read_data = *(uint8_t *) addr;
+        rt_kprintf("addr=%x read_data=%02x buf=%02x\n", addr, read_data, *buf);
         /* check data */
         if (read_data != *buf)
         {
@@ -247,7 +248,7 @@ static int erase(long offset, size_t size)
     fmc_state_enum flash_status;
     size_t erased_size = 0;
     uint32_t cur_erase_sector;
-    uint32_t addr = stm32f2_onchip_flash.addr + offset;
+    uint32_t addr = gd32f4_onchip_flash.addr + offset;
 
     /* start erase */
     fmc_unlock();
@@ -257,22 +258,22 @@ static int erase(long offset, size_t size)
     /* it will stop when erased size is greater than setting size */
     while (erased_size < size)
     {
-        cur_erase_sector = stm32_get_sector(addr + erased_size);
+        cur_erase_sector = gd32f4_get_sector(addr + erased_size);
         flash_status = fmc_sector_erase(cur_erase_sector);
         if (flash_status != FMC_READY)
         {
             return -1;
         }
-        erased_size += stm32_get_sector_size(cur_erase_sector);
+        erased_size += gd32f4_get_sector_size(cur_erase_sector);
     }
     fmc_lock();
 
     return size;
 }
 
-const struct fal_flash_dev stm32f2_onchip_flash =
+const struct fal_flash_dev gd32f4_onchip_flash =
 {
-    .name       = "stm32_onchip",
+    .name       = "gd32f4_onchip",
     .addr       = 0x08000000,
     .len        = 1024*1024,
     .blk_size   = 128*1024,
