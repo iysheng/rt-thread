@@ -66,6 +66,11 @@ config BSP_USING_GPIO
     select RT_USING_PIN
     default n
 
+config BSP_USING_KEYBOARD
+    bool "using keyboard"
+    select RT_USING_PIN
+    default n
+
 menuconfig BSP_USING_CAN
     bool "using can"
     default n
