@@ -154,6 +154,19 @@
 
 /* system packages */
 
+#define PKG_USING_FAL
+#define FAL_DEBUG_CONFIG
+#define FAL_DEBUG 1
+#define FAL_PART_HAS_TABLE_CFG
+#define PKG_USING_FAL_V00500
+#define PKG_FAL_VER_NUM 0x00500
+#define PKG_USING_FLASHDB
+#define FDB_USING_KVDB
+#define FDB_USING_TSDB
+#define FDB_WRITE_GRAN_1BIT
+#define FDB_WRITE_GRAN 1
+#define FDB_DEBUG_ENABLE
+#define PKG_USING_FLASHDB_LATEST_VERSION
 
 /* peripheral libraries and drivers */
 

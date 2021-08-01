@@ -285,7 +285,9 @@ typedef enum IRQn
 
 /* enum definitions */
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} EventStatus, ControlStatus;
+#ifndef bool
 typedef enum {FALSE = 0, TRUE = !FALSE} bool;
+#endif
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, BitState;
 typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrStatus;
 
