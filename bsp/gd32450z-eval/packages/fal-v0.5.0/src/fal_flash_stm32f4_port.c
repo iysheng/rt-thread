@@ -23,6 +23,7 @@
  */
 
 #include <fal.h>
+#include <rtthread.h>
 
 #include <gd32f4xx.h>
 
@@ -51,6 +52,7 @@
 #define ADDR_FLASH_SECTOR_21     ((uint32_t)0x081A0000) /* Base address of Sector 21, 128 K bytes */
 #define ADDR_FLASH_SECTOR_22     ((uint32_t)0x081C0000) /* Base address of Sector 22, 128 K bytes */
 #define ADDR_FLASH_SECTOR_23     ((uint32_t)0x081E0000) /* Base address of Sector 23, 128 K bytes */
+
 
 /**
  * Get the sector of a given address
@@ -219,26 +221,74 @@ static int read(long offset, uint8_t *buf, size_t size)
 static int write(long offset, const uint8_t *buf, size_t size)
 {
     size_t i;
-    uint32_t read_data;
+    uint32_t read_data = 0;
+    uint32_t cur_erase_sector = 0;
+    uint32_t cur_sector_headaddr = 0;
+    uint32_t cur_sector_endaddr = 0;
+    uint32_t cur_erase_sector_size = 0;
+    uint32_t cur_write_size = 0;
     uint32_t addr = gd32f4_onchip_flash.addr + offset;
+    uint32_t end_addr = addr + size;
+    uint8_t * back_ptr = NULL;
 
+
+        //rt_kprintf("offset=%x end_addr=%x\n", addr, end_addr);
     fmc_unlock();
-    fmc_flag_clear(
-            FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_RDDERR
-                    | FMC_FLAG_PGSERR);
-    for (i = 0; i < size; i++, buf++, addr++)
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_RDDERR
+        | FMC_FLAG_PGSERR);
+
+    do
     {
-        /* write data */
-        fmc_byte_program(addr, *buf);
-        read_data = *(uint8_t *) addr;
-        rt_kprintf("addr=%x read_data=%02x buf=%02x\n", addr, read_data, *buf);
-        /* check data */
-        if (read_data != *buf)
+        end_addr = addr + size - cur_write_size;
+        cur_erase_sector = gd32f4_get_sector(addr);
+        cur_erase_sector_size = gd32f4_get_sector_size(cur_erase_sector);
+        cur_sector_headaddr = addr & (~(cur_erase_sector_size - 1));
+        cur_sector_endaddr = cur_sector_headaddr + cur_erase_sector_size;
+
+        //rt_kprintf("cur_erase_sector_size=%x\n", cur_erase_sector_size);
+        back_ptr = (uint8_t *)rt_malloc(cur_erase_sector_size);
+        if (!back_ptr)
         {
-            return -1;
+            rt_kprintf("No enough memory");
+            break;
         }
-    }
+        rt_memcpy(back_ptr, (uint8_t *)cur_sector_headaddr, cur_erase_sector_size);
+
+        fmc_sector_erase(cur_erase_sector);
+
+        if (cur_sector_endaddr < end_addr)
+        {
+            cur_write_size = cur_sector_endaddr - addr;
+        }
+        else
+        {
+            cur_write_size = end_addr - addr;
+        }
+
+        for (i = addr - cur_sector_headaddr; i < addr - cur_sector_headaddr + cur_write_size; i++, buf++)
+        {
+            /* write data */
+            back_ptr[i] = *buf;
+        }
+        for (i = 0; i < cur_erase_sector_size; i++)
+        {
+            /* write data */
+            fmc_byte_program(cur_sector_headaddr + i, back_ptr[i]);
+            read_data = *(uint8_t *)(cur_sector_headaddr + i);
+            /* check data */
+            if (read_data != back_ptr[i])
+            {
+                rt_kprintf("addr=%x read_data=%x buf=%x\n", i + cur_sector_headaddr, read_data, back_ptr[i]);
+                size = -1;
+                goto end;
+            }
+        }
+end:
+        rt_free(back_ptr);
+        addr = cur_sector_endaddr;
+    } while (end_addr > cur_sector_endaddr);
     fmc_lock();
+
 
     return size;
 }
@@ -252,9 +302,7 @@ static int erase(long offset, size_t size)
 
     /* start erase */
     fmc_unlock();
-    fmc_flag_clear(
-            FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_RDDERR
-                    | FMC_FLAG_PGSERR);
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_RDDERR | FMC_FLAG_PGSERR);
     /* it will stop when erased size is greater than setting size */
     while (erased_size < size)
     {
