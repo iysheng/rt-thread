@@ -14,6 +14,7 @@
 #include <rtdevice.h>
 #include <drv_gpio.h>
 #include "can_comm.h"
+#include <flashdb.h>
 
 #define DBG_LVL               DBG_LOG
 #define DBG_TAG               "app.MAIN"
@@ -33,10 +34,111 @@ static rt_thread_t gs_encoder_backend, gs_screen_backend;
 extern void display_calibrate_value(unsigned char * level, unsigned char len);
 extern void display_check_value(unsigned char * level, unsigned char len);
 extern int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len);
+
+static struct fdb_kvdb gs_flashdb4sys;
+static uint32_t gs_bootcounts;
+static struct fdb_default_kv_node gs_default_kvnode4sys[] = {
+    {.key = "bootcounts", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts0", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts1", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts2", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts3", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts4", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts5", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts6", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts7", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts8", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts9", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts10", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts11", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts12", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts13", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts14", .value = &gs_bootcounts, .value_len = 4},
+    {.key = "bootcounts15", .value = &gs_bootcounts, .value_len = 4},
+};
+struct fdb_default_kv gs_defautlkv4sys = {
+    .kvs = gs_default_kvnode4sys,
+    .num = 5,
+};
+
+void kvdb_basic_sample(fdb_kvdb_t kvdb)
+{
+    struct fdb_blob blob;
+    int bootcounts = 0;
+
+    LOG_I("==================== kvdb_basic_sample ====================\n");
+
+    { /* GET the KV value */
+        /* get the "boot_count" KV value */
+        fdb_kv_get_blob(kvdb, "bootcounts", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        /* the blob.saved.len is more than 0 when get the value successful */
+        if (blob.saved.len > 0) {
+            LOG_I("get the 'bootcounts' value is %d\n", bootcounts);
+        } else {
+            LOG_I("get the 'bootcounts' failed\n");
+        }
+
+        bootcounts ++;
+        /* change the "bootcounts" KV's value */
+        fdb_kv_set_blob(kvdb, "bootcounts", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+    }
+
+    { /* CHANGE the KV value */
+        /* increase the boot count */
+        bootcounts ++;
+        /* change the "bootcounts" KV's value */
+        fdb_kv_set_blob(kvdb, "bootcounts0", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts1", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts2", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        return ;
+        fdb_kv_set_blob(kvdb, "bootcounts3", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts4", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts5", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts6", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts7", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts8", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts9", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts10", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts11", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts12", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts13", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts14", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        fdb_kv_set_blob(kvdb, "bootcounts15", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
+        bootcounts ++;
+        LOG_I("set the 'bootcounts' value to %d\n", bootcounts);
+    }
+}
+
+static void init_sysconfig(void)
+{
+    int ret;
+extern fdb_err_t fdb_kvdb_init(fdb_kvdb_t db, const char *name, const char *part_name, struct fdb_default_kv *default_kv,
+        void *user_data);
+    ret = fdb_kvdb_init(&gs_flashdb4sys, "syscfg", "sys", &gs_defautlkv4sys, NULL);
+    LOG_I("init sysconfig ret=%d.", ret);
+    kvdb_basic_sample(&gs_flashdb4sys);
+}
+
 int main(void)
 {
     int ret = 0;
     unsigned char calibrate_info_buffer[6] = {0};
+    init_sysconfig();
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
     rt_pin_mode(TEST_CALIBRATE_PIN, PIN_MODE_INPUT);
 

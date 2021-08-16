@@ -220,77 +220,32 @@ static int read(long offset, uint8_t *buf, size_t size)
 
 static int write(long offset, const uint8_t *buf, size_t size)
 {
-    size_t i;
-    uint32_t read_data = 0;
-    uint32_t cur_erase_sector = 0;
-    uint32_t cur_sector_headaddr = 0;
-    uint32_t cur_sector_endaddr = 0;
-    uint32_t cur_erase_sector_size = 0;
-    uint32_t cur_write_size = 0;
     uint32_t addr = gd32f4_onchip_flash.addr + offset;
-    uint32_t end_addr = addr + size;
-    uint8_t * back_ptr = NULL;
+    size_t i;
+    int ret = size;
+    uint8_t read_data;
 
 
-        //rt_kprintf("offset=%x end_addr=%x\n", addr, end_addr);
     fmc_unlock();
     fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_RDDERR
         | FMC_FLAG_PGSERR);
 
-    do
+    for (i = 0; i < size; i++)
     {
-        end_addr = addr + size - cur_write_size;
-        cur_erase_sector = gd32f4_get_sector(addr);
-        cur_erase_sector_size = gd32f4_get_sector_size(cur_erase_sector);
-        cur_sector_headaddr = addr & (~(cur_erase_sector_size - 1));
-        cur_sector_endaddr = cur_sector_headaddr + cur_erase_sector_size;
-
-        //rt_kprintf("cur_erase_sector_size=%x\n", cur_erase_sector_size);
-        back_ptr = (uint8_t *)rt_malloc(cur_erase_sector_size);
-        if (!back_ptr)
+        /* write data */
+        fmc_byte_program(addr + i, buf[i]);
+        read_data = *(uint8_t *)(addr + i);
+        /* check data */
+        if (read_data != buf[i])
         {
-            rt_kprintf("No enough memory");
-            break;
+            rt_kprintf("addr=%x buf=%x read_data=%x\n", i + addr, buf[i], read_data);
+            ret = -1;
         }
-        rt_memcpy(back_ptr, (uint8_t *)cur_sector_headaddr, cur_erase_sector_size);
-
-        fmc_sector_erase(cur_erase_sector);
-
-        if (cur_sector_endaddr < end_addr)
-        {
-            cur_write_size = cur_sector_endaddr - addr;
-        }
-        else
-        {
-            cur_write_size = end_addr - addr;
-        }
-
-        for (i = addr - cur_sector_headaddr; i < addr - cur_sector_headaddr + cur_write_size; i++, buf++)
-        {
-            /* write data */
-            back_ptr[i] = *buf;
-        }
-        for (i = 0; i < cur_erase_sector_size; i++)
-        {
-            /* write data */
-            fmc_byte_program(cur_sector_headaddr + i, back_ptr[i]);
-            read_data = *(uint8_t *)(cur_sector_headaddr + i);
-            /* check data */
-            if (read_data != back_ptr[i])
-            {
-                rt_kprintf("addr=%x read_data=%x buf=%x\n", i + cur_sector_headaddr, read_data, back_ptr[i]);
-                size = -1;
-                goto end;
-            }
-        }
-end:
-        rt_free(back_ptr);
-        addr = cur_sector_endaddr;
-    } while (end_addr > cur_sector_endaddr);
+    }
     fmc_lock();
 
 
-    return size;
+    return ret;
 }
 
 static int erase(long offset, size_t size)

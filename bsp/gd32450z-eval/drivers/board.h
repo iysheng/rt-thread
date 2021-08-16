@@ -24,7 +24,7 @@
 extern char __ICFEDIT_region_RAM_end__;
 #define GD32_SRAM_END          &__ICFEDIT_region_RAM_end__
 #else
-#define GD32_SRAM_SIZE         128
+#define GD32_SRAM_SIZE         448
 #define GD32_SRAM_END          (0x20000000 + GD32_SRAM_SIZE * 1024)
 #endif
 
