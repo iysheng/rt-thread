@@ -4,6 +4,7 @@ from building import *
 
 cwd     = os.path.join(str(Dir('#')), 'applications')
 src	= Glob('main.c')
+src	+= Glob('ccd_main_db.c')
 
 CPPPATH = [cwd, str(Dir('#'))]
 CPPPATH += [cwd + '/GUI']
