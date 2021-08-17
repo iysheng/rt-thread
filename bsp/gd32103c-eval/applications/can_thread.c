@@ -18,6 +18,8 @@ enum {
     CCD_CALIBRATE_INFO_RESPON = 0x06,
     CCD_CHECK_INFO = 0x07,
     CCD_CHECK_INFO_RESPON = 0x08,
+    CCD_DUANLUO_INFO = 0x09,
+    CCD_DUANLUO_INFO_RESPON = 0x0A,
 } can_comm_cmd_E;
 
 #define DBG_LVL               DBG_INFO
@@ -57,7 +59,7 @@ static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
     {
         /* TODO 采样标定 */
         LOG_D("times=%d", msg->data[1]);
-        set_tcd1304_device_marktimes(msg->data[1]);
+        set_tcd1304_device_marktimes(!!msg->data[1]);
         NVIC_EnableIRQ(TIMER3_IRQn);
         /* 设置标定成功 */
         msg->data[2] = 0;
@@ -137,6 +139,30 @@ int get_ccd_check_info(rt_can_msg_t msg)
 {
 extern int get_tcd1304_check_info(unsigned char *value, unsigned char len);
     return get_tcd1304_check_info(&msg->data[1], 6);
+}
+
+/**
+  * @brief 获取 CCD 的段落信息
+  *
+  * retval errno/Linux.
+  *      0 表示获取到有效的检测结果
+  */
+int set_ccd_duanluo_info(rt_can_msg_t msg)
+{
+extern int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
+    return set_tcd1304_duanluo_info(&msg->data[1], 6);
+}
+
+/**
+  * @brief 获取 CCD 的段落信息
+  *
+  * retval errno/Linux.
+  *      0 表示获取到有效的检测结果
+  */
+int get_ccd_duanluo_info(rt_can_msg_t msg)
+{
+extern int get_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
+    return get_tcd1304_duanluo_info(&msg->data[1], 6);
 }
 
 /**
@@ -268,6 +294,15 @@ void can_backend_entry(void * arg)
                     get_ccd_check_info(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_CHECK_INFO_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_DUANLUO_INFO:
+                    /* TODO calibrate */
+                    set_ccd_duanluo_info(&msg);
+                    get_ccd_check_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_DUANLUO_INFO_RESPON;
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;

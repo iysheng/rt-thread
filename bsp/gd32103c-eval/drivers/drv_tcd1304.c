@@ -45,12 +45,23 @@ typedef struct {
 
 static ccd_check_sync_t gs_ccd_sync;
 
-
 typedef struct {
     uint16_t ans_zone0; /* [0...1000) */
     uint16_t ans_zone1; /* [1000...2647] */
     uint16_t ans_zone2; /* (2647,3647] */
 } drv_tcd1304_target_ans_t;
+
+typedef struct {
+    uint16_t left;
+    uint16_t middle;
+    uint16_t right;
+} ccd_duanluo_t;
+
+static ccd_duanluo_t gs_ccd_duanluo_cfg = {
+    .left = 1000,
+    .middle = 1647,
+    .right = 1000,
+};
 
 /* 存储标记的区域像素信息 */
 drv_tcd1304_target_ans_t gs_tcd_mark_target_ans;
@@ -58,9 +69,9 @@ drv_tcd1304_target_ans_t gs_tcd_mark_target_ans;
 static drv_tcd1304_target_ans_t gs_tcd_cmp_target_ans;
 
 /**
-  * @brief 
-  * @param unsigned char *value: 
-  * @param unsigned char len: 
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
   * retval .
   */
 int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
@@ -80,9 +91,9 @@ int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
 }
 
 /**
-  * @brief 
-  * @param unsigned char *value: 
-  * @param unsigned char len: 
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
   * retval .
   */
 int get_tcd1304_check_info(unsigned char *value, unsigned char len)
@@ -101,6 +112,41 @@ int get_tcd1304_check_info(unsigned char *value, unsigned char len)
         return 0;
     }
     return -1;
+}
+
+/**
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
+  * retval .
+  */
+int get_tcd1304_duanluo_info(unsigned char *value, unsigned char len)
+{
+    value[0] = gs_ccd_duanluo_cfg.left >> 8;
+    value[1] = gs_ccd_duanluo_cfg.left ;
+    value[2] = gs_ccd_duanluo_cfg.middle >> 8;
+    value[3] = gs_ccd_duanluo_cfg.middle ;
+    value[4] = gs_ccd_duanluo_cfg.right >> 8;
+    value[5] = gs_ccd_duanluo_cfg.right ;
+
+    return 0;
+}
+
+/**
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
+  * retval .
+  */
+int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len)
+{
+    /* TODO chech value valid */
+    gs_ccd_duanluo_cfg.left = value[0] << 8 | value[1];
+    gs_ccd_duanluo_cfg.middle = value[2] << 8 | value[3];
+    gs_ccd_duanluo_cfg.right = value[4] << 8 | value[5];
+    LOG_E("SetDuanLuo[%hu,%hu,%hu]", gs_ccd_duanluo_cfg.left, gs_ccd_duanluo_cfg.middle, gs_ccd_duanluo_cfg.right);
+
+    return 0;
 }
 
 static uint16_t _get_stand_value(uint16_t *data, int data_len)
@@ -179,7 +225,11 @@ static int do_sum2_with_data(uint16_t *target, uint16_t *data, int data_len)
 static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_ans_t *ans_data)
 {
     int i = 0;
-    static const int cmp_index_array[2] = {1000, 2647};
+    int cmp_index_array[2] = {1000, 2647};
+    /* use sys duanluo config */
+    cmp_index_array[0] = gs_ccd_duanluo_cfg.left;
+    cmp_index_array[1] = gs_ccd_duanluo_cfg.left + gs_ccd_duanluo_cfg.middle;
+
     ans_data->ans_zone0 = 0;
     ans_data->ans_zone1 = 0;
     ans_data->ans_zone2 = 0;
@@ -521,12 +571,12 @@ static void show_voltage(char * title, uint16_t * adc_value, int counts)
 }
 
 /**
-  * @brief 
-  * 
-  * @param uint16_t * src: 
-  * @param uint16_t *dst: 
-  * @param int len: 
-  * @param float alpha: 
+  * @brief
+  *
+  * @param uint16_t * src:
+  * @param uint16_t *dst:
+  * @param int len:
+  * @param float alpha:
   * retval .
   */
 void do_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, float alpha)
