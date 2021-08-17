@@ -34,4 +34,5 @@ typedef struct {
 } ccd_main_system_t;
 
 extern int set_ccd_main_config(ccd_main_config_t *ccd_main_config);
+
 #endif

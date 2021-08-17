@@ -10,6 +10,8 @@
 #include <rtdevice.h>
 #include <string.h>
 
+#include "ccd_main_base.h"
+
 enum {
     CCD_CHECK = 0x01,
     CCD_CHECK_RESPON = 0x02,
@@ -19,6 +21,8 @@ enum {
     CCD_CALIBRATE_INFO_RESPON = 0x06,
     CCD_CHECK_INFO = 0x07,
     CCD_CHECK_INFO_RESPON = 0x08,
+    CCD_SET_DUANLUO = 0x09,
+    CCD_SET_DUANLUO_REPLY = 0x0A,
 } can_comm_cmd_E;
 
 #define DBG_LVL               DBG_WARNING
@@ -295,6 +299,73 @@ static int _get_ccd_check_info(rt_device_t dev, unsigned char addr, unsigned cha
 }
 
 /**
+  * @brief 设置 CCD 段落配置
+  *
+  * @param rt_device_t dev:
+  * @param unsigned char addr:
+  * @param unsigned int id: 检测对应的 ID 信息
+  * retval errno/Linux.
+  */
+static int _set_ccd_duanluo(rt_device_t dev, unsigned char addr, \
+    ccd_main_config_t *ccd_duanluo_config)
+{
+    int ret;
+    struct rt_can_msg msg = {0};
+    struct rt_can_msg rx_msg = {0};
+
+    RT_ASSERT(dev);
+    msg.id = addr;
+    msg.ide = RT_CAN_STDID;     /* 标准格式 */
+    msg.rtr = RT_CAN_DTR;       /* 数据帧 */
+    msg.len = 8;                /* 数据长度为 8 */
+    /* 发送校验次数 */
+    msg.data[0] = CCD_SET_DUANLUO;
+    msg.data[1] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.left >> 8 & 0xff;
+    msg.data[2] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.left & 0xff;
+    msg.data[3] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.middle >> 8 & 0xff;
+    msg.data[4] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.middle & 0xff;
+    msg.data[5] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.right >> 8 & 0xff;
+    msg.data[6] = ccd_duanluo_config->duanluo_cfg.ccd_duanluo_pos_value.right & 0xff;
+    /* 异或校验结果 */
+    msg.data[7] = CCD_CHECK ^ msg.data[1] ^ msg.data[2] ^ msg.data[3] ^ msg.data[4] ^ msg.data[5] ^ msg.data[6];
+    ret = rt_sem_control(&gs_can_rx_sem, RT_IPC_CMD_RESET, 0);
+    if (sizeof(msg) == rt_device_write(dev, 0, &msg, sizeof(msg)))
+    {
+        /* 阻塞等待接收信号量 */
+        ret = rt_sem_take(&gs_can_rx_sem, CAN_RECV_MAX_DELAY);
+        if (ret != RT_EOK)
+        {
+            LOG_D("Failed take gs can sem. err=%d", ret);
+            return ret;
+        }
+        /* 从 can 读取一帧数据 */
+        ret = rt_device_read(gs_can_dev, 0, &rx_msg, sizeof(rx_msg));
+        if (ret != sizeof(rx_msg))
+        {
+            LOG_D("Failed get respon of check");
+            return -EINVAL;
+        }
+        else if ((unsigned char)rx_msg.id != addr)
+        {
+            LOG_D("Respon no match addr");
+            return -ENODEV;
+        }
+        else if (rx_msg.data[0] == CCD_SET_DUANLUO_REPLY)
+        {
+            LOG_I("Respon [%hu,%hu,%hu]", rx_msg.data[1] << 8 | rx_msg.data[2], \
+            rx_msg.data[3] << 8 | rx_msg.data[4], \
+            rx_msg.data[5] << 8 | rx_msg.data[6]);
+            /* TODO display sth on screen */
+        }
+        /* 打印数据 id 及内容 */
+        LOG_D("id:%x", rx_msg.id);
+        LOG_HEX("ccdDuanluo", 8, rx_msg.data, 8);
+    }
+
+    return ret;
+}
+
+/**
   * @brief 控制 CCD 进行标定
   *
   * @param unsigned char addr:
@@ -345,6 +416,20 @@ int get_ccd_check_info(unsigned char addr, unsigned char *value, unsigned char l
 int set_ccd_check(unsigned char addr, unsigned int id)
 {
     return _set_ccd_check(gs_can_dev, addr,id);
+}
+
+/**
+  * @brief 控制 CCD 段落配置
+  *
+  * @param unsigned char addr:
+  * param unsigned int id:
+  * retval errno/Linux.
+  *     0 表示匹配
+  *     1 表示不匹配
+  */
+int set_ccd_duanluo(unsigned char addr, ccd_main_config_t *config)
+{
+    return _set_ccd_duanluo(gs_can_dev, addr, config);
 }
 
 /* 接收数据回调函数 */

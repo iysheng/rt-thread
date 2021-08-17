@@ -21,10 +21,14 @@ static uint32_t gs_bootcounts;
 
 ccd_main_system_t gs_ccd_main_sysinfo = {
     .ccd_main_config = {
-        .left = 1000,
-        .middle = 1400,
-        .right = 1000,
-    },
+        .duanluo_cfg = {
+            .ccd_duanluo_pos_value = {
+                .left = 1000,
+                .middle = 1400,
+                .right = 1000,
+            }
+        },
+    }
 };
 
 static struct fdb_default_kv_node gs_default_kvnode4sys[] = {
@@ -85,7 +89,7 @@ int ccd_main_db_init(void)
     {
         up_boot_progress(&gs_flashdb4sys);
         fdb_kv_get_blob(&gs_flashdb4sys, "ccd_main_info", fdb_blob_make(&blob, &gs_ccd_main_sysinfo, sizeof(gs_ccd_main_sysinfo)));
-        LOG_I("ccd_main_config[%u,%u,%u]", gs_ccd_main_sysinfo.ccd_main_config.left, gs_ccd_main_sysinfo.ccd_main_config.middle, gs_ccd_main_sysinfo.ccd_main_config.right);
+        LOG_I("ccd_main_config[%u,%u,%u]", gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.left, gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.middle, gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.right);
         set_ccd_main_config(&gs_ccd_main_sysinfo.ccd_main_config);
     }
 

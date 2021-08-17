@@ -199,3 +199,9 @@ int tc(int argc, char *argv[])
 /* 导出到 msh 命令列表中 */
 MSH_CMD_EXPORT(tc, can device sample);
 
+static int reboot(int argc, char *argv[])
+{
+    NVIC_SystemReset();
+}
+/* 导出到 reboot 命令 */
+MSH_CMD_EXPORT(reboot, reboo chip);

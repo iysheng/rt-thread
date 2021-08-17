@@ -90,6 +90,7 @@ void screen_backend_entry(void * arg)
                 case KEYBOARD_JING:
                     display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
                     set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
+                    set_ccd_duanluo(0x01, &gs_duanluo_mode.duanluo_config_value);
                     break;
                 case KEYBOARD_DOWN:
                     gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_value[gs_duanluo_mode.duanluo_mode] = 0;
