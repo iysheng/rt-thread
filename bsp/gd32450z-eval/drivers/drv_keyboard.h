@@ -23,8 +23,8 @@ typedef enum {
     KEYBOARD_LEFT,
     KEYBOARD_DOWN,
     KEYBOARD_RIGHT,
-    KEYBOARD_xing,
+    KEYBOARD_XING,
     KEYBOARD_0,
-    KEYBOARD_jing,
+    KEYBOARD_JING,
 }keyboard_value_E;
 #endif /* ifndef __DRV_KEYBOARD_H__ */

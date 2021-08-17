@@ -20,4 +20,12 @@ typedef struct {
     ccd_main_config_t ccd_main_config;
 } ccd_main_system_t;
 
+typedef enum {
+    DUANLUO_LEFT_INDEX,
+    DUANLUO_MIDDLE_INDEX,
+    DUANLUO_RIGHT_INDEX,
+    DUANLUO_NULL_INDEX,
+    DUANLUO_MAX_INDEX,
+} duanluo_index_E;
+
 #endif

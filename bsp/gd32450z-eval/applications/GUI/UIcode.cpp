@@ -2,6 +2,8 @@
 #include "GuiLite.h"
 #include <stdlib.h>
 
+#include "ccd_main_base.h"
+
 #define UI_WIDTH 256
 #define UI_HEIGHT 160
 
@@ -76,7 +78,7 @@ WND_TREE s_main_widgets[] =
     /* 检测 */
     { NULL,        ID_LABEL_JIANCE,    "\xe6\xa3\x80\xe6\xb5\x8b\x3a",    5, 84, 40, 20},
     /* 左 */
-    { NULL,        ID_LABEL_MODIFYDUANLUO,    "\xe5\xb7\xa6",    12, 112, 20, 20},
+    { NULL,        ID_LABEL_MODIFYDUANLUO,    "*",    12, 112, 20, 20},
     /* 左中右 */
     { NULL,        ID_LABEL_DUANLUO,    "\xe5\xb7\xa6\xE4\xB8\xAD\xe5\x8f\xb3\x3a",    45, 138, 65, 20},
 
@@ -89,9 +91,9 @@ WND_TREE s_main_widgets[] =
     /* 详细检测 */
     { NULL,        ID_LABEL_JIANCEZHI,     ",,",   55, 84, 175, 20},
     /* 左/中/右 分段修改 */
-    { NULL,        ID_LABEL_MODIFYDUANLUO,    "9999",    0, 138, 44, 20},
+    { NULL,        ID_LABEL_MODIFYDUANLUOZHI,    "9999",    0, 138, 44, 20},
     /* 左中右分段 */
-    { NULL,        ID_LABEL_DUANLUO,    "1000,2000,1000",    115, 138, 130, 20},
+    { NULL,        ID_LABEL_DUANLUOZHI,    "1000,2000,1000",    115, 138, 130, 20},
 
     { NULL, 0 , 0, 0, 0, 0, 0}
 };
@@ -255,6 +257,50 @@ extern "C" void display_check_value(unsigned char * level, unsigned char len)
     }
 }
 
+extern "C" void display_modify_duanluo(unsigned char duanluo_index,unsigned int level)
+{
+    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_MODIFYDUANLUOZHI);
+    c_label * wind_level_label_title = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_MODIFYDUANLUO);
+    char level_buffer[16] = {0};
+    char duanluo_index_buffer[DUANLUO_MAX_INDEX][4] = {
+        "\xe5\xb7\xa6",
+        "\xE4\xB8\xAD",
+        "\xe5\x8f\xb3",
+        "*",
+    };
+
+    if (!c_my_ui::s_init_my_ui_flag)
+    {
+        rt_kprintf("GuiLite is not ready\n");
+        return;
+    }
+
+    if (wind_level_label)
+    {
+        if (level <= 9999)
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "%hu", level);
+        }
+        else
+        {
+            snprintf(level_buffer, sizeof(level_buffer), "*");
+        }
+        wind_level_label->set_str(level_buffer);
+        wind_level_label->show_window();
+    }
+    if (wind_level_label_title)
+    {
+        if (duanluo_index < DUANLUO_NULL_INDEX)
+        {
+            wind_level_label_title->set_str(duanluo_index_buffer[duanluo_index]);
+        }
+        else
+        {
+            wind_level_label_title->set_str(duanluo_index_buffer[duanluo_index]);
+        }
+        wind_level_label_title->show_window();
+    }
+}
 void* getUiOfHelloStar(int* width, int* height, bool force_update)
 {
 	if (s_display)
