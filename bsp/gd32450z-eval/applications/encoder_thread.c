@@ -19,9 +19,11 @@
 #define RELAY_PIN0    GET_PIN(E, 2)
 #define RELAY_PIN1    GET_PIN(E, 3)
 
+extern int get_ccd_check_info(unsigned char addr, unsigned char *value, unsigned char len);
+extern void display_check_value(unsigned char * level, unsigned char len);
 extern void display_check_ans(int alarm, unsigned int check_value);
 extern void *get_sync_obj_encoder(void);
-void encoder_comm_backend_init(void)
+void encoder_comm_backend_init(void *arg)
 {
     unsigned int id = 0;
     int ret;

@@ -28,8 +28,8 @@
 #define DBG_LED2_PIN     GET_PIN(B, 2)
 
 extern int tc(int argc, char *argv[]);
-extern void encoder_comm_backend_init(void);
-extern void screen_backend_entry(void);
+extern void encoder_comm_backend_init(void *arg);
+extern void screen_backend_entry(void * arg);
 static rt_thread_t gs_encoder_backend, gs_screen_backend;
 extern void display_calibrate_value(unsigned char * level, unsigned char len);
 extern void display_check_value(unsigned char * level, unsigned char len);
@@ -47,6 +47,7 @@ int main(void)
 
     LOG_I("tc start.");
     tc(0, NULL);
+    LOG_I("tc end.");
     if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
     {
         display_calibrate_value(calibrate_info_buffer, 6);
@@ -56,7 +57,6 @@ int main(void)
     {
         LOG_E("Failed Get Calibrate info");
     }
-    LOG_I("tc end.");
 
     gs_encoder_backend = rt_thread_create("encoderB", encoder_comm_backend_init, RT_NULL, 0x1000, 5, 10);
     if (gs_encoder_backend)

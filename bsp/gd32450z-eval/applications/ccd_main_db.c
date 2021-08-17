@@ -62,9 +62,9 @@ static void up_boot_progress(fdb_kvdb_t kvdb)
     fdb_kv_get_blob(kvdb, "bootcounts", fdb_blob_make(&blob, &bootcounts, sizeof(bootcounts)));
     /* the blob.saved.len is more than 0 when get the value successful */
     if (blob.saved.len > 0) {
-        LOG_I("get the 'bootcounts' value is %d\n", bootcounts);
+        LOG_I("get the 'bootcounts' value is %d", bootcounts);
     } else {
-        LOG_I("get the 'bootcounts' failed\n");
+        LOG_I("get the 'bootcounts' failed");
     }
 
     bootcounts ++;
@@ -86,7 +86,6 @@ int ccd_main_db_init(void)
         up_boot_progress(&gs_flashdb4sys);
         fdb_kv_get_blob(&gs_flashdb4sys, "ccd_main_info", fdb_blob_make(&blob, &gs_ccd_main_sysinfo, sizeof(gs_ccd_main_sysinfo)));
         LOG_I("ccd_main_config[%u,%u,%u]", gs_ccd_main_sysinfo.ccd_main_config.left, gs_ccd_main_sysinfo.ccd_main_config.middle, gs_ccd_main_sysinfo.ccd_main_config.right);
-        gs_ccd_main_sysinfo.ccd_main_config.middle++;
         set_ccd_main_config(&gs_ccd_main_sysinfo.ccd_main_config);
     }
 

@@ -393,7 +393,8 @@ static int can_comm_init(void)
     {
         LOG_D("Init can commiuncation@%d success.", CAN_BAUD);
     }
+    LOG_W("Can commiuncate ok");
 
     return ret;
 }
-INIT_APP_EXPORT(can_comm_init);
+INIT_ENV_EXPORT(can_comm_init);
