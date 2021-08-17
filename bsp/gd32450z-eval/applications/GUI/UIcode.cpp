@@ -93,7 +93,7 @@ WND_TREE s_main_widgets[] =
     /* 左/中/右 分段修改 */
     { NULL,        ID_LABEL_MODIFYDUANLUOZHI,    "9999",    0, 138, 44, 20},
     /* 左中右分段 */
-    { NULL,        ID_LABEL_DUANLUOZHI,    "1000,2000,1000",    115, 138, 130, 20},
+    { NULL,        ID_LABEL_DUANLUOZHI,    ",,",    115, 138, 151, 20},
 
     { NULL, 0 , 0, 0, 0, 0, 0}
 };
@@ -301,6 +301,26 @@ extern "C" void display_modify_duanluo(unsigned char duanluo_index,unsigned int 
         wind_level_label_title->show_window();
     }
 }
+
+extern "C" void display_duanluozhi(ccd_main_config_t *ccd_main_config)
+{
+    c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_DUANLUOZHI);
+    char level_buffer[32] = {0};
+
+    if (!c_my_ui::s_init_my_ui_flag)
+    {
+        rt_kprintf("GuiLite is not ready\n");
+        return;
+    }
+
+    if (wind_level_label)
+    {
+        snprintf(level_buffer, sizeof(level_buffer), "%hu,%hu,%hu", ccd_main_config->duanluo_cfg.ccd_duanluo_pos_value.left, ccd_main_config->duanluo_cfg.ccd_duanluo_pos_value.middle, ccd_main_config->duanluo_cfg.ccd_duanluo_pos_value.right);
+        wind_level_label->set_str(level_buffer);
+        wind_level_label->show_window();
+    }
+}
+
 void* getUiOfHelloStar(int* width, int* height, bool force_update)
 {
 	if (s_display)
