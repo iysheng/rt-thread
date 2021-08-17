@@ -84,7 +84,7 @@ void screen_backend_entry(void * arg)
             {
                 case KEYBOARD_XING:
                     gs_duanluo_mode.duanluo_mode++;
-                    gs_duanluo_mode.duanluo_mode %= DUANLUO_MAX_INDEX;
+                    gs_duanluo_mode.duanluo_mode %= DUANLUO_NULL_INDEX;
                     do_display_with_duanluo(&gs_duanluo_mode);
                     break;
                 case KEYBOARD_JING:
