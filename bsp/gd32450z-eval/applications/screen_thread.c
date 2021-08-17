@@ -66,6 +66,7 @@ static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
 void screen_backend_entry(void * arg)
 {
     unsigned char value[6] = {0};
+    unsigned char calibrate_info_buffer[6] = {0};
     uint32_t key_value;
 
     LOG_I("Hello screen");
@@ -92,6 +93,14 @@ void screen_backend_entry(void * arg)
                     set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
                     set_ccd_duanluo(0x01, &gs_duanluo_mode.duanluo_config_value);
                     break;
+                case KEYBOARD_UP:
+                    /* 触发校准 */
+                    tc(0, NULL);
+                    if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
+                    {
+                        display_calibrate_value(calibrate_info_buffer, 6);
+                        LOG_I("Get calibrate info success");
+                    }
                 case KEYBOARD_DOWN:
                     gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_value[gs_duanluo_mode.duanluo_mode] = 0;
                     break;
