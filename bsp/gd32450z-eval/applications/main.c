@@ -45,18 +45,6 @@ int main(void)
     rt_pin_mode(HEART_LED_PIN, PIN_MODE_OUTPUT);
     rt_pin_mode(TEST_CALIBRATE_PIN, PIN_MODE_INPUT);
 
-    LOG_I("tc start.");
-    tc(0, NULL);
-    LOG_I("tc end.");
-    if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
-    {
-        display_calibrate_value(calibrate_info_buffer, 6);
-        LOG_I("Get calibrate info success");
-    }
-    else
-    {
-        LOG_E("Failed Get Calibrate info");
-    }
 
     gs_encoder_backend = rt_thread_create("encoderB", encoder_comm_backend_init, RT_NULL, 0x1000, 5, 10);
     if (gs_encoder_backend)
@@ -76,6 +64,20 @@ int main(void)
             LOG_E("Failed startup screen backend thread, err=%d", ret);
         }
     }
+
+    LOG_I("tc start.");
+    tc(0, NULL);
+    LOG_I("tc end.");
+    if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
+    {
+        display_calibrate_value(calibrate_info_buffer, 6);
+        LOG_I("Get calibrate info success");
+    }
+    else
+    {
+        LOG_E("Failed Get Calibrate info");
+    }
+
     while(1)
     {
         rt_pin_write(HEART_LED_PIN, PIN_HIGH);

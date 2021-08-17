@@ -15,10 +15,14 @@ enum WND_ID
     ID_LABEL_ZONGBAOJING,
     ID_LABEL_ZONGJIANCE,
     ID_LABEL_JIANCE,
+    ID_LABEL_MODIFYDUANLUO,
+    ID_LABEL_DUANLUO,
     ID_LABEL_CANKAOZHI,
     ID_LABEL_ZONGBAOJINGZHI,
     ID_LABEL_ZONGJIANCEZHI,
     ID_LABEL_JIANCEZHI,
+    ID_LABEL_MODIFYDUANLUOZHI,
+    ID_LABEL_DUANLUOZHI,
     ID_LABEL_MAX
 };
 
@@ -63,34 +67,44 @@ static c_surface_no_fb * gs_surface_no_fb;
 
 WND_TREE s_main_widgets[] =
 {
-	/* 参考 */
-	{ NULL,		ID_LABEL_CANKAO,	"\xe5\x8f\x82\xe8\x80\x83\x3a",	0, 0, 75, 38},
-	/* 总报警 */
-	{ NULL,		ID_LABEL_ZONGBAOJING,	"\xe6\x80\xbb\xe6\x8a\xa5\xe8\xad\xa6\x3a",	0, 40, 115, 38},
-	/* 总检测 */
-	{ NULL,		ID_LABEL_ZONGJIANCE,	"\xe6\x80\xbb\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 80, 115, 38},
-	/* 检测 */
-	{ NULL,		ID_LABEL_JIANCE,	"\xe6\xa3\x80\xe6\xb5\x8b\x3a",	0, 120, 75, 38},
+    /* 参考 */
+    { NULL,        ID_LABEL_CANKAO,    "\xe5\x8f\x82\xe8\x80\x83\x3a",    5, 6, 40, 20},
+    /* 总报警 */
+    { NULL,        ID_LABEL_ZONGBAOJING,    "\xe6\x80\xbb\xe6\x8a\xa5\xe8\xad\xa6\x3a",    5, 32, 60, 20},
+    /* 总检测 */
+    { NULL,        ID_LABEL_ZONGJIANCE,    "\xe6\x80\xbb\xe6\xa3\x80\xe6\xb5\x8b\x3a",    5, 58, 60, 20},
+    /* 检测 */
+    { NULL,        ID_LABEL_JIANCE,    "\xe6\xa3\x80\xe6\xb5\x8b\x3a",    5, 84, 40, 20},
+    /* 左 */
+    { NULL,        ID_LABEL_MODIFYDUANLUO,    "\xe5\xb7\xa6",    12, 112, 20, 20},
+    /* 左中右 */
+    { NULL,        ID_LABEL_DUANLUO,    "\xe5\xb7\xa6\xE4\xB8\xAD\xe5\x8f\xb3\x3a",    45, 138, 65, 20},
 
-	/* 参考值 */
-	{ NULL,		ID_LABEL_CANKAOZHI,	",,",	75, 0, 175, 38},
-	/* 总报警次数 */
-	{ NULL,		ID_LABEL_ZONGBAOJINGZHI,	"0",	115, 40, 150, 38},
-	/* 总检测次数 */
-	{ NULL,		ID_LABEL_ZONGJIANCEZHI,	"0",	115, 80, 150, 38},
-	/* 检测详细 */
-	{ NULL,		ID_LABEL_JIANCEZHI,	",,",	75, 120, 175, 38},
+    /* 参考值 */
+    { NULL,        ID_LABEL_CANKAOZHI,    ",,",    55, 6, 175, 20},
+    /* 总报警次数 */
+    { NULL,        ID_LABEL_ZONGBAOJINGZHI,    "0",    75, 32, 150, 20},
+    /* 总检测次数 */
+    { NULL,        ID_LABEL_ZONGJIANCEZHI,    "0",    75, 58, 150, 20},
+    /* 详细检测 */
+    { NULL,        ID_LABEL_JIANCEZHI,     ",,",   55, 84, 175, 20},
+    /* 左/中/右 分段修改 */
+    { NULL,        ID_LABEL_MODIFYDUANLUO,    "9999",    0, 138, 44, 20},
+    /* 左中右分段 */
+    { NULL,        ID_LABEL_DUANLUO,    "1000,2000,1000",    115, 138, 130, 20},
 
-	{ NULL, 0 , 0, 0, 0, 0, 0}
+    { NULL, 0 , 0, 0, 0, 0, 0}
 };
 
 // Create GUI
 extern const FONT_INFO yahei_22;
 extern const FONT_INFO yahei_16;
+extern const FONT_INFO songti_15;
 void load_resource()
 {
-	c_theme::add_font(FONT_DEFAULT, &yahei_22);
+	c_theme::add_font(FONT_DEFAULT, &songti_15);
 	c_theme::add_font(FONT_CUSTOM1, &yahei_16);
+	c_theme::add_font(FONT_CUSTOM2, &yahei_22);
 	c_theme::add_color(COLOR_WND_FONT, 1);
 	c_theme::add_color(COLOR_WND_NORMAL, 1);
 }
@@ -101,8 +115,12 @@ static inline void widgets_pre_init(WND_TREE *tree)
 {
     int i = 0;
 
+#if 0
     gs_label4dispaly[ID_LABEL_CANKAOZHI-2].set_font_type(&yahei_16);
+    gs_label4dispaly[ID_LABEL_ZONGBAOJINGZHI-2].set_font_type(&yahei_16);
+    gs_label4dispaly[ID_LABEL_ZONGJIANCEZHI-2].set_font_type(&yahei_16);
     gs_label4dispaly[ID_LABEL_JIANCEZHI-2].set_font_type(&yahei_16);
+#endif
     while (tree[i].resource_id)
     {
         tree[i].p_wnd = &gs_label4dispaly[i];
@@ -126,6 +144,10 @@ void create_ui(void* phy_fb, int screen_width, int screen_height, int color_byte
     gs_my_ui->set_surface(gs_surface_no_fb);
     gs_my_ui->connect(NULL, ID_ROOT, 0, 0, 0, UI_WIDTH, UI_HEIGHT, s_main_widgets);
     gs_my_ui->show_window();
+
+    gs_surface_no_fb->fill_rect(0, 109, 44, 109, GL_RGB(0, 0, 0), Z_ORDER_LEVEL_0);
+    gs_surface_no_fb->fill_rect(44, 135, 256, 135, GL_RGB(0, 0, 0), Z_ORDER_LEVEL_0);
+    gs_surface_no_fb->fill_rect(44, 109, 44, 160, GL_RGB(0, 0, 0), Z_ORDER_LEVEL_0);
     /* 標記 GuiLite 初始化完成 */
     c_my_ui::s_init_my_ui_flag = 1;
 }

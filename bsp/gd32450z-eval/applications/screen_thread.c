@@ -24,13 +24,22 @@ static struct EXTERNAL_GFX_OP
 
 extern void startHelloStar(void* phy_fb, int width, int height, int color_bytes, struct EXTERNAL_GFX_OP* gfx_op);
 
-void screen_backend_entry(void)
+extern int get_keyboard_keydown(uint32_t *value);
+void screen_backend_entry(void * arg)
 {
+    unsigned char value[6] = {0};
+    uint32_t key_value;
     LOG_I("Hello screen");
     startHelloStar(NULL, 256, 160, 2, &gs_gui_ops);
 
     while (1)
     {
         rt_thread_mdelay(1000);
+
+        if (!get_keyboard_keydown(&key_value))
+        {
+            value[1] = key_value & 0xff;
+            display_check_value(value, 6);
+        }
     }
 }
