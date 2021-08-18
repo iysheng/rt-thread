@@ -99,7 +99,7 @@ void screen_backend_entry(void * arg)
 
     while (1)
     {
-        rt_thread_mdelay(1000);
+        rt_thread_mdelay(100);
 
         if (!get_keyboard_keydown(&key_value))
         {
@@ -141,6 +141,7 @@ void screen_backend_entry(void * arg)
                         display_calibrate_value(calibrate_info_buffer, 6);
                         LOG_I("Get calibrate info success");
                     }
+                    break;
                 case KEYBOARD_DOWN:
                     gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_value[gs_duanluo_mode.duanluo_mode] = 0;
                     break;
