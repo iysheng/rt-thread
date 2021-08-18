@@ -66,6 +66,7 @@ int main(void)
         }
     }
 
+#if 0
     LOG_I("tc start.");
     tc(0, NULL);
     LOG_I("tc end.");
@@ -84,6 +85,7 @@ int main(void)
     {
         LOG_E("Failed Get Calibrate info");
     }
+#endif
 
     while(1)
     {

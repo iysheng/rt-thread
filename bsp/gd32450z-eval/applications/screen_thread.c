@@ -88,16 +88,29 @@ static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
   * @param ccd_main_config_t *ccd_config: 
   * retval .
   */
-static void init_remote_ccd_devices(ccd_main_config_t *ccd_config)
+static void init_remote_ccd_devices(duanluo_config4screen_t *ccd_config4screen)
 {
+    unsigned char calibrate_info_buffer[6] = {0};
+
     /* TODO check ccd_config valid */
     /* 初始化段落参考信息 */
-    set_ccd_duanluo(0x01, ccd_config);
-    /* 初始化段落参考信息 */
-    set_ccd_duanluo_cankao(0x01, ccd_config);
+    set_ccd_duanluo(0x01, &ccd_config4screen->duanluo_config_value);
     /* 初始化段落参考容错信息 */
-    set_ccd_duanluo_cankao_delta(0x01, ccd_config);
+    set_ccd_duanluo_cankao_delta(0x01, &ccd_config4screen->duanluo_config_value);
+    /* 初始化段落参考信息 */
+    set_ccd_duanluo_cankao(0x01, &ccd_config4screen->duanluo_config_value);
     /* 配置完成提示 */
+
+    /* pre init display */
+    display_duanluozhi(&ccd_config4screen->duanluo_config_value);
+    do_display_with_duanluo(ccd_config4screen);
+    calibrate_info_buffer[0] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left >> 8;
+    calibrate_info_buffer[1] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left;
+    calibrate_info_buffer[2] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle >> 8;
+    calibrate_info_buffer[3] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle;
+    calibrate_info_buffer[4] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right >> 8;
+    calibrate_info_buffer[5] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right;
+    display_calibrate_value(calibrate_info_buffer, 6);
     display_boot_phase(0);
 }
 
@@ -111,10 +124,7 @@ void screen_backend_entry(void * arg)
     startHelloStar(NULL, 256, 160, 2, &gs_gui_ops);
     rt_memcpy(&gs_duanluo_mode.duanluo_config_value, &gs_ccd_main_sysinfo.ccd_main_config, sizeof(ccd_main_config_t));
     LOG_I("DuanLuo[%u,%u,%u]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.right);
-    /* pre init display */
-    display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
-    do_display_with_duanluo(&gs_duanluo_mode);
-    init_remote_ccd_devices(&gs_duanluo_mode.duanluo_config_value);
+    init_remote_ccd_devices(&gs_duanluo_mode);
     LOG_I("CanKao[%u,%u,%u@%hu]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_delta[0]);
 
     while (1)
