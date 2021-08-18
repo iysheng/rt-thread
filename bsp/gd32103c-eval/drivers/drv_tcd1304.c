@@ -434,11 +434,6 @@ void TIMER3_IRQHandler(void)
     /* 如果需要对采样的数据 AD 转换 */
     if (g_tcd1304_device_data.should_scan & 0x01)
     {
-#if 0
-        rt_kprintf("should_scan=%d\n", g_tcd1304_device_data.should_scan);
-        if ((g_tcd1304_device_data.mark_times != 0 && g_tcd1304_device_data.should_scan == g_tcd1304_device_data.mark_times) || g_tcd1304_device_data.mark_times == 0)
-        {
-#endif
         /* DMA 中断后为了保持同步,跳过第一个 ICG 中断 */
         if (gs_dma0_dummy4timer3 == 1)
         {
@@ -451,9 +446,6 @@ void TIMER3_IRQHandler(void)
             TIMER_SetCounter(TIMER0, 0);
             TIMER_Enable(TIMER0, ENABLE);
         }
-#if 0
-        }
-#endif
     }
     rt_interrupt_leave();
 }
@@ -722,9 +714,7 @@ void DMA0_Channel0_IRQHandler(void)
 #if 1
 #if 0
     show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
-#endif
-    //do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
-#if 0
+    do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
     show_voltage("filter", g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
 #endif
     do_sum2_with_data(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN);
