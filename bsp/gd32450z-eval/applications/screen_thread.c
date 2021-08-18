@@ -46,6 +46,11 @@ extern ccd_main_system_t gs_ccd_main_sysinfo;
 extern void display_modify_duanluo(unsigned char duanluo_index, unsigned short int level);
 extern void display_duanluozhi(ccd_main_config_t *ccd_main_config);
 extern void display_calibrate_value(unsigned char * level, unsigned char len);
+extern int set_ccd_duanluo(unsigned char addr, ccd_main_config_t *config);
+extern int set_ccd_duanluo_cankao(unsigned char addr, ccd_main_config_t *config);
+extern int set_ccd_duanluo_cankao_delta(unsigned char addr, ccd_main_config_t *config);
+extern int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len);
+
 static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
 {
     /* TODO check duanluo mode valid */
