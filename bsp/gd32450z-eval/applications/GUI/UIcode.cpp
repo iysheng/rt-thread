@@ -160,6 +160,7 @@ extern "C" void startHelloStar(void* phy_fb, int width, int height, int color_by
 }
 
 extern const BITMAP_INFO alarm_bmp;
+extern const BITMAP_INFO init_ok1_bmp;
 extern "C" void display_check_ans(int alarm, unsigned int check_value)
 {
     static unsigned int s_total_alram_counts;
@@ -200,6 +201,11 @@ extern "C" void display_check_ans(int alarm, unsigned int check_value)
         wind_check_label->set_str(alarm_buffer);
         wind_check_label->show_window();
     }
+}
+
+extern "C" void display_boot_phase(int phase)
+{
+    c_bitmap::draw_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &init_ok1_bmp, 45, 112);
 }
 
 extern "C" void display_calibrate_value(unsigned char * level, unsigned char len)

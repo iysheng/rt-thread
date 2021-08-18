@@ -46,6 +46,7 @@ extern ccd_main_system_t gs_ccd_main_sysinfo;
 extern void display_modify_duanluo(unsigned char duanluo_index, unsigned short int level);
 extern void display_duanluozhi(ccd_main_config_t *ccd_main_config);
 extern void display_calibrate_value(unsigned char * level, unsigned char len);
+extern void display_boot_phase(int phase);
 extern int set_ccd_duanluo(unsigned char addr, ccd_main_config_t *config);
 extern int set_ccd_duanluo_cankao(unsigned char addr, ccd_main_config_t *config);
 extern int set_ccd_duanluo_cankao_delta(unsigned char addr, ccd_main_config_t *config);
@@ -82,6 +83,24 @@ static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
     }
 }
 
+/**
+  * @brief 
+  * @param ccd_main_config_t *ccd_config: 
+  * retval .
+  */
+static void init_remote_ccd_devices(ccd_main_config_t *ccd_config)
+{
+    /* TODO check ccd_config valid */
+    /* 初始化段落参考信息 */
+    set_ccd_duanluo(0x01, ccd_config);
+    /* 初始化段落参考信息 */
+    set_ccd_duanluo_cankao(0x01, ccd_config);
+    /* 初始化段落参考容错信息 */
+    set_ccd_duanluo_cankao_delta(0x01, ccd_config);
+    /* 配置完成提示 */
+    display_boot_phase(0);
+}
+
 void screen_backend_entry(void * arg)
 {
     unsigned char value[6] = {0};
@@ -95,6 +114,7 @@ void screen_backend_entry(void * arg)
     /* pre init display */
     display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
     do_display_with_duanluo(&gs_duanluo_mode);
+    init_remote_ccd_devices(&gs_duanluo_mode.duanluo_config_value);
     LOG_I("CanKao[%u,%u,%u@%hu]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_delta[0]);
 
     while (1)
