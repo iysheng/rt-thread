@@ -35,6 +35,7 @@ extern void display_calibrate_value(unsigned char * level, unsigned char len);
 extern void display_check_value(unsigned char * level, unsigned char len);
 extern int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len);
 extern int ccd_main_db_init(void);
+extern ccd_main_system_t gs_ccd_main_sysinfo;
 
 int main(void)
 {
@@ -70,8 +71,14 @@ int main(void)
     LOG_I("tc end.");
     if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
     {
+        gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_left = calibrate_info_buffer[0] << 8 | calibrate_info_buffer[1];
+        gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle = calibrate_info_buffer[2] << 8 | calibrate_info_buffer[3];
+        gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_right = calibrate_info_buffer[4] << 8 | calibrate_info_buffer[5];
         display_calibrate_value(calibrate_info_buffer, 6);
-        LOG_I("Get calibrate info success");
+        LOG_I("Get calibrate info success[%hu,%hu,%hu]", \
+            gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_left,\
+            gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle,\
+            gs_ccd_main_sysinfo.ccd_main_config.duanluo_cfg.ccd_duanluo_pos_value.cankao_right);
     }
     else
     {

@@ -26,6 +26,10 @@ ccd_main_system_t gs_ccd_main_sysinfo = {
                 .left = 1000,
                 .middle = 1400,
                 .right = 1000,
+                .cankao_left = 1000,
+                .cankao_middle = 1000,
+                .cankao_right = 1000,
+                .cankao_delta[0] = 150,
             }
         },
     }

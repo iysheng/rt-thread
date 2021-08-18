@@ -34,8 +34,9 @@ typedef struct {
 } duanluo_config4screen_t;
 
 static duanluo_config4screen_t gs_duanluo_mode = {
-    .duanluo_mode = DUANLUO_NULL_INDEX, /* 初始表示空 * 模式 */
+    .duanluo_mode = DUANLUO_LEFT_INDEX, /* 初始表示空 * 模式 */
 };
+
 extern ccd_main_system_t gs_ccd_main_sysinfo;
 /**
   * @brief 显示段落信息
@@ -44,6 +45,7 @@ extern ccd_main_system_t gs_ccd_main_sysinfo;
   */
 extern void display_modify_duanluo(unsigned char duanluo_index, unsigned short int level);
 extern void display_duanluozhi(ccd_main_config_t *ccd_main_config);
+extern void display_calibrate_value(unsigned char * level, unsigned char len);
 static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
 {
     /* TODO check duanluo mode valid */
@@ -57,6 +59,18 @@ static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
             break;
         case DUANLUO_RIGHT_INDEX:
             display_modify_duanluo(DUANLUO_RIGHT_INDEX, duanluo->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.right);
+            break;
+        case DUANLUO_CANKAO_LEFT_INDEX:
+            display_modify_duanluo(DUANLUO_CANKAO_LEFT_INDEX, duanluo->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left);
+            break;
+        case DUANLUO_CANKAO_MIDDLE_INDEX:
+            display_modify_duanluo(DUANLUO_CANKAO_MIDDLE_INDEX, duanluo->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle);
+            break;
+        case DUANLUO_CANKAO_RIGHT_INDEX:
+            display_modify_duanluo(DUANLUO_CANKAO_RIGHT_INDEX, duanluo->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right);
+            break;
+        case DUANLUO_CANKAO_DELTA_INDEX:
+            display_modify_duanluo(DUANLUO_CANKAO_DELTA_INDEX, duanluo->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_delta[0]);
             break;
         default:
             break;
@@ -72,8 +86,11 @@ void screen_backend_entry(void * arg)
     LOG_I("Hello screen");
     startHelloStar(NULL, 256, 160, 2, &gs_gui_ops);
     rt_memcpy(&gs_duanluo_mode.duanluo_config_value, &gs_ccd_main_sysinfo.ccd_main_config, sizeof(ccd_main_config_t));
-    LOG_I("[%u,%u,%u]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.right);
+    LOG_I("DuanLuo[%u,%u,%u]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.right);
+    /* pre init display */
     display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
+    do_display_with_duanluo(&gs_duanluo_mode);
+    LOG_I("CanKao[%u,%u,%u@%hu]", gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right, gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_delta[0]);
 
     while (1)
     {
@@ -89,9 +106,27 @@ void screen_backend_entry(void * arg)
                     do_display_with_duanluo(&gs_duanluo_mode);
                     break;
                 case KEYBOARD_JING:
-                    display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
+                    if (gs_duanluo_mode.duanluo_mode < DUANLUO_CANKAO_LEFT_INDEX)
+                    {
+                        display_duanluozhi(&gs_duanluo_mode.duanluo_config_value);
+                        set_ccd_duanluo(0x01, &gs_duanluo_mode.duanluo_config_value);
+                    }
+                    else if (gs_duanluo_mode.duanluo_mode < DUANLUO_CANKAO_DELTA_INDEX)
+                    {
+                        calibrate_info_buffer[0] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left >> 8;
+                        calibrate_info_buffer[1] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left;
+                        calibrate_info_buffer[2] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle >> 8;
+                        calibrate_info_buffer[3] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle;
+                        calibrate_info_buffer[4] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right >> 8;
+                        calibrate_info_buffer[5] = gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right;
+                        display_calibrate_value(calibrate_info_buffer, 6);
+                        set_ccd_duanluo_cankao(0x01, &gs_duanluo_mode.duanluo_config_value);
+                    }
+                    else if (gs_duanluo_mode.duanluo_mode < DUANLUO_NULL_INDEX)
+                    {
+                        set_ccd_duanluo_cankao_delta(0x01, &gs_duanluo_mode.duanluo_config_value);
+                    }
                     set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
-                    set_ccd_duanluo(0x01, &gs_duanluo_mode.duanluo_config_value);
                     break;
                 case KEYBOARD_UP:
                     /* 触发校准 */

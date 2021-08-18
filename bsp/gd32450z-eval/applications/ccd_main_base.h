@@ -13,6 +13,10 @@ typedef enum {
     DUANLUO_LEFT_INDEX,
     DUANLUO_MIDDLE_INDEX,
     DUANLUO_RIGHT_INDEX,
+    DUANLUO_CANKAO_LEFT_INDEX,
+    DUANLUO_CANKAO_MIDDLE_INDEX,
+    DUANLUO_CANKAO_RIGHT_INDEX,
+    DUANLUO_CANKAO_DELTA_INDEX,
     DUANLUO_NULL_INDEX,
     DUANLUO_MAX_INDEX,
 } duanluo_index_E;
@@ -23,7 +27,10 @@ typedef struct {
             uint16_t left;
             uint16_t middle;
             uint16_t right;
-            uint16_t pad[1];
+            uint16_t cankao_left;
+            uint16_t cankao_middle;
+            uint16_t cankao_right;
+            uint16_t cankao_delta[1];
         } ccd_duanluo_pos_value;
         uint16_t ccd_duanluo_value[DUANLUO_MAX_INDEX];
     } duanluo_cfg;

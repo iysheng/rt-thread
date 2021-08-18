@@ -78,7 +78,7 @@ WND_TREE s_main_widgets[] =
     /* 检测 */
     { NULL,        ID_LABEL_JIANCE,    "\xe6\xa3\x80\xe6\xb5\x8b\x3a",    5, 84, 40, 20},
     /* 左 */
-    { NULL,        ID_LABEL_MODIFYDUANLUO,    "*",    12, 112, 20, 20},
+    { NULL,        ID_LABEL_MODIFYDUANLUO,    "*",    0, 112, 40, 20},
     /* 左中右 */
     { NULL,        ID_LABEL_DUANLUO,    "\xe5\xb7\xa6\xE4\xB8\xAD\xe5\x8f\xb3\x3a",    45, 138, 65, 20},
 
@@ -262,10 +262,14 @@ extern "C" void display_modify_duanluo(unsigned char duanluo_index,unsigned int 
     c_label * wind_level_label = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_MODIFYDUANLUOZHI);
     c_label * wind_level_label_title = (c_label *)gs_my_ui->get_wnd_ptr(ID_LABEL_MODIFYDUANLUO);
     char level_buffer[16] = {0};
-    char duanluo_index_buffer[DUANLUO_MAX_INDEX][4] = {
+    char duanluo_index_buffer[DUANLUO_MAX_INDEX][7] = {
         "\xe5\xb7\xa6",
         "\xE4\xB8\xAD",
         "\xe5\x8f\xb3",
+        "\xe5\x8f\x82\xe5\xb7\xa6",
+        "\xe5\x8f\x82\xE4\xB8\xAD",
+        "\xe5\x8f\x82\xe5\x8f\xb3",
+        "\xe5\xae\xb9\xe9\x94\x99",
         "*",
     };
 
