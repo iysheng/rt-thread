@@ -55,12 +55,14 @@ typedef struct {
     uint16_t left;
     uint16_t middle;
     uint16_t right;
+    uint16_t cankao_delta;
 } ccd_duanluo_t;
 
 static ccd_duanluo_t gs_ccd_duanluo_cfg = {
     .left = 1000,
     .middle = 1647,
     .right = 1000,
+    .cankao_delta = 150,
 };
 
 /* 存储标记的区域像素信息 */
@@ -85,11 +87,40 @@ int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
         value[3] = gs_tcd_mark_target_ans.ans_zone1 ;
         value[4] = gs_tcd_mark_target_ans.ans_zone2 >> 8;
         value[5] = gs_tcd_mark_target_ans.ans_zone2 ;
+
         return 0;
     }
     return -1;
 }
 
+/**
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
+  * retval .
+  */
+int get_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+/* TODO check len valid len must == 6 */
+    value[0] = gs_ccd_duanluo_cfg.cankao_delta >> 8;
+    value[1] = gs_ccd_duanluo_cfg.cankao_delta;
+
+    return 0;
+}
+
+/**
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
+  * retval .
+  */
+int set_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+/* TODO check len valid len must == 6 */
+    gs_ccd_duanluo_cfg.cankao_delta = value[0] << 8 | value[1];
+
+    return 0;
+}
 /**
   * @brief
   * @param unsigned char *value:
@@ -145,6 +176,23 @@ int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len)
     gs_ccd_duanluo_cfg.middle = value[2] << 8 | value[3];
     gs_ccd_duanluo_cfg.right = value[4] << 8 | value[5];
     LOG_E("SetDuanLuo[%hu,%hu,%hu]", gs_ccd_duanluo_cfg.left, gs_ccd_duanluo_cfg.middle, gs_ccd_duanluo_cfg.right);
+
+    return 0;
+}
+
+/**
+  * @brief
+  * @param unsigned char *value:
+  * @param unsigned char len:
+  * retval .
+  */
+int set_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
+{
+    /* TODO chech value valid */
+    gs_tcd_cmp_target_ans.ans_zone0 = value[0] << 8 | value[1];
+    gs_tcd_cmp_target_ans.ans_zone1 = value[2] << 8 | value[3];
+    gs_tcd_cmp_target_ans.ans_zone2 = value[4] << 8 | value[5];
+    LOG_E("SetCanKao[%hu,%hu,%hu]", gs_tcd_cmp_target_ans.ans_zone0, gs_tcd_cmp_target_ans.ans_zone1, gs_tcd_cmp_target_ans.ans_zone2);
 
     return 0;
 }
@@ -603,32 +651,38 @@ static int check_whether_match_target(drv_tcd1304_target_ans_t *mark, drv_tcd130
 {
 #define COMPARE_THREOLD    150
     int match = 0;
+    uint16_t t_compare_threold = COMPARE_THREOLD;
+
+    if (gs_ccd_duanluo_cfg.cankao_delta < 3647)
+    {
+        t_compare_threold = gs_ccd_duanluo_cfg.cankao_delta;
+    }
 
     if (mark->ans_zone0 > cmp->ans_zone0)
     {
-        match += (mark->ans_zone0 - cmp->ans_zone0 > COMPARE_THREOLD);
+        match += (mark->ans_zone0 - cmp->ans_zone0 > t_compare_threold);
     }
     else
     {
-        match += (cmp->ans_zone0 - mark->ans_zone0 > COMPARE_THREOLD);
+        match += (cmp->ans_zone0 - mark->ans_zone0 > t_compare_threold);
     }
 
     if (mark->ans_zone1 > cmp->ans_zone1)
     {
-        match += (mark->ans_zone1 - cmp->ans_zone1 > COMPARE_THREOLD);
+        match += (mark->ans_zone1 - cmp->ans_zone1 > t_compare_threold);
     }
     else
     {
-        match += (cmp->ans_zone1 - mark->ans_zone1 > COMPARE_THREOLD);
+        match += (cmp->ans_zone1 - mark->ans_zone1 > t_compare_threold);
     }
 
     if (mark->ans_zone2 > cmp->ans_zone2)
     {
-        match += (mark->ans_zone2 - cmp->ans_zone2 > COMPARE_THREOLD);
+        match += (mark->ans_zone2 - cmp->ans_zone2 > t_compare_threold);
     }
     else
     {
-        match += (cmp->ans_zone2 - mark->ans_zone2 > COMPARE_THREOLD);
+        match += (cmp->ans_zone2 - mark->ans_zone2 > t_compare_threold);
     }
 
     LOG_D(">--------------no match counts=%d.", match);

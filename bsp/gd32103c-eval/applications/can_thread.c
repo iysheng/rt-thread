@@ -20,6 +20,9 @@ enum {
     CCD_CHECK_INFO_RESPON = 0x08,
     CCD_DUANLUO_INFO = 0x09,
     CCD_DUANLUO_INFO_RESPON = 0x0A,
+    CCD_DUANLUO_CANKAO_INFO = 0x0B,
+    CCD_DUANLUO_CANKAO_DELTA_INFO = 0x0D,
+    CCD_DUANLUO_CANKAO_DELTA_INFO_RESPON = 0x0E,
 } can_comm_cmd_E;
 
 #define DBG_LVL               DBG_INFO
@@ -128,6 +131,20 @@ extern int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
 }
 
 /**
+  * @brief 设置 CCD 的标定结果信息
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int set_ccd_calibrate_info(rt_can_msg_t msg)
+{
+extern int set_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
+    return set_tcd1304_calibrate_info(&msg->data[1], 6);
+}
+
+/**
   * @brief 获取 CCD 的检测结果信息
   *
   * @param unsigned char addr:
@@ -165,6 +182,33 @@ extern int get_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
     return get_tcd1304_duanluo_info(&msg->data[1], 6);
 }
 
+/**
+  * @brief 获取 CCD 的检测容错值
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int get_ccd_calibrate_delta_info(rt_can_msg_t msg)
+{
+extern int get_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len);
+    return get_tcd1304_calibrate_delta_info(&msg->data[1], 6);
+}
+
+/**
+  * @brief 设置 CCD 的检测容错值
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示校准成功
+  */
+int set_ccd_calibrate_delta_info(rt_can_msg_t msg)
+{
+extern int set_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len);
+    return set_tcd1304_calibrate_delta_info(&msg->data[1], 6);
+}
 /**
   * @brief 控制 CCD 进行检测并返回检测结果
   *
@@ -303,6 +347,24 @@ void can_backend_entry(void * arg)
                     get_ccd_check_info(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_DUANLUO_INFO_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_DUANLUO_CANKAO_INFO:
+                    /* TODO calibrate */
+                    set_ccd_calibrate_info(&msg);
+                    get_ccd_calibrate_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_CALIBRATE_INFO_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_DUANLUO_CANKAO_DELTA_INFO:
+                    /* TODO calibrate */
+                    set_ccd_calibrate_delta_info(&msg);
+                    get_ccd_calibrate_delta_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_DUANLUO_CANKAO_DELTA_INFO_RESPON;
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
