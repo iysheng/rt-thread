@@ -118,6 +118,7 @@ int set_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len)
 {
 /* TODO check len valid len must == 6 */
     gs_ccd_duanluo_cfg.cankao_delta = value[0] << 8 | value[1];
+    LOG_E("SetDelta[%hu]", gs_ccd_duanluo_cfg.cankao_delta);
 
     return 0;
 }
@@ -189,10 +190,10 @@ int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len)
 int set_tcd1304_calibrate_info(unsigned char *value, unsigned char len)
 {
     /* TODO chech value valid */
-    gs_tcd_cmp_target_ans.ans_zone0 = value[0] << 8 | value[1];
-    gs_tcd_cmp_target_ans.ans_zone1 = value[2] << 8 | value[3];
-    gs_tcd_cmp_target_ans.ans_zone2 = value[4] << 8 | value[5];
-    LOG_E("SetCanKao[%hu,%hu,%hu]", gs_tcd_cmp_target_ans.ans_zone0, gs_tcd_cmp_target_ans.ans_zone1, gs_tcd_cmp_target_ans.ans_zone2);
+    gs_tcd_mark_target_ans.ans_zone0 = value[0] << 8 | value[1];
+    gs_tcd_mark_target_ans.ans_zone1 = value[2] << 8 | value[3];
+    gs_tcd_mark_target_ans.ans_zone2 = value[4] << 8 | value[5];
+    LOG_E("SetCanKao[%hu,%hu,%hu]", gs_tcd_mark_target_ans.ans_zone0, gs_tcd_mark_target_ans.ans_zone1, gs_tcd_mark_target_ans.ans_zone2);
 
     return 0;
 }
