@@ -51,6 +51,7 @@ extern int set_ccd_duanluo(unsigned char addr, ccd_main_config_t *config);
 extern int set_ccd_duanluo_cankao(unsigned char addr, ccd_main_config_t *config);
 extern int set_ccd_duanluo_cankao_delta(unsigned char addr, ccd_main_config_t *config);
 extern int get_ccd_calibrate_info(unsigned char addr, unsigned char *value, unsigned char len);
+extern void sync_times_encoder(int times);
 
 static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
 {
@@ -135,6 +136,10 @@ void screen_backend_entry(void * arg)
         {
             switch(key_value)
             {
+                case KEYBOARD_LEFT:
+                    /* TODO clean encoder counts */
+                    sync_times_encoder(0);
+                    break;
                 case KEYBOARD_XING:
                     gs_duanluo_mode.duanluo_mode++;
                     gs_duanluo_mode.duanluo_mode %= DUANLUO_NULL_INDEX;

@@ -11,6 +11,7 @@
 #include <string.h>
 #include "can_comm.h"
 #include "drv_gpio.h"
+#include "drv_encoder.h"
 
 #define DBG_LVL               DBG_LOG
 #define DBG_TAG               "app.encoder"
@@ -27,10 +28,10 @@ void encoder_comm_backend_init(void *arg)
 {
     unsigned int id = 0;
     int ret;
-    rt_sem_t drv_encoder_sem = get_sync_obj_encoder();
+    encoder_sync_t *drv_encoder4sync = get_sync_obj_encoder();
     unsigned char value[6] = {0};
 
-    if (!drv_encoder_sem)
+    if (!drv_encoder4sync)
     {
         LOG_E("Failed get encoder sem.");
         return;
@@ -45,35 +46,43 @@ void encoder_comm_backend_init(void *arg)
     while(1)
     {
         rt_thread_mdelay(1);
-        if (!rt_sem_take(drv_encoder_sem, RT_TICK_PER_SECOND))
+        if (!rt_sem_take(&drv_encoder4sync->sem4sync, RT_TICK_PER_SECOND))
         {
-            ret = set_ccd_check(1, id++);
-            if (!get_ccd_check_info(1, value, 6))
+            if (drv_encoder4sync->sync_counts == ENCODER_START_CHECK)
             {
-                display_check_value(value, 6);
-                memset(value, 0, 6);
+                /* Clearn remote ans to start check */
+                ret = set_ccd_check(1, id++);
             }
-            display_check_ans(ret, id);
-            if (1 == ret)
+            else if (drv_encoder4sync->sync_counts == ENCODER_END_CHECK)
             {
-                LOG_I("No match");
-                rt_pin_write(RELAY_PIN0, PIN_HIGH);
-                rt_pin_write(RELAY_PIN1, PIN_HIGH);
-                rt_thread_mdelay(1000);
-                rt_pin_write(RELAY_PIN0, PIN_LOW);
-                rt_pin_write(RELAY_PIN1, PIN_LOW);
-            }
-            else if (!ret)
-            {
-#if 0
-                LOG_I("Match");
-                rt_pin_write(RELAY_PIN0, PIN_LOW);
-                rt_pin_write(RELAY_PIN1, PIN_LOW);
-#endif
-            }
-            else
-            {
-                LOG_E("Errors in check, err=%d", ret);
+                ret = set_ccd_check(1, id++);
+                if (!get_ccd_check_info(1, value, 6))
+                {
+                    display_check_value(value, 6);
+                    memset(value, 0, 6);
+                }
+                display_check_ans(ret, id);
+                if (1 == ret)
+                {
+                    LOG_I("No match");
+                    rt_pin_write(RELAY_PIN0, PIN_HIGH);
+                    rt_pin_write(RELAY_PIN1, PIN_HIGH);
+                    rt_thread_mdelay(1000);
+                    rt_pin_write(RELAY_PIN0, PIN_LOW);
+                    rt_pin_write(RELAY_PIN1, PIN_LOW);
+                }
+                else if (!ret)
+                {
+    #if 0
+                    LOG_I("Match");
+                    rt_pin_write(RELAY_PIN0, PIN_LOW);
+                    rt_pin_write(RELAY_PIN1, PIN_LOW);
+    #endif
+                }
+                else
+                {
+                    LOG_E("Errors in check, err=%d", ret);
+                }
             }
         }
 #if 0
