@@ -139,6 +139,7 @@ void screen_backend_entry(void * arg)
                 case KEYBOARD_LEFT:
                     /* TODO clean encoder counts */
                     sync_times_encoder(0);
+                    display_boot_phase(3);
                     break;
                 case KEYBOARD_XING:
                     gs_duanluo_mode.duanluo_mode++;

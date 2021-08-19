@@ -24,6 +24,7 @@ extern int get_ccd_check_info(unsigned char addr, unsigned char *value, unsigned
 extern void display_check_value(unsigned char * level, unsigned char len);
 extern void display_check_ans(int alarm, unsigned int check_value);
 extern void *get_sync_obj_encoder(void);
+extern void display_boot_phase(int phase);
 void encoder_comm_backend_init(void *arg)
 {
     unsigned int id = 0;
@@ -52,6 +53,7 @@ void encoder_comm_backend_init(void *arg)
             {
                 /* Clearn remote ans to start check */
                 ret = set_ccd_check(1, id++);
+                display_boot_phase(1);
             }
             else if (drv_encoder4sync->sync_counts == ENCODER_END_CHECK)
             {
@@ -61,6 +63,7 @@ void encoder_comm_backend_init(void *arg)
                     display_check_value(value, 6);
                     memset(value, 0, 6);
                 }
+                display_boot_phase(2);
                 display_check_ans(ret, id);
                 if (1 == ret)
                 {
