@@ -141,6 +141,7 @@ int get_tcd1304_check_info(unsigned char *value, unsigned char len)
         value[3] = gs_tcd_cmp_target_ans.ans_zone1 ;
         value[4] = gs_tcd_cmp_target_ans.ans_zone2 >> 8;
         value[5] = gs_tcd_cmp_target_ans.ans_zone2 ;
+
         return 0;
     }
     return -1;
@@ -270,6 +271,18 @@ static int do_sum2_with_data(uint16_t *target, uint16_t *data, int data_len)
     return 0;
 }
 
+static int do_copy_with_data(uint16_t *target, uint16_t *data, int data_len)
+{
+    int i = 0;
+
+    for (; i < data_len; i++)
+    {
+        target[i] = data[i];
+    }
+
+    return 0;
+}
+
 /* 统计 0 / 1 数量 */
 static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_ans_t *ans_data)
 {
@@ -282,6 +295,7 @@ static int do_get_target_ans(uint16_t *target, int data_len, drv_tcd1304_target_
     ans_data->ans_zone0 = 0;
     ans_data->ans_zone1 = 0;
     ans_data->ans_zone2 = 0;
+ 
     for (; i < data_len; i++)
     {
         if (i < cmp_index_array[0])
@@ -718,7 +732,7 @@ void DMA0_Channel0_IRQHandler(void)
     do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
     show_voltage("filter", g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
 #endif
-    do_sum2_with_data(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN);
+    do_copy_with_data(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN);
 #if 1
     /* TODO check whether use filtered data mark stand */
     if (g_tcd1304_device_data.mark_times > 0)
@@ -733,10 +747,12 @@ void DMA0_Channel0_IRQHandler(void)
     }
     else
     {
+
+        do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN, 0.1);
+        do_format_data(g_tcd_convert_data, VALID_CCD_DATA_LEN);
+        do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data, VALID_CCD_DATA_LEN);
         if (g_tcd1304_device_data.should_scan & 0x02)
         {
-            do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, 0.1);
-            do_format_data(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN);
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
             /* check whether match */
             gs_ccd_sync.ans = !!check_whether_match_target(&gs_tcd_mark_target_ans, &gs_tcd_cmp_target_ans);
