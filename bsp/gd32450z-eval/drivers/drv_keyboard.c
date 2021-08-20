@@ -63,7 +63,7 @@ static void scan_func4keybaord(void *parameter)
 {
     if (PIN_HIGH == rt_pin_read(KEYBOARD_COM))
     {
-        LOG_I("Wow key=%hu", gs_keyboard_value.key_value);
+        LOG_I("Wow key=%hu index=%hu", gs_keyboard_value.key_value, gs_keyboard_value.key_value_index);
         gs_keyboard_value.key_value_buffer[gs_keyboard_value.key_value_index++] = gs_keyboard_value.key_value;
     }
     gs_keyboard_value.key_value++;

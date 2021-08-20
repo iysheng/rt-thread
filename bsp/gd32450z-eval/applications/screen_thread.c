@@ -10,7 +10,7 @@
 #include "drv_keyboard.h"
 #include "ccd_main_base.h"
 
-#define DBG_LVL               DBG_LOG
+#define DBG_LVL               DBG_WARNING
 #define DBG_TAG               "app.screen"
 #include <rtdbg.h>
 
@@ -113,6 +113,8 @@ static void init_remote_ccd_devices(duanluo_config4screen_t *ccd_config4screen)
     calibrate_info_buffer[5] = ccd_config4screen->duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right;
     display_calibrate_value(calibrate_info_buffer, 6);
     display_boot_phase(0);
+    display_boot_phase(3);
+    display_boot_phase(4);
 }
 
 void screen_backend_entry(void * arg)
@@ -176,6 +178,22 @@ void screen_backend_entry(void * arg)
                     {
                         display_calibrate_value(calibrate_info_buffer, 6);
                         LOG_I("Get calibrate info success");
+                        if (gs_duanluo_mode.duanluo_mode < DUANLUO_CANKAO_LEFT_INDEX || \
+                            gs_duanluo_mode.duanluo_mode > DUANLUO_CANKAO_RIGHT_INDEX)
+                        {
+                            /* 使用之前的参考数值 */
+                            set_ccd_duanluo_cankao(0x01, &gs_duanluo_mode.duanluo_config_value);
+                            display_boot_phase(5);
+                        }
+                        else
+                        {
+                            /* 如果是在其他选项那么直接修改到 flash */
+                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left = calibrate_info_buffer[0] << 8 | calibrate_info_buffer[1];
+                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle = calibrate_info_buffer[2] << 8 | calibrate_info_buffer[3];
+                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right = calibrate_info_buffer[4] << 8 | calibrate_info_buffer[5];
+                            set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
+                            display_boot_phase(4);
+                        }
                     }
                     break;
                 case KEYBOARD_DOWN:

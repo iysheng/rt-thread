@@ -164,6 +164,7 @@ extern const BITMAP_INFO init_ok1_bmp;
 extern const BITMAP_INFO start_bmp;
 extern const BITMAP_INFO end_bmp;
 extern const BITMAP_INFO clear_bmp;
+extern const BITMAP_INFO chixu_bmp;
 extern "C" void display_check_ans(int alarm, unsigned int check_value)
 {
     static unsigned int s_total_alram_counts;
@@ -224,6 +225,14 @@ extern "C" void display_boot_phase(int phase)
         case 3:
             //c_bitmap::hide_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &init_ok1_bmp, 65, 112);
             c_bitmap::draw_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &clear_bmp, 65, 112);
+        break;
+        case 4:
+            //c_bitmap::hide_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &init_ok1_bmp, 65, 112);
+            c_bitmap::draw_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &chixu_bmp, 85, 112);
+        break;
+        case 5:
+            //c_bitmap::hide_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &init_ok1_bmp, 65, 112);
+            c_bitmap::hide_bitmap(gs_surface_no_fb, Z_ORDER_LEVEL_0, &chixu_bmp, 85, 112);
         break;
         default:
         break;
