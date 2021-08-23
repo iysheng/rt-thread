@@ -626,6 +626,30 @@ static void show_voltage(char * title, uint16_t * adc_value, int counts)
 }
 
 /**
+  * @brief 将浮点运算修改为乘除运算
+  *
+  * @param uint16_t * src:
+  * @param uint16_t *dst:
+  * @param int len:
+  * @param float alpha:  浮点数乘 10 取整
+  * retval .
+  */
+void do_pseudo_filter_with_lowpass(uint16_t * src, uint16_t *dst, int len, int alpha)
+{
+    int i = 1;
+    uint16_t tmp_data_raw, tmp_data_filter;
+
+    dst[0] = src[0];
+    for (; i < len; i++)
+    {
+        tmp_data_filter = dst[i - 1];
+        tmp_data_raw = src[33 + i];
+        tmp_data_filter = tmp_data_filter + (alpha * (tmp_data_raw - tmp_data_filter) / 10);
+        dst[i] = tmp_data_filter;
+    }
+}
+
+/**
   * @brief
   *
   * @param uint16_t * src:
@@ -731,14 +755,14 @@ void DMA0_Channel0_IRQHandler(void)
     show_voltage("raw", g_tcd_convert_data, CCD_DATA_LEN);
     do_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 0.1);
     show_voltage("filter", g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
-#endif
     do_copy_with_data(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN);
+#endif
 #if 1
     /* TODO check whether use filtered data mark stand */
     if (g_tcd1304_device_data.mark_times > 0)
     {
 
-            do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN, 0.1);
+            do_pseudo_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN, 1);
             do_format_data(g_tcd_convert_data_filter4mark, VALID_CCD_DATA_LEN);
         if (--g_tcd1304_device_data.mark_times == 0)
         {
@@ -747,10 +771,9 @@ void DMA0_Channel0_IRQHandler(void)
     }
     else
     {
-
-        do_filter_with_lowpass(g_tcd_convert_data_filter, g_tcd_convert_data, VALID_CCD_DATA_LEN, 0.1);
-        do_format_data(g_tcd_convert_data, VALID_CCD_DATA_LEN);
-        do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data, VALID_CCD_DATA_LEN);
+        do_pseudo_filter_with_lowpass(g_tcd_convert_data, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN, 1);
+        do_format_data(g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
+        do_xor_with_data(g_tcd_convert_data_filter4cmp, g_tcd_convert_data_filter, VALID_CCD_DATA_LEN);
         if (g_tcd1304_device_data.should_scan & 0x02)
         {
             do_get_target_ans(g_tcd_convert_data_filter4cmp, VALID_CCD_DATA_LEN, &gs_tcd_cmp_target_ans);
