@@ -55,6 +55,16 @@ extern void sync_times_encoder(int times);
 
 static void do_display_with_duanluo(duanluo_config4screen_t *duanluo)
 {
+
+    if (duanluo->duanluo_mode < DUANLUO_CANKAO_LEFT_INDEX || \
+        duanluo->duanluo_mode > DUANLUO_CANKAO_RIGHT_INDEX)
+    {
+        display_boot_phase(5);
+    }
+    else
+    {
+        display_boot_phase(4);
+    }
     /* TODO check duanluo mode valid */
     switch (duanluo->duanluo_mode)
     {
@@ -114,7 +124,7 @@ static void init_remote_ccd_devices(duanluo_config4screen_t *ccd_config4screen)
     display_calibrate_value(calibrate_info_buffer, 6);
     display_boot_phase(0);
     display_boot_phase(3);
-    display_boot_phase(4);
+    display_boot_phase(5);
 }
 
 void screen_backend_entry(void * arg)
@@ -172,28 +182,22 @@ void screen_backend_entry(void * arg)
                     set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
                     break;
                 case KEYBOARD_UP:
+                    if (gs_duanluo_mode.duanluo_mode < DUANLUO_CANKAO_LEFT_INDEX || \
+                        gs_duanluo_mode.duanluo_mode > DUANLUO_CANKAO_RIGHT_INDEX)
+                    {
+                        break;
+                    }
                     /* 触发校准 */
                     tc(0, NULL);
                     if (!get_ccd_calibrate_info(0x01, calibrate_info_buffer, 6))
                     {
                         display_calibrate_value(calibrate_info_buffer, 6);
                         LOG_I("Get calibrate info success");
-                        if (gs_duanluo_mode.duanluo_mode < DUANLUO_CANKAO_LEFT_INDEX || \
-                            gs_duanluo_mode.duanluo_mode > DUANLUO_CANKAO_RIGHT_INDEX)
-                        {
-                            /* 使用之前的参考数值 */
-                            set_ccd_duanluo_cankao(0x01, &gs_duanluo_mode.duanluo_config_value);
-                            display_boot_phase(5);
-                        }
-                        else
-                        {
-                            /* 如果是在其他选项那么直接修改到 flash */
-                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left = calibrate_info_buffer[0] << 8 | calibrate_info_buffer[1];
-                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle = calibrate_info_buffer[2] << 8 | calibrate_info_buffer[3];
-                            gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right = calibrate_info_buffer[4] << 8 | calibrate_info_buffer[5];
-                            set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
-                            display_boot_phase(4);
-                        }
+                        /* 如果是在其他选项那么直接修改到 flash */
+                        gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_left = calibrate_info_buffer[0] << 8 | calibrate_info_buffer[1];
+                        gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_middle = calibrate_info_buffer[2] << 8 | calibrate_info_buffer[3];
+                        gs_duanluo_mode.duanluo_config_value.duanluo_cfg.ccd_duanluo_pos_value.cankao_right = calibrate_info_buffer[4] << 8 | calibrate_info_buffer[5];
+                        set_ccd_main_config(&gs_duanluo_mode.duanluo_config_value);
                     }
                     break;
                 case KEYBOARD_DOWN:
