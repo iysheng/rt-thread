@@ -153,7 +153,8 @@
 
 /* samples: kernel and components samples */
 
-#define SOC_GD32350R
+#define SOC_SERIES_GD32F2
+#define SOC_GD32205Rx
 #define BSP_USING_UART0
 
 #endif

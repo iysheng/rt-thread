@@ -17,8 +17,6 @@
 
 int main(void)
 {
-    rt_pin_mode(HEART_PIN, PIN_MODE_OUTPUT);
-
     while(1)
     {
         rt_pin_write(HEART_PIN, PIN_HIGH);
