@@ -10,20 +10,24 @@
 
 #include "_gd32_pinmux.h"
 
-static struct _gd32_pinmux_map gs_gd32f2xx_map = {
+#define MK_GD32F4_PIN_MODE_VALUE(ctl, pp) (0xff & ((ctl) << 2 | (pp)))
+#define GET_GD32F4_CTL(mode)              (((mode) >> 2) & 0x3)
+#define GET_GD32F4_PUPD(mode)             ((mode) & 0x3)
+
+static struct _gd32_pinmux_map gs_gd32f4xx_map = {
     /* 0 1 2 3
      * 4 5 6 7
      * 8 9 a b
      * c d e f */
     {{{PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
-     PINMUX_DEFAULT, GPIO_MODE_AF_PP, GPIO_MODE_IN_FLOATING, PINMUX_DEFAULT,
+     PINMUX_DEFAULT, MK_GD32F4_PIN_MODE_VALUE(GPIO_MODE_AF, GPIO_PUPD_PULLUP), MK_GD32F4_PIN_MODE_VALUE(GPIO_MODE_AF, GPIO_PUPD_PULLUP), PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT},
      GPIOA, RCU_GPIOA}, /* GPIOA */
     {{PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
-     PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, GPIO_MODE_OUT_PP},
+     PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, MK_GD32F4_PIN_MODE_VALUE(GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP)},
      GPIOB, RCU_GPIOB}, /* GPIOB */
     {{PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
@@ -68,16 +72,19 @@ static struct _gd32_pinmux_map gs_gd32f2xx_map = {
   * @param void: 
   * retval .
   */
-static int __gd32f2xx_afio_init(void)
+static int __gd32f4xx_afio_init(void)
 {
-    /* TODO */
+    /* connect port to USARTx_Tx */
+    gpio_af_set(GPIOA, GPIO_AF_7, GPIO_PIN_9);
+    /* connect port to USARTx_Rx */
+    gpio_af_set(GPIOA, GPIO_AF_7, GPIO_PIN_10);
 }
 
 /**
   * @brief Init pin mux config
   * retval .
   */
-static int gd32f2xx_pinmux_init(void)
+static int gd32f4xx_pinmux_init(void)
 {
     int port_index = 0, pin_index = 0;
 
@@ -85,16 +92,27 @@ static int gd32f2xx_pinmux_init(void)
     {
         for (pin_index = 0; pin_index < MAX_PIN_COUNTS_1PORT; pin_index++)
         {
-            if (gs_gd32f2xx_map.port[port_index].pin_mode[pin_index] != PINMUX_DEFAULT)
+            if (gs_gd32f4xx_map.port[port_index].pin_mode[pin_index] != PINMUX_DEFAULT)
             {
-                if (PORT_CLK_STATE_DISABLE == gs_gd32f2xx_map.port_clk_state[port_index])
+                if (PORT_CLK_STATE_DISABLE == gs_gd32f4xx_map.port_clk_state[port_index])
                 {
-                    rcu_periph_clock_enable(gs_gd32f2xx_map.port[port_index].port_clk);
-                    gs_gd32f2xx_map.port_clk_state[port_index] = PORT_CLK_STATE_ENABLE;
+                    rcu_periph_clock_enable(gs_gd32f4xx_map.port[port_index].port_clk);
+                    gs_gd32f4xx_map.port_clk_state[port_index] = PORT_CLK_STATE_ENABLE;
                 }
-                gpio_init(gs_gd32f2xx_map.port[port_index].port_base, 
-                    gs_gd32f2xx_map.port[port_index].pin_mode[pin_index] ,
-                    GPIO_OSPEED_50MHZ, BIT(pin_index));
+                /* configure USART Tx as alternate function push-pull */
+                gpio_mode_set(gs_gd32f4xx_map.port[port_index].port_base,
+                    GET_GD32F4_CTL(gs_gd32f4xx_map.port[port_index].pin_mode[pin_index]),
+                    GET_GD32F4_PUPD(gs_gd32f4xx_map.port[port_index].pin_mode[pin_index]), BIT(pin_index));
+                if (GPIO_PUPD_NONE == GET_GD32F4_PUPD(gs_gd32f4xx_map.port[port_index].pin_mode[pin_index]))
+                {
+                    gpio_output_options_set(gs_gd32f4xx_map.port[port_index].port_base,
+                        GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, BIT(pin_index));
+                }
+                else
+                {
+                    gpio_output_options_set(gs_gd32f4xx_map.port[port_index].port_base,
+                        GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, BIT(pin_index));
+                }
             }
             else
             {
@@ -102,8 +120,5 @@ static int gd32f2xx_pinmux_init(void)
             }
         }
     }
-    __gd32f2xx_afio_init();
-
-    return 0;
+    __gd32f4xx_afio_init();
 }
-INIT_BOARD_EXPORT(gd32f2xx_pinmux_init);
