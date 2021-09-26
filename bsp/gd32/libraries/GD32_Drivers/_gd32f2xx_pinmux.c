@@ -64,16 +64,6 @@ static struct _gd32_pinmux_map gs_gd32f2xx_map = {
 };
 
 /**
-  * @brief Init afio config
-  * @param void: 
-  * retval .
-  */
-static int __gd32f2xx_afio_init(void)
-{
-    /* TODO */
-}
-
-/**
   * @brief Init pin mux config
   * retval .
   */
@@ -102,7 +92,6 @@ static int gd32f2xx_pinmux_init(void)
             }
         }
     }
-    __gd32f2xx_afio_init();
 
     return 0;
 }

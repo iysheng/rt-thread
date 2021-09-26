@@ -25,7 +25,8 @@
 #endif
 #endif
 
-#define PINMUX_DEFAULT    0xff
+#define PINMUX_DEFAULT        0xff
+#define PINAFIO_DEFAULT       0xff
 
 #define MAX_PORT_COUNTS        9
 #define MAX_PIN_COUNTS_1PORT   16
@@ -37,6 +38,9 @@ enum port_clk_state_E {
 
 struct _gd32_port4pinmux {
     uint8_t pin_mode[MAX_PIN_COUNTS_1PORT];
+#if defined(SOC_SERIES_GD32F4)
+    uint8_t pin_afio[MAX_PIN_COUNTS_1PORT];
+#endif
     uint32_t port_base;
     rcu_periph_enum port_clk;
 };
