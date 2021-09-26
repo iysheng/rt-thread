@@ -45,6 +45,10 @@
 #define RT_CONSOLEBUF_SIZE 128
 #define RT_CONSOLE_DEVICE_NAME "uart0"
 #define RT_VER_NUM 0x40004
+#define ARCH_ARM
+#define RT_USING_CPU_FFS
+#define ARCH_ARM_CORTEX_M
+#define ARCH_ARM_CORTEX_M3
 
 /* RT-Thread Components */
 
@@ -153,6 +157,7 @@
 
 /* samples: kernel and components samples */
 
+#define SOC_FAMILY_GD32
 #define SOC_SERIES_GD32F2
 #define SOC_GD32205Rx
 #define BSP_USING_UART0

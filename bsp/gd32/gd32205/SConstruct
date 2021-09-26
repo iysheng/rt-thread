@@ -53,7 +53,7 @@ rtconfig.BSP_LIBRARY_TYPE = gd32_library
 objs.extend(SConscript(os.path.join(libraries_path_prefix, gd32_library, 'SConscript')))
 
 # include drivers
-objs.extend(SConscript(os.path.join(libraries_path_prefix, 'HAL_Drivers', 'SConscript')))
+objs.extend(SConscript(os.path.join(libraries_path_prefix, 'GD32_Drivers', 'SConscript')))
 
 # make a building
 DoBuilding(TARGET, objs)
