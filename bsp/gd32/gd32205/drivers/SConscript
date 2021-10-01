@@ -9,6 +9,10 @@ src = Split("""
 board.c
 """)
 
+
+if GetDepend(['BSP_USING_TCD1209']):
+    src += ['drv_tcd1209.c']
+
 CPPPATH = [cwd]
 
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = CPPPATH)

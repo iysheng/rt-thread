@@ -21,6 +21,7 @@ config PKGS_DIR
 source "$RTT_DIR/Kconfig"
 source "$PKGS_DIR/Kconfig"
 source "$BSP_DIR/../libraries/Kconfig"
+source "$BSP_DIR/drivers/Kconfig"
 
 if SOC_SERIES_GD32F2
     config SOC_GD32205Rx
