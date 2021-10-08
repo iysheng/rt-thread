@@ -11,12 +11,14 @@
 #include <rtconfig.h>
 #include <rtdevice.h>
 #include "gd32f20x_timer.h"
+#include "drv_gpio.h"
 #include "drv_tcd1209.h"
 
 #define DBG_LVL    DBG_INFO
 #define DBG_TAG    "tcd1209"
 #include <rtdbg.h>
 
+static uint8_t gs_ad9945_data[AD9945_DATA_COUNTS];
 /*
  * AHB = 120M
  * APB2 = 120M
@@ -25,7 +27,137 @@
  * APB1 的分频作为 TIMER1/2/3/4/5/6 11/12/13 的时钟, 最大为 60MHz 并且如果分频为 1 ,那么 x1 否则 x2
  * APB2 的分频作为 TIMER0/7/8/9/10 的时钟, 最大为 120MHz 并且如果分频为 1 ,那么 x1 否则 x2
  * */
+#if 0
+/**
+  * @brief 获取指定寄存器地址的数据
+  * @param uint8_t reg_addr: 
+  * retval 寄存器地址的数据.
+  */
+static uint16_t _get_ad9945_reg_value(uint8_t reg_addr)
+{
+    int addr_index = 0;
+    uint16_t reg_value = 0;
 
+    rt_pin_mode(GD32_AD9945_SDA_PIN, PIN_MODE_OUTPUT);
+    rt_pin_write(GD32_AD9945_SL_PIN, PIN_LOW);
+
+    for (; addr_index < 4; addr_index ++)
+    {
+        rt_pin_write(GD32_AD9945_SDA_PIN, reg_addr >> addr_index & 0x01);
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_LOW);
+        rt_thread_mdelay(1);
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_HIGH);
+        rt_thread_mdelay(1);
+    }
+    rt_pin_mode(GD32_AD9945_SDA_PIN, PIN_MODE_INPUT);
+    for (addr_index = 0; addr_index < 12; addr_index ++)
+    {
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_LOW);
+        rt_thread_mdelay(1);
+        reg_value |= (rt_pin_read(GD32_AD9945_SDA_PIN) & 0x01) << addr_index;
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_HIGH);
+        rt_thread_mdelay(1);
+    }
+
+    return reg_value;
+}
+#endif
+
+/**
+  * @brief 设置指定寄存器地址的数据
+  * @param uint8_t reg_addr: 
+  * @param uint16_t reg_data: 
+  * retval N/A.
+  */
+static void _set_ad9945_reg_value(uint8_t reg_addr, uint16_t reg_data)
+{
+    int addr_index = 0;
+
+    rt_pin_write(GD32_AD9945_SL_PIN, PIN_LOW);
+    rt_thread_mdelay(1);
+
+    for (; addr_index < 4; addr_index ++)
+    {
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_LOW);
+        rt_pin_write(GD32_AD9945_SDA_PIN, reg_addr >> addr_index & 0x01);
+        rt_thread_mdelay(1);
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_HIGH);
+        rt_thread_mdelay(1);
+    }
+    for (addr_index = 0; addr_index < 12; addr_index ++)
+    {
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_LOW);
+        rt_pin_write(GD32_AD9945_SDA_PIN, reg_data >> addr_index & 0x01);
+        rt_thread_mdelay(1);
+        rt_pin_write(GD32_AD9945_SCK_PIN, PIN_HIGH);
+        rt_thread_mdelay(1);
+    }
+    rt_pin_write(GD32_AD9945_SL_PIN, PIN_HIGH);
+}
+
+/**
+  * @brief 获取指定寄存器地址的数据
+  * @param uint8_t reg_addr: 
+  * retval 寄存器地址的数据.
+  */
+static uint16_t _get_ad9945_ad_value(void)
+{
+    rt_uint16_t port_b_value, port_c_value;
+
+    port_b_value = gpio_input_port_get(GPIOB);
+    port_c_value = gpio_input_port_get(GPIOC);
+
+    port_b_value &= 0xc7f;
+    port_c_value &= 0x1c00;
+    port_c_value >>= 10;
+    port_b_value |= port_c_value << 7;
+
+    return port_b_value;
+}
+
+static int s_index;
+static int s_start_sample;
+void TIMER0_BRK_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+
+    if (s_index == AD9945_DATA_COUNTS)
+    {
+        timer_interrupt_disable(TIMER8, TIMER_INT_CH1);
+        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
+    }
+#if 0
+    else if (s_index < 400)
+    {
+        rt_pin_write(GD32_AD9945_CLPOB_PIN, RESET);
+    }
+    else
+    {
+        rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
+    }
+#endif
+    if (SET == timer_interrupt_flag_get(TIMER8, TIMER_INT_FLAG_CH1))
+    {
+        timer_interrupt_flag_clear(TIMER8, TIMER_INT_FLAG_CH1);
+        gs_ad9945_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9945_ad_value();
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+void TIMER1_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+
+    if (0 == s_start_sample)
+    {
+        timer_interrupt_enable(TIMER8, TIMER_INT_CH1);
+        s_start_sample = 1;
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
 /**
   * @brief AD9945 初始化
   * @param void: 
@@ -35,13 +167,79 @@ static void ad9945_device_init(void)
 {
     /* timer 4 AD9945 device */
     timer_parameter_struct timer4shp, timer4shd, timer4dataclk, timer4clpob, timer4pblk;
+    timer_oc_parameter_struct timer_oc4shd;
 
-    timer4shp.prescaler         = 0U;
+    timer4shp.prescaler         = 5U;
     timer4shp.alignedmode       = TIMER_COUNTER_EDGE;
     timer4shp.counterdirection  = TIMER_COUNTER_UP;
     timer4shp.period            = 0U;
     timer4shp.clockdivision     = TIMER_CKDIV_DIV1;
     timer4shp.repetitioncounter = 0U;
+
+    timer4shd.prescaler         = 5U;
+    timer4shd.alignedmode       = TIMER_COUNTER_EDGE;
+    timer4shd.counterdirection  = TIMER_COUNTER_UP;
+    timer4shd.period            = 0U;
+    timer4shd.clockdivision     = TIMER_CKDIV_DIV1;
+    timer4shd.repetitioncounter = 0U;
+
+    timer_oc4shd.outputstate  = TIMER_CCX_ENABLE;
+    timer_oc4shd.outputnstate = TIMER_CCXN_DISABLE;
+    timer_oc4shd.ocpolarity   = TIMER_OC_POLARITY_HIGH;
+    timer_oc4shd.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
+    timer_oc4shd.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
+    timer_oc4shd.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
+
+    timer4dataclk.prescaler         = 5U;
+    timer4dataclk.alignedmode       = TIMER_COUNTER_EDGE;
+    timer4dataclk.counterdirection  = TIMER_COUNTER_UP;
+    timer4dataclk.period            = 0U;
+    timer4dataclk.clockdivision     = TIMER_CKDIV_DIV1;
+    timer4dataclk.repetitioncounter = 0U;
+
+    rcu_periph_clock_enable(RCU_TIMER4);
+    timer_init(TIMER4, &timer4shp);
+    timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM0);
+    timer_autoreload_value_config(TIMER4, 19);
+    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_2, 15);
+    timer_channel_output_state_config(TIMER4, TIMER_CH_2, ENABLE);
+    timer_interrupt_disable(TIMER4, TIMER_INT_CH2);
+
+    rcu_periph_clock_enable(RCU_TIMER7);
+    timer_init(TIMER7, &timer4shd);
+    timer_channel_output_mode_config(TIMER7, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER7, 19);
+    timer_channel_output_pulse_value_config(TIMER7, TIMER_CH_0, 5);
+    timer_channel_output_state_config(TIMER7, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER7, TIMER_INT_CH0);
+    timer_channel_output_config(TIMER7, TIMER_CH_0, &timer_oc4shd);
+    timer_primary_output_config(TIMER7, ENABLE);
+    timer_channel_output_fast_config(TIMER7, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
+    timer_counter_value_config(TIMER4, 1);
+    timer_counter_value_config(TIMER7, 3);
+    timer_enable(TIMER4);
+    timer_enable(TIMER7);
+
+    rcu_periph_clock_enable(RCU_TIMER8);
+    timer_init(TIMER8, &timer4dataclk);
+    timer_channel_output_mode_config(TIMER8, TIMER_CH_1, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER8, 19);
+    timer_channel_output_pulse_value_config(TIMER8, TIMER_CH_1, 10);
+    timer_channel_output_state_config(TIMER8, TIMER_CH_1, ENABLE);
+    //timer_interrupt_enable(TIMER8, TIMER_INT_CH1);
+    timer_enable(TIMER8);
+
+    NVIC_SetPriority(TIMER0_BRK_TIMER8_IRQn, 10);
+    NVIC_EnableIRQ(TIMER0_BRK_TIMER8_IRQn);
+
+    rt_pin_write(GD32_AD9945_PBLK_PIN, RESET);
+    rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
+    _set_ad9945_reg_value(0x00, 0x04);
+    _set_ad9945_reg_value(0x01, 0x00);
+    _set_ad9945_reg_value(0x02, 0x80);
+    _set_ad9945_reg_value(0x03, 0x00);
+    _set_ad9945_reg_value(0x0d, 0x838);
+    LOG_I("AD9945 START");
 }
 
 int tcd1209_hw_init(void)
@@ -95,6 +293,8 @@ int tcd1209_hw_init(void)
     timer_channel_output_state_config(TIMER1, TIMER_CH_1, ENABLE);
     timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
     timer_enable(TIMER1);
+    NVIC_SetPriority(TIMER1_IRQn, 10);
+    NVIC_EnableIRQ(TIMER1_IRQn);
     //rt_thread_mdelay(1);
 
     rcu_periph_clock_enable(RCU_TIMER3);
@@ -133,7 +333,25 @@ int tcd1209_hw_init(void)
     timer_interrupt_disable(TIMER10, TIMER_INT_CH0);
     timer_enable(TIMER10);
 
+    ad9945_device_init();
     return ret;
 }
 INIT_PREV_EXPORT(tcd1209_hw_init);
 
+long show_ad9945(void)
+{
+    int i = 0;
+
+    s_start_sample = 0;
+
+    timer_interrupt_enable(TIMER1, TIMER_INT_UP);
+    while(s_index < AD9945_DATA_COUNTS);
+    s_index = 0;
+    for (; i < AD9945_DATA_COUNTS; i++)
+    {
+        rt_kprintf("%d:%u\r\n", i, gs_ad9945_data[i]);
+    }
+
+    LOG_I("aHa");
+}
+MSH_CMD_EXPORT(show_ad9945, list device in system);
