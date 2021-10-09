@@ -18,7 +18,7 @@
 #define DBG_TAG    "tcd1209"
 #include <rtdbg.h>
 
-static uint8_t gs_ad9945_data[AD9945_DATA_COUNTS];
+static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS];
 /*
  * AHB = 120M
  * APB2 = 120M
