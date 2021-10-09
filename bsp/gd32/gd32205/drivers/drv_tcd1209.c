@@ -19,7 +19,7 @@
 #define DBG_TAG    "tcd1209"
 #include <rtdbg.h>
 
-static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS];
+static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS], gs_ad9945_data4portc[AD9945_DATA_COUNTS];
 /*
  * AHB = 120M
  * APB2 = 120M
@@ -168,7 +168,6 @@ void DMA1_Channel0_IRQHandler(void)
         dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
         timer_interrupt_disable(TIMER1, TIMER_INT_UP);
         LOG_I("WOW DMA1 CHANNEL0 OK-----------------------");
-        s_index = AD9945_DATA_COUNTS;
     }
 #if 0
     if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_HTF))
@@ -186,6 +185,21 @@ void DMA1_Channel0_IRQHandler(void)
     rt_interrupt_leave();
 }
 
+void DMA1_Channel1_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if (SET == dma_flag_get(DMA1, DMA_CH1, DMA_FLAG_FTF))
+    {
+        dma_flag_clear(DMA1, DMA_CH1, DMA_FLAG_FTF);
+        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
+        LOG_I("WOW DMA1 CHANNEL1 OK-----------------------");
+        s_index = AD9945_DATA_COUNTS;
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+
 /**
   * @brief 初始化 DMA 完成 AD9945 输出的 AD 数据搬移
   * @param void: 
@@ -193,7 +207,7 @@ void DMA1_Channel0_IRQHandler(void)
   */
 static void dma_init4ad9945(void)
 {
-    dma_parameter_struct dma_param4dataclk_portb;
+    dma_parameter_struct dma_param4dataclk_portb, dma_param4dataclk_portc;
 
     rcu_periph_clock_enable(RCU_DMA1);
     dma_param4dataclk_portb.periph_addr  = GPIOB + 0x08U;
@@ -206,10 +220,24 @@ static void dma_init4ad9945(void)
     dma_param4dataclk_portb.direction    = (uint8_t)DMA_PERIPHERAL_TO_MEMORY;
     dma_param4dataclk_portb.priority     = DMA_PRIORITY_HIGH;
 
+    dma_param4dataclk_portc.periph_addr  = GPIOC + 0x08U;
+    dma_param4dataclk_portc.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+    dma_param4dataclk_portc.periph_inc   = (uint8_t)DMA_PERIPH_INCREASE_DISABLE;
+    dma_param4dataclk_portc.memory_addr  = (uint32_t)&gs_ad9945_data4portc[0];
+    dma_param4dataclk_portc.memory_width = DMA_MEMORY_WIDTH_16BIT;
+    dma_param4dataclk_portc.memory_inc   = (uint8_t)DMA_MEMORY_INCREASE_ENABLE;
+    dma_param4dataclk_portc.number       = AD9945_DATA_COUNTS;
+    dma_param4dataclk_portc.direction    = (uint8_t)DMA_PERIPHERAL_TO_MEMORY;
+    dma_param4dataclk_portc.priority     = DMA_PRIORITY_HIGH;
+
     dma_init(DMA1, DMA_CH0, &dma_param4dataclk_portb);
+    dma_init(DMA1, DMA_CH1, &dma_param4dataclk_portc);
     NVIC_SetPriority(DMA1_Channel0_IRQn, 0);
     NVIC_EnableIRQ(DMA1_Channel0_IRQn);
+    NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
+    NVIC_EnableIRQ(DMA1_Channel1_IRQn);
     dma_interrupt_enable(DMA1, DMA_CH0, DMA_INT_FTF | DMA_INT_ERR);
+    dma_interrupt_enable(DMA1, DMA_CH1, DMA_INT_FTF | DMA_INT_ERR);
     LOG_I("DMA init ok");
 }
 
@@ -280,8 +308,17 @@ static void ad9945_device_init(void)
     timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_3, 10);
     timer_channel_output_state_config(TIMER4, TIMER_CH_3, ENABLE);
     timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
+
+    /* just for another dma for portc */
+    timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER4, 19);
+    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_2, 10);
+    timer_channel_output_state_config(TIMER4, TIMER_CH_2, ENABLE);
+    timer_interrupt_disable(TIMER4, TIMER_INT_CH2);
+
     timer_channel_dma_request_source_select(TIMER4, TIMER_DMAREQUEST_CHANNELEVENT);
     timer_dma_enable(TIMER4, TIMER_DMA_CH3D);
+    timer_dma_enable(TIMER4, TIMER_DMA_CH2D);
     timer_enable(TIMER4);
 
 #if 0
@@ -403,14 +440,19 @@ long show_ad9945(void)
     s_start_sample = 0;
 
     dma_channel_enable(DMA1, DMA_CH0);
+    dma_channel_enable(DMA1, DMA_CH1);
     timer_interrupt_enable(TIMER1, TIMER_INT_UP);
     while(s_index < AD9945_DATA_COUNTS);
     dma_channel_disable(DMA1, DMA_CH0);
+    dma_channel_disable(DMA1, DMA_CH1);
     dma_transfer_number_config(DMA1, DMA_CH0, AD9945_DATA_COUNTS);
+    dma_transfer_number_config(DMA1, DMA_CH1, AD9945_DATA_COUNTS);
     s_index = 0;
     for (; i < AD9945_DATA_COUNTS; i++)
     {
-        rt_kprintf("%d:%u\r\n", i, gs_ad9945_data[i] & 0xc7f);
+        gs_ad9945_data4portc[i] &= 0x1c00;
+        gs_ad9945_data4portc[i] >>= 10;
+        rt_kprintf("%d:%u\r\n", i, (gs_ad9945_data[i] & 0xc7f) | gs_ad9945_data4portc[i] << 7);
     }
 
     LOG_I("aHa");
