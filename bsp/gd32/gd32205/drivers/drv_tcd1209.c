@@ -117,14 +117,14 @@ static uint16_t _get_ad9945_ad_value(void)
 
 static int s_index;
 static int s_start_sample;
-void TIMER0_BRK_IRQHandler(void)
+void TIMER4_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
 
     if (s_index == AD9945_DATA_COUNTS)
     {
-        timer_interrupt_disable(TIMER8, TIMER_INT_CH1);
+        timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
         timer_interrupt_disable(TIMER1, TIMER_INT_UP);
     }
 #if 0
@@ -137,9 +137,9 @@ void TIMER0_BRK_IRQHandler(void)
         rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
     }
 #endif
-    if (SET == timer_interrupt_flag_get(TIMER8, TIMER_INT_FLAG_CH1))
+    if (SET == timer_interrupt_flag_get(TIMER4, TIMER_INT_FLAG_CH3))
     {
-        timer_interrupt_flag_clear(TIMER8, TIMER_INT_FLAG_CH1);
+        timer_interrupt_flag_clear(TIMER4, TIMER_INT_FLAG_CH3);
         gs_ad9945_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9945_ad_value();
     }
     /* leave interrupt */
@@ -152,7 +152,7 @@ void TIMER1_IRQHandler(void)
 
     if (0 == s_start_sample)
     {
-        timer_interrupt_enable(TIMER8, TIMER_INT_CH1);
+        timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
         s_start_sample = 1;
     }
     /* leave interrupt */
@@ -197,13 +197,13 @@ static void ad9945_device_init(void)
     timer4dataclk.clockdivision     = TIMER_CKDIV_DIV1;
     timer4dataclk.repetitioncounter = 0U;
 
-    rcu_periph_clock_enable(RCU_TIMER4);
-    timer_init(TIMER4, &timer4shp);
-    timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM0);
-    timer_autoreload_value_config(TIMER4, 19);
-    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_2, 15);
-    timer_channel_output_state_config(TIMER4, TIMER_CH_2, ENABLE);
-    timer_interrupt_disable(TIMER4, TIMER_INT_CH2);
+    rcu_periph_clock_enable(RCU_TIMER8);
+    timer_init(TIMER8, &timer4shp);
+    timer_channel_output_mode_config(TIMER8, TIMER_CH_0, TIMER_OC_MODE_PWM0);
+    timer_autoreload_value_config(TIMER8, 19);
+    timer_channel_output_pulse_value_config(TIMER8, TIMER_CH_0, 15);
+    timer_channel_output_state_config(TIMER8, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER8, TIMER_INT_CH0);
 
     rcu_periph_clock_enable(RCU_TIMER7);
     timer_init(TIMER7, &timer4shd);
@@ -215,22 +215,24 @@ static void ad9945_device_init(void)
     timer_channel_output_config(TIMER7, TIMER_CH_0, &timer_oc4shd);
     timer_primary_output_config(TIMER7, ENABLE);
     timer_channel_output_fast_config(TIMER7, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
-    timer_counter_value_config(TIMER4, 1);
-    timer_counter_value_config(TIMER7, 3);
-    timer_enable(TIMER4);
+    //timer_counter_value_config(TIMER8, 1);
+    //timer_counter_value_config(TIMER7, 1);
+    timer_enable(TIMER8);
     timer_enable(TIMER7);
 
-    rcu_periph_clock_enable(RCU_TIMER8);
-    timer_init(TIMER8, &timer4dataclk);
-    timer_channel_output_mode_config(TIMER8, TIMER_CH_1, TIMER_OC_MODE_PWM1);
-    timer_autoreload_value_config(TIMER8, 19);
-    timer_channel_output_pulse_value_config(TIMER8, TIMER_CH_1, 10);
-    timer_channel_output_state_config(TIMER8, TIMER_CH_1, ENABLE);
-    //timer_interrupt_enable(TIMER8, TIMER_INT_CH1);
-    timer_enable(TIMER8);
+    rcu_periph_clock_enable(RCU_TIMER4);
+    timer_init(TIMER4, &timer4dataclk);
+    timer_channel_output_mode_config(TIMER4, TIMER_CH_3, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER4, 19);
+    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_3, 10);
+    timer_channel_output_state_config(TIMER4, TIMER_CH_3, ENABLE);
+    //timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
+    timer_enable(TIMER4);
 
-    NVIC_SetPriority(TIMER0_BRK_TIMER8_IRQn, 10);
-    NVIC_EnableIRQ(TIMER0_BRK_TIMER8_IRQn);
+#if 1
+    NVIC_SetPriority(TIMER4_IRQn, 0);
+    NVIC_EnableIRQ(TIMER4_IRQn);
+#endif
 
     rt_pin_write(GD32_AD9945_PBLK_PIN, RESET);
     rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);

@@ -18,9 +18,9 @@
 #define GD32_SH_PIN                    GET_PIN(A, 1)    /* TIMER1_CH1 */
 
 /* AD9945 涉及到的管脚 */
-#define GD32_AD9945_SHP_PIN            GET_PIN(A, 2)    /* TIMER4_CH2 */
+#define GD32_AD9945_SHP_PIN            GET_PIN(A, 2)    /* TIMER8_CH0 */
 #define GD32_AD9945_SHD_PIN            GET_PIN(C, 6)    /* TIMER7_CH0 */
-#define GD32_AD9945_DATACLK_PIN        GET_PIN(A, 3)    /* TIMER8_CH1 */
+#define GD32_AD9945_DATACLK_PIN        GET_PIN(A, 3)    /* TIMER4_CH3 */
 #define GD32_AD9945_CLPOB_PIN          GET_PIN(B, 13)   /* TIMER0_CH0_ON */
 #define GD32_AD9945_PBLK_PIN           GET_PIN(A, 8)    /* TIMER0_CH0 这个是可选的 */
 
