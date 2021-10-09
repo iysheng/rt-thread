@@ -145,15 +145,23 @@ void TIMER4_IRQHandler(void)
     /* leave interrupt */
     rt_interrupt_leave();
 }
+
 void TIMER1_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
 
+    LOG_I("Hello china");
+    if (timer_flag_get(TIMER1, TIMER_FLAG_CH1))
+    {
+
     if (0 == s_start_sample)
     {
      //   timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
+        timer_enable(TIMER4);
         s_start_sample = 1;
+    }
+        timer_interrupt_flag_clear(TIMER1, TIMER_FLAG_CH1);
     }
     /* leave interrupt */
     rt_interrupt_leave();
@@ -166,7 +174,8 @@ void DMA1_Channel0_IRQHandler(void)
     if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_FTF))
     {
         dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
-        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
+        timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
+        timer_disable(TIMER4);
         LOG_I("WOW DMA1 CHANNEL0 OK-----------------------");
     }
 #if 0
@@ -192,7 +201,8 @@ void DMA1_Channel1_IRQHandler(void)
     if (SET == dma_flag_get(DMA1, DMA_CH1, DMA_FLAG_FTF))
     {
         dma_flag_clear(DMA1, DMA_CH1, DMA_FLAG_FTF);
-        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
+        timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
+        timer_disable(TIMER4);
         LOG_I("WOW DMA1 CHANNEL1 OK-----------------------");
         s_index = AD9945_DATA_COUNTS;
     }
@@ -319,7 +329,6 @@ static void ad9945_device_init(void)
     timer_channel_dma_request_source_select(TIMER4, TIMER_DMAREQUEST_CHANNELEVENT);
     timer_dma_enable(TIMER4, TIMER_DMA_CH3D);
     timer_dma_enable(TIMER4, TIMER_DMA_CH2D);
-    timer_enable(TIMER4);
 
 #if 0
     NVIC_SetPriority(TIMER4_IRQn, 0);
@@ -383,7 +392,7 @@ int tcd1209_hw_init(void)
     rcu_periph_clock_enable(RCU_TIMER1);
     timer_init(TIMER1, &timer4sh);
     timer_channel_output_mode_config(TIMER1, TIMER_CH_1, TIMER_OC_MODE_PWM0);
-    timer_autoreload_value_config(TIMER1, 2500);
+    timer_autoreload_value_config(TIMER1, AD9945_DATA_COUNTS - 1);
     timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_1, 1);
     timer_channel_output_state_config(TIMER1, TIMER_CH_1, ENABLE);
     timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
@@ -441,19 +450,22 @@ long show_ad9945(void)
 
     dma_channel_enable(DMA1, DMA_CH0);
     dma_channel_enable(DMA1, DMA_CH1);
-    timer_interrupt_enable(TIMER1, TIMER_INT_UP);
+    timer_interrupt_flag_clear(TIMER1, TIMER_FLAG_CH1);
+    timer_interrupt_enable(TIMER1, TIMER_INT_CH1);
     while(s_index < AD9945_DATA_COUNTS);
     dma_channel_disable(DMA1, DMA_CH0);
     dma_channel_disable(DMA1, DMA_CH1);
     dma_transfer_number_config(DMA1, DMA_CH0, AD9945_DATA_COUNTS);
     dma_transfer_number_config(DMA1, DMA_CH1, AD9945_DATA_COUNTS);
     s_index = 0;
+#if 1
     for (; i < AD9945_DATA_COUNTS; i++)
     {
         gs_ad9945_data4portc[i] &= 0x1c00;
         gs_ad9945_data4portc[i] >>= 10;
         rt_kprintf("%d:%u\r\n", i, (gs_ad9945_data[i] & 0xc7f) | gs_ad9945_data4portc[i] << 7);
     }
+#endif
 
     LOG_I("aHa");
 }
