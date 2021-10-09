@@ -11,6 +11,7 @@
 #include <rtconfig.h>
 #include <rtdevice.h>
 #include "gd32f20x_timer.h"
+#include "gd32f20x_dma.h"
 #include "drv_gpio.h"
 #include "drv_tcd1209.h"
 
@@ -125,7 +126,6 @@ void TIMER4_IRQHandler(void)
     if (s_index == AD9945_DATA_COUNTS)
     {
         timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
-        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
     }
 #if 0
     else if (s_index < 400)
@@ -140,7 +140,7 @@ void TIMER4_IRQHandler(void)
     if (SET == timer_interrupt_flag_get(TIMER4, TIMER_INT_FLAG_CH3))
     {
         timer_interrupt_flag_clear(TIMER4, TIMER_INT_FLAG_CH3);
-        gs_ad9945_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9945_ad_value();
+     //   gs_ad9945_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9945_ad_value();
     }
     /* leave interrupt */
     rt_interrupt_leave();
@@ -152,12 +152,67 @@ void TIMER1_IRQHandler(void)
 
     if (0 == s_start_sample)
     {
-        timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
+     //   timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
         s_start_sample = 1;
     }
     /* leave interrupt */
     rt_interrupt_leave();
 }
+
+void DMA1_Channel0_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_FTF))
+    {
+        dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
+        timer_interrupt_disable(TIMER1, TIMER_INT_UP);
+        LOG_I("WOW DMA1 CHANNEL0 OK-----------------------");
+        s_index = AD9945_DATA_COUNTS;
+    }
+#if 0
+    if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_HTF))
+    {
+        dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_HTF);
+        LOG_I("WOW DMA1 CHANNEL0 HTF***********************");
+    }
+    if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_G))
+    {
+        dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_G);
+        LOG_I("WOW DMA1 CHANNEL0 GLOBAL***********************");
+    }
+#endif
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+
+/**
+  * @brief 初始化 DMA 完成 AD9945 输出的 AD 数据搬移
+  * @param void: 
+  * retval N/A.
+  */
+static void dma_init4ad9945(void)
+{
+    dma_parameter_struct dma_param4dataclk_portb;
+
+    rcu_periph_clock_enable(RCU_DMA1);
+    dma_param4dataclk_portb.periph_addr  = GPIOB + 0x08U;
+    dma_param4dataclk_portb.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+    dma_param4dataclk_portb.periph_inc   = (uint8_t)DMA_PERIPH_INCREASE_DISABLE;
+    dma_param4dataclk_portb.memory_addr  = (uint32_t)&gs_ad9945_data[0];
+    dma_param4dataclk_portb.memory_width = DMA_MEMORY_WIDTH_16BIT;
+    dma_param4dataclk_portb.memory_inc   = (uint8_t)DMA_MEMORY_INCREASE_ENABLE;
+    dma_param4dataclk_portb.number       = AD9945_DATA_COUNTS;
+    dma_param4dataclk_portb.direction    = (uint8_t)DMA_PERIPHERAL_TO_MEMORY;
+    dma_param4dataclk_portb.priority     = DMA_PRIORITY_HIGH;
+
+    dma_init(DMA1, DMA_CH0, &dma_param4dataclk_portb);
+    NVIC_SetPriority(DMA1_Channel0_IRQn, 0);
+    NVIC_EnableIRQ(DMA1_Channel0_IRQn);
+    dma_interrupt_enable(DMA1, DMA_CH0, DMA_INT_FTF | DMA_INT_ERR);
+    LOG_I("DMA init ok");
+}
+
 /**
   * @brief AD9945 初始化
   * @param void: 
@@ -215,8 +270,6 @@ static void ad9945_device_init(void)
     timer_channel_output_config(TIMER7, TIMER_CH_0, &timer_oc4shd);
     timer_primary_output_config(TIMER7, ENABLE);
     timer_channel_output_fast_config(TIMER7, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
-    //timer_counter_value_config(TIMER8, 1);
-    //timer_counter_value_config(TIMER7, 1);
     timer_enable(TIMER8);
     timer_enable(TIMER7);
 
@@ -226,10 +279,12 @@ static void ad9945_device_init(void)
     timer_autoreload_value_config(TIMER4, 19);
     timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_3, 10);
     timer_channel_output_state_config(TIMER4, TIMER_CH_3, ENABLE);
-    //timer_interrupt_enable(TIMER4, TIMER_INT_CH3);
+    timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
+    timer_channel_dma_request_source_select(TIMER4, TIMER_DMAREQUEST_CHANNELEVENT);
+    timer_dma_enable(TIMER4, TIMER_DMA_CH3D);
     timer_enable(TIMER4);
 
-#if 1
+#if 0
     NVIC_SetPriority(TIMER4_IRQn, 0);
     NVIC_EnableIRQ(TIMER4_IRQn);
 #endif
@@ -241,6 +296,7 @@ static void ad9945_device_init(void)
     _set_ad9945_reg_value(0x02, 0x80);
     _set_ad9945_reg_value(0x03, 0x00);
     _set_ad9945_reg_value(0x0d, 0x838);
+    dma_init4ad9945();
     LOG_I("AD9945 START");
 }
 
@@ -346,12 +402,15 @@ long show_ad9945(void)
 
     s_start_sample = 0;
 
+    dma_channel_enable(DMA1, DMA_CH0);
     timer_interrupt_enable(TIMER1, TIMER_INT_UP);
     while(s_index < AD9945_DATA_COUNTS);
+    dma_channel_disable(DMA1, DMA_CH0);
+    dma_transfer_number_config(DMA1, DMA_CH0, AD9945_DATA_COUNTS);
     s_index = 0;
     for (; i < AD9945_DATA_COUNTS; i++)
     {
-        rt_kprintf("%d:%u\r\n", i, gs_ad9945_data[i]);
+        rt_kprintf("%d:%u\r\n", i, gs_ad9945_data[i] & 0xc7f);
     }
 
     LOG_I("aHa");
