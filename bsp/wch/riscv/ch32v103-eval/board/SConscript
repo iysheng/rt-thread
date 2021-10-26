@@ -8,17 +8,14 @@ cwd = GetCurrentDir()
 
 # add general drivers
 src = Split('''
-system_ch32f10x.c
+system_ch32v10x.c
 board.c
 ''')
 
-
 startup_path_prefix = SDK_LIB
 
-if rtconfig.CROSS_TOOL == 'keil':
-    src += [startup_path_prefix + '/CH32F10x_StdPeriph_Driver/CMSIS/WCH/CH32F10x/Source/ARM/startup_ch32f10x.s']
 if rtconfig.CROSS_TOOL == 'gcc':
-    src += [startup_path_prefix + '/CH32F10x_StdPeriph_Driver/CMSIS/WCH/CH32F10x/Source/GCC/startup_ch32f10x.S']
+    src += [startup_path_prefix + '/Startup/startup_ch32v10x.S']
 
 
 path =  [cwd]

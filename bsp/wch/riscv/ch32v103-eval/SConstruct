@@ -34,7 +34,7 @@ if rtconfig.PLATFORM == 'iar':
 Export('RTT_ROOT')
 Export('rtconfig')
 
-SDK_ROOT = os.path.abspath('./')
+SDK_ROOT = os.path.abspath('../')
 
 if os.path.exists(SDK_ROOT + '/Libraries'):
     libraries_path_prefix = SDK_ROOT + '/Libraries'
@@ -47,8 +47,11 @@ Export('SDK_LIB')
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
 
-ch32_library = 'CH32F10x_StdPeriph_Driver'
+ch32_library = 'Peripheral'
 rtconfig.BSP_LIBRARY_TYPE = ch32_library
+
+# include core
+objs.extend(SConscript(os.path.join(libraries_path_prefix, 'Core', 'SConscript')))
 
 # include libraries
 objs.extend(SConscript(os.path.join(libraries_path_prefix, ch32_library, 'SConscript')))

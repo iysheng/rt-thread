@@ -5,13 +5,13 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2021-08-10     charlown      first version
+ * 2021-10-26     iysheng      first version
  */
 
 #ifndef __BOARD_H__
 #define __BOARD_H__
 
-#include "ch32f10x.h"
+#include "ch32v10x.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,0 +1,16 @@
+import rtconfig
+Import('RTT_ROOT')
+from building import *
+
+# get current directory
+cwd = GetCurrentDir()
+
+src = Split("""
+core_riscv.c
+""")
+
+path = [cwd]
+
+group = DefineGroup('Core', src, depend = [''], CPPPATH = path)
+
+Return('group')
