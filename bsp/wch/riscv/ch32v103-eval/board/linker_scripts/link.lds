@@ -1,156 +1,166 @@
-/* Program Entry, set to mark it as "used" and avoid gc */
-OUTPUT_ARCH( "riscv" )
-
 ENTRY( _start )
+
+__stack_size = 2048;
+
+PROVIDE( _stack_size = __stack_size );
+
 
 MEMORY
 {
-    ROM (rx) : ORIGIN = 0x08000000, LENGTH = 64k /* 64KB flash */
-    RAM (rw) : ORIGIN = 0x20000000, LENGTH =  20k /* 20K sram */
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
+	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
 }
-ENTRY(Reset_Handler)
-_system_stack_size = 0x200;
+
 
 SECTIONS
 {
-    .text :
+
+	.init :
+	{
+		_sinit = .;
+		. = ALIGN(4);
+		KEEP(*(SORT_NONE(.init)))
+		. = ALIGN(4);
+		_einit = .;
+	} >FLASH AT>FLASH
+
+  .vector :
+  {
+      *(.vector);
+	  . = ALIGN(64);
+  } >FLASH AT>FLASH
+
+	.text :
+	{
+		. = ALIGN(4);
+		*(.text)
+		*(.text.*)
+		*(.rodata)
+		*(.rodata*)
+		*(.glue_7)
+		*(.glue_7t)
+		*(.gnu.linkonce.t.*)
+		. = ALIGN(4);
+	} >FLASH AT>FLASH 
+
+	.fini :
+	{
+		KEEP(*(SORT_NONE(.fini)))
+		. = ALIGN(4);
+	} >FLASH AT>FLASH
+
+	PROVIDE( _etext = . );
+	PROVIDE( _eitcm = . );	
+
+	.preinit_array  :
+	{
+	  PROVIDE_HIDDEN (__preinit_array_start = .);
+	  KEEP (*(.preinit_array))
+	  PROVIDE_HIDDEN (__preinit_array_end = .);
+	} >FLASH AT>FLASH 
+	
+	.init_array     :
+	{
+	  PROVIDE_HIDDEN (__init_array_start = .);
+	  KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+	  KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+	  PROVIDE_HIDDEN (__init_array_end = .);
+	} >FLASH AT>FLASH 
+	
+	.fini_array     :
+	{
+	  PROVIDE_HIDDEN (__fini_array_start = .);
+	  KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+	  KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
+	  PROVIDE_HIDDEN (__fini_array_end = .);
+	} >FLASH AT>FLASH 
+	
+	.ctors          :
+	{
+	  /* gcc uses crtbegin.o to find the start of
+	     the constructors, so we make sure it is
+	     first.  Because this is a wildcard, it
+	     doesn't matter if the user does not
+	     actually link against crtbegin.o; the
+	     linker won't look for a file to match a
+	     wildcard.  The wildcard also means that it
+	     doesn't matter which directory crtbegin.o
+	     is in.  */
+	  KEEP (*crtbegin.o(.ctors))
+	  KEEP (*crtbegin?.o(.ctors))
+	  /* We don't want to include the .ctor section from
+	     the crtend.o file until after the sorted ctors.
+	     The .ctor section from the crtend file contains the
+	     end of ctors marker and it must be last */
+	  KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
+	  KEEP (*(SORT(.ctors.*)))
+	  KEEP (*(.ctors))
+	} >FLASH AT>FLASH 
+	
+	.dtors          :
+	{
+	  KEEP (*crtbegin.o(.dtors))
+	  KEEP (*crtbegin?.o(.dtors))
+	  KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
+	  KEEP (*(SORT(.dtors.*)))
+	  KEEP (*(.dtors))
+	} >FLASH AT>FLASH 
+
+	.dalign :
+	{
+		. = ALIGN(4);
+		PROVIDE(_data_vma = .);
+	} >RAM AT>FLASH	
+
+	.dlalign :
+	{
+		. = ALIGN(4); 
+		PROVIDE(_data_lma = .);
+	} >FLASH AT>FLASH
+
+	.data :
+	{
+    	*(.gnu.linkonce.r.*)
+    	*(.data .data.*)
+    	*(.gnu.linkonce.d.*)
+		. = ALIGN(8);
+    	PROVIDE( __global_pointer$ = . + 0x800 );
+    	*(.sdata .sdata.*)
+		*(.sdata2.*)
+    	*(.gnu.linkonce.s.*)
+    	. = ALIGN(8);
+    	*(.srodata.cst16)
+    	*(.srodata.cst8)
+    	*(.srodata.cst4)
+    	*(.srodata.cst2)
+    	*(.srodata .srodata.*)
+    	. = ALIGN(4);
+		PROVIDE( _edata = .);
+	} >RAM AT>FLASH
+
+	.bss :
+	{
+		. = ALIGN(4);
+		PROVIDE( _sbss = .);
+  	    *(.sbss*)
+        *(.gnu.linkonce.sb.*)
+		*(.bss*)
+     	*(.gnu.linkonce.b.*)		
+		*(COMMON*)
+		. = ALIGN(4);
+		PROVIDE( _ebss = .);
+	} >RAM AT>FLASH
+
+	PROVIDE( _end = _ebss);
+	PROVIDE( end = . );
+
+    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
     {
         . = ALIGN(4);
-        _stext = .;
-        KEEP(*(.isr_vector))            /* Startup code */
+        PROVIDE(_susrstack = . );
+        . = . + __stack_size;
+        PROVIDE( _eusrstack = .);
+    } >RAM 
 
-        . = ALIGN(4);
-        *(.text)                        /* remaining code */
-        *(.text.*)                      /* remaining code */
-        *(.rodata)                      /* read-only data (constants) */
-        *(.rodata*)
-        *(.glue_7)
-        *(.glue_7t)
-        *(.gnu.linkonce.t*)
-
-        /* section information for finsh shell */
-        . = ALIGN(4);
-        __fsymtab_start = .;
-        KEEP(*(FSymTab))
-        __fsymtab_end = .;
-
-        . = ALIGN(4);
-        __vsymtab_start = .;
-        KEEP(*(VSymTab))
-        __vsymtab_end = .;
-
-        /* section information for initial. */
-        . = ALIGN(4);
-        __rt_init_start = .;
-        KEEP(*(SORT(.rti_fn*)))
-        __rt_init_end = .;
-
-        . = ALIGN(4);
-
-        PROVIDE(__ctors_start__ = .);
-        KEEP (*(SORT(.init_array.*)))
-        KEEP (*(.init_array))
-        PROVIDE(__ctors_end__ = .);
-
-        . = ALIGN(4);
-
-        _etext = .;
-    } > ROM = 0
-
-    /* .ARM.exidx is sorted, so has to go in its own output section.  */
-    __exidx_start = .;
-    .ARM.exidx :
-    {
-        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-
-        /* This is used by the startup in order to initialize the .data secion */
-        _sidata = .;
-    } > ROM
-    __exidx_end = .;
-
-    /* .data section which is used for initialized data */
-
-    .data : AT (_sidata)
-    {
-        . = ALIGN(4);
-        /* This is used by the startup in order to initialize the .data secion */
-        _sdata = . ;
-
-        *(.data)
-        *(.data.*)
-        *(.gnu.linkonce.d*)
-
-        PROVIDE(__dtors_start__ = .);
-        KEEP(*(SORT(.dtors.*)))
-        KEEP(*(.dtors))
-        PROVIDE(__dtors_end__ = .);
-
-        . = ALIGN(4);
-        /* This is used by the startup in order to initialize the .data secion */
-        _edata = . ;
-    } >RAM
-
-    .stack : 
-    {
-        . = ALIGN(4);
-        _sstack = .;
-        . = . + _system_stack_size;
-        . = ALIGN(4);
-        _estack = .;
-    } >RAM
-
-    __bss_start = .;
-    .bss :
-    {
-        . = ALIGN(4);
-        /* This is used by the startup in order to initialize the .bss secion */
-        _sbss = .;
-
-        *(.bss)
-        *(.bss.*)
-        *(COMMON)
-
-        . = ALIGN(4);
-        /* This is used by the startup in order to initialize the .bss secion */
-        _ebss = . ;
-        
-        *(.bss.init)
-    } > RAM
-    __bss_end = .;
-
-    _end = .;
-
-    /* Stabs debugging sections.  */
-    .stab          0 : { *(.stab) }
-    .stabstr       0 : { *(.stabstr) }
-    .stab.excl     0 : { *(.stab.excl) }
-    .stab.exclstr  0 : { *(.stab.exclstr) }
-    .stab.index    0 : { *(.stab.index) }
-    .stab.indexstr 0 : { *(.stab.indexstr) }
-    .comment       0 : { *(.comment) }
-    /* DWARF debug sections.
-     * Symbols in the DWARF debugging sections are relative to the beginning
-     * of the section so we begin them at 0.  */
-    /* DWARF 1 */
-    .debug          0 : { *(.debug) }
-    .line           0 : { *(.line) }
-    /* GNU DWARF 1 extensions */
-    .debug_srcinfo  0 : { *(.debug_srcinfo) }
-    .debug_sfnames  0 : { *(.debug_sfnames) }
-    /* DWARF 1.1 and DWARF 2 */
-    .debug_aranges  0 : { *(.debug_aranges) }
-    .debug_pubnames 0 : { *(.debug_pubnames) }
-    /* DWARF 2 */
-    .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
-    .debug_abbrev   0 : { *(.debug_abbrev) }
-    .debug_line     0 : { *(.debug_line) }
-    .debug_frame    0 : { *(.debug_frame) }
-    .debug_str      0 : { *(.debug_str) }
-    .debug_loc      0 : { *(.debug_loc) }
-    .debug_macinfo  0 : { *(.debug_macinfo) }
-    /* SGI/MIPS DWARF 2 extensions */
-    .debug_weaknames 0 : { *(.debug_weaknames) }
-    .debug_funcnames 0 : { *(.debug_funcnames) }
-    .debug_typenames 0 : { *(.debug_typenames) }
-    .debug_varnames  0 : { *(.debug_varnames) }
 }
+

@@ -1,8 +1,8 @@
 import os
 
 # toolchains options
-ARCH='riscv'
-CPU='cortex-m3'
+ARCH='risc-v'
+CPU='ch32v'
 CROSS_TOOL='gcc'
 
 # bsp lib config
@@ -43,7 +43,7 @@ if PLATFORM == 'gcc':
     OBJDUMP = PREFIX + 'objdump'
     OBJCPY = PREFIX + 'objcopy'
 
-    DEVICE = ' -march=rv32imac -mabi=ilp32'
+    DEVICE = ' -march=rv32imac -mabi=ilp32 -DUSE_PLIC -DUSE_M_TIME -DNO_INIT -mcmodel=medany -msmall-data-limit=8 -L.  -nostartfiles  -lc '
     CFLAGS = DEVICE + ' -Dgcc'
     AFLAGS = ' -c' + DEVICE + ' -x assembler-with-cpp'
     LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=rt-thread.map,-cref,-u, -T board/linker_scripts/link.lds'

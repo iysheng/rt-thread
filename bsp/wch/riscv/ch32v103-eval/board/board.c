@@ -23,6 +23,10 @@ rt_uint32_t ch32_get_sysclock_frequency(void)
     return RCC_Clocks.SYSCLK_Frequency;
 }
 
+void rt_hw_board_init(void)
+{
+}
+
 #if 0
 void ch32f1_usart_clock_and_io_init(USART_TypeDef *usartx)
 {
