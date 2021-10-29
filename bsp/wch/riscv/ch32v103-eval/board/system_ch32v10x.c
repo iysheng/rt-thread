@@ -51,6 +51,12 @@ static void SetSysClock(void);
   static void SetSysClockTo72(void);
 #endif
 
+void just_markled_code(void)
+{
+    *(volatile uint32_t *)0x40021018 |= 0x1 << 2;
+    *(volatile uint32_t *)0x40010800 = 0x43444444;
+    *(volatile uint32_t *)0x4001080c &= (~(1 << 6));
+}
 
 /******************************************************************************************
 * Function Name  : SystemInit
@@ -66,10 +72,10 @@ void SystemInit (void)
   RCC->CTLR &= (uint32_t)0xFEF6FFFF;
   RCC->CTLR &= (uint32_t)0xFFFBFFFF;
   RCC->CFGR0 &= (uint32_t)0xFF80FFFF;
-  RCC->INTR = 0x009F0000;    
+  RCC->INTR = 0x009F0000;
   SetSysClock();
+  PFIC->CFGR = 0xfa050001;
 }
-
 
 /******************************************************************************************
 * Function Name  : SystemCoreClockUpdate

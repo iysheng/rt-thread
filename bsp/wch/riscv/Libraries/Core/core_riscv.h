@@ -124,7 +124,7 @@ typedef struct
 * Return         : None
 *******************************************************************************/
 RV_STATIC_INLINE void NVIC_EnableIRQ(IRQn_Type IRQn){
-  NVIC->IENR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+  NVIC->IENR[((uint32_t)(IRQn) >> 5)] |= (1 << ((uint32_t)(IRQn) & 0x1F));
 }
 
 /*******************************************************************************

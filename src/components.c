@@ -226,6 +226,7 @@ void rt_application_init(void)
     rt_thread_startup(tid);
 }
 
+extern void just_markled_code(void);
 /**
  * @brief  This function will call all levels of initialization functions to complete
  *         the initialization of the system, and finally start the scheduler.

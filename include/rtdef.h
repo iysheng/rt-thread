@@ -614,7 +614,7 @@ struct rt_thread
     rt_list_t   tlist;                                  /**< the thread list */
 
     /* stack point and entry */
-    void       *sp;                                     /**< stack point */
+    void       *sp;                                     /**< stack point */ /* 偏移是 -0x1c 可以找到 rt_thread 结构体首地址 */
     void       *entry;                                  /**< entry */
     void       *parameter;                              /**< parameter */
     void       *stack_addr;                             /**< stack address */

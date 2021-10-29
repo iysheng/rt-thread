@@ -44,14 +44,14 @@ rt_hw_interrupt_enable:
  */
     .globl rt_hw_context_switch_to
 rt_hw_context_switch_to:
-    LOAD sp, (a0)
+    LOAD sp, (a0)    /* lw sp, (a0)  将 a0 的值加载到 sp */
 
 #ifdef RT_USING_SMP
     mv   a0,   a1
     call  rt_cpus_lock_status_restore
 #endif
     LOAD a0,   2 * REGBYTES(sp)
-    csrw mstatus, a0
+    csrw mstatus, a0    /* 对照 a0 中每一个为 1 的 bit, 将 mstatus 指定的 bit 置 1 */
     j    rt_hw_context_switch_exit
 
 /*
@@ -110,18 +110,18 @@ rt_hw_context_switch:
     FSTORE  f31, 31 * FREGBYTES(sp)
 
 #endif
-    addi  sp,  sp, -32 * REGBYTES
-    STORE sp,  (a0)
+    addi  sp,  sp, -32 * REGBYTES  /* addi sp, sp - 32 * 4 */
+    STORE sp,  (a0) /* 将 sp 存到 a0 */
 
-    STORE x1,   0 * REGBYTES(sp)
+    STORE x1,   0 * REGBYTES(sp) /* 为什么要保存两份 x1 */
     STORE x1,   1 * REGBYTES(sp)
 
     csrr a0, mstatus
-    andi a0, a0, 8
-    beqz a0, save_mpie
-    li   a0, 0x80
+    andi a0, a0, 8 /* 按位与 */
+    beqz a0, save_mpie  /* 如果 a0 == 0, 那么跳转到 save_mpie */
+    li   a0, 0x80 /* 装载立即数 */
 save_mpie:
-    STORE a0,   2 * REGBYTES(sp)
+    STORE a0,   2 * REGBYTES(sp) /*sw a0,8(sp) -> sw a0,sp+8 -> save mstatus */
 
     STORE x4,   4 * REGBYTES(sp)
     STORE x5,   5 * REGBYTES(sp)

@@ -146,6 +146,11 @@ void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to)
     rt_interrupt_to_thread = to;
     rt_thread_switch_interrupt_flag = 1;
 
+    if (to)
+    {
+        rt_hw_context_switch_to(rt_interrupt_to_thread);
+        rt_thread_switch_interrupt_flag = 0;
+    }
     return ;
 }
 #endif /* end of RT_USING_SMP */

@@ -23,8 +23,60 @@ rt_uint32_t ch32_get_sysclock_frequency(void)
     return RCC_Clocks.SYSCLK_Frequency;
 }
 
+extern void __set_MSTATUS(uint32_t value);
+static int systick_init(rt_uint32_t ticks)
+{
+    if ((ticks - 1) > 0xFFFFFFFF)
+    {
+        return 1;
+    }
+    ticks -= 1;
+
+    SysTick->CNTL0 = 0;
+    SysTick->CNTL1 = 0;
+    SysTick->CNTL2 = 0;
+    SysTick->CNTL3 = 0;
+
+    SysTick->CNTH0 = 0;
+    SysTick->CNTH1 = 0;
+    SysTick->CNTH2 = 0;
+    SysTick->CNTH3 = 0;
+
+    SysTick->CMPLR0 = (ticks >>  0) & 0xff;
+    SysTick->CMPLR1 = (ticks >>  8) & 0xff;
+    SysTick->CMPLR2 = (ticks >> 16) & 0xff;
+    SysTick->CMPLR3 = (ticks >> 24) & 0xff;
+
+    SysTick->CMPHR0 = 0;
+    SysTick->CMPHR1 = 0;
+    SysTick->CMPHR2 = 0;
+    SysTick->CMPHR3 = 0;
+
+    __set_MSTATUS(0x8);
+    NVIC_SetPriority(SysTicK_IRQn, 255);
+    NVIC_EnableIRQ(SysTicK_IRQn);
+    *(volatile unsigned int *)(0xe000e100) = 1 << 12;
+    SysTick->CTLR = 1;
+
+    return 0;
+}
+
+extern void just_markled_code(void);
+
+int abc;
 void rt_hw_board_init(void)
 {
+    rt_uint32_t sysfreq;
+
+    sysfreq = ch32_get_sysclock_frequency();
+    systick_init(sysfreq / 8 / RT_TICK_PER_SECOND);
+    abc = 1;
+    abc = 2;
+
+    /* Heap initialization */
+#if defined(RT_USING_HEAP)
+    rt_system_heap_init((void *)HEAP_BEGIN, (void *)HEAP_END);
+#endif
 }
 
 #if 0

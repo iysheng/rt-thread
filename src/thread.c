@@ -900,6 +900,7 @@ RTM_EXPORT(rt_thread_resume);
  *
  * @param   parameter is the parameter of thread timeout function
  */
+/* 线程对应的定时器超时函数 */
 void rt_thread_timeout(void *parameter)
 {
     struct rt_thread *thread;

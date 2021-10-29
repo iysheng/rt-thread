@@ -295,6 +295,13 @@ static void rt_thread_idle_entry(void *parameter)
         }
 #endif /* RT_USING_IDLE_HOOK */
 
+
+#if 0
+    *(volatile rt_uint32_t *)0x4001080c &= 0xbf;
+
+    *(volatile rt_uint32_t *)0x4001080c |= 0x40;
+#endif
+
 #ifndef RT_USING_SMP
         rt_defunct_execute();
 #endif /* RT_USING_SMP */

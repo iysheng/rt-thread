@@ -19,8 +19,7 @@ extern "C" {
 
 
 #define CH32_FLASH_START_ADRESS     ((uint32_t)0x08000000)
-#define FLASH_PAGE_SIZE             (64)
-#define CH32_FLASH_SIZE             (1024 * 1024)
+#define CH32_FLASH_SIZE             (64 * 1024)
 #define CH32_FLASH_END_ADDRESS      ((uint32_t)(CH32_FLASH_START_ADRESS + CH32_FLASH_SIZE))
 
 #define CH32_SRAM_SIZE      20
@@ -33,8 +32,8 @@ extern int Image$$RW_IRAM1$$ZI$$Limit;
 #pragma section="CSTACK"
 #define HEAP_BEGIN      (__segment_end("CSTACK"))
 #else
-extern int __bss_end;
-#define HEAP_BEGIN      ((void *)&__bss_end)
+extern int _ebss;
+#define HEAP_BEGIN      ((void *)&_ebss)
 #endif
 
 #define HEAP_END        CH32_SRAM_END
