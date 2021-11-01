@@ -52,10 +52,10 @@ static int systick_init(rt_uint32_t ticks)
     SysTick->CMPHR2 = 0;
     SysTick->CMPHR3 = 0;
 
-    __set_MSTATUS(0x8);
+ //   __set_MSTATUS(0x8);
     NVIC_SetPriority(SysTicK_IRQn, 255);
     NVIC_EnableIRQ(SysTicK_IRQn);
-    *(volatile unsigned int *)(0xe000e100) = 1 << 12;
+//*(volatile unsigned int *)(0xe000e100) = 1 << 12;
     SysTick->CTLR = 1;
 
     return 0;

@@ -44,6 +44,9 @@ rt_hw_interrupt_enable:
  */
     .globl rt_hw_context_switch_to
 rt_hw_context_switch_to:
+#    la t0, _eusrstack
+#    csrw 0x340, t0
+
     LOAD sp, (a0)    /* lw sp, (a0)  将 a0 的值加载到 sp */
 
 #ifdef RT_USING_SMP
