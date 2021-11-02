@@ -29,10 +29,10 @@ int main(void)
     while(1)
     {
 
-    *(volatile rt_uint32_t *)0x4001080c &= 0xbf;
+    *(volatile rt_uint32_t *)0x4001080c = 0x00;
 
     rt_thread_mdelay(1000);
-    *(volatile rt_uint32_t *)0x4001080c |= 0x40;
+    *((volatile rt_uint32_t *)0x4001080c) = 0x40;
 
     rt_thread_mdelay(1000);
     }

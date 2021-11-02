@@ -49,6 +49,7 @@ void SysTick_Handler(void)
       rt_interrupt_enter();
 
 #if 1
+      SysTick->CTLR = 0;
       SysTick->CNTL0 = 0;
       SysTick->CNTL1 = 0;
       SysTick->CNTL2 = 0;
@@ -57,6 +58,7 @@ void SysTick_Handler(void)
       SysTick->CNTH1 = 0;
       SysTick->CNTH2 = 0;
       SysTick->CNTH3 = 0;
+      SysTick->CTLR = 1;
 
       rt_tick_increase();
 #endif

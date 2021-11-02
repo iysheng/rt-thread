@@ -381,6 +381,7 @@ rt_err_t rt_timer_start(rt_timer_t timer)
     /* stop timer firstly */
     level = rt_hw_interrupt_disable();
     /* remove timer from list */
+    /* 将这个 timer 移除来 */
     _timer_remove(timer);
     /* change status of timer */
     timer->parent.flag &= ~RT_TIMER_FLAG_ACTIVATED;
@@ -408,6 +409,9 @@ rt_err_t rt_timer_start(rt_timer_t timer)
     }
 
     row_head[0]  = &timer_list[0];
+    /* 遍历所有有效时间片的列表
+     * 遍历的目的是什么???
+     * */
     for (row_lvl = 0; row_lvl < RT_TIMER_SKIP_LIST_LEVEL; row_lvl++)
     {
         for (; row_head[row_lvl] != timer_list[row_lvl].prev;
@@ -424,10 +428,12 @@ rt_err_t rt_timer_start(rt_timer_t timer)
              * So insert the new timer to the end the the some-timeout timer
              * list.
              */
+            /* 如果有超时时间片相同的继续 */
             if ((t->timeout_tick - timer->timeout_tick) == 0)
             {
                 continue;
             }
+            /* 如果找到时间片比当前晚的.则退出 */
             else if ((t->timeout_tick - timer->timeout_tick) < RT_TICK_MAX / 2)
             {
                 break;
@@ -458,6 +464,7 @@ rt_err_t rt_timer_start(rt_timer_t timer)
         tst_nr >>= (RT_TIMER_SKIP_LIST_MASK + 1) >> 1;
     }
 
+    // 标记这个 timer 激活状态
     timer->parent.flag |= RT_TIMER_FLAG_ACTIVATED;
 
 #ifdef RT_USING_TIMER_SOFT

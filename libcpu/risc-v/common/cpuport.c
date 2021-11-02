@@ -130,6 +130,25 @@ rt_uint8_t *rt_hw_stack_init(void       *tentry,
     return stk;
 }
 
+void rt_hw_taskswitch(void)
+{
+    rt_thread_switch_interrupt_flag = 0;
+
+}
+
+/**
+ * @brief Do rt-thread context switch in task context
+ *
+ * @param from thread sp of from thread
+ * @param to thread sp of to thread
+ */
+void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to)
+{
+    rt_interrupt_from_thread = from;
+    rt_interrupt_to_thread = to;
+    /* 触发 SW 中断 */
+    *((volatile unsigned int *)(0xe000e200)) = (1 << 14);
+}
 /*
  * #ifdef RT_USING_SMP
  * void rt_hw_context_switch_interrupt(void *context, rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
@@ -151,6 +170,8 @@ void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to)
         rt_hw_context_switch_to(rt_interrupt_to_thread);
         rt_thread_switch_interrupt_flag = 0;
     }
+
+    *((volatile unsigned int *)(0xe000e200)) = (1 << 14);
     return ;
 }
 #endif /* end of RT_USING_SMP */
