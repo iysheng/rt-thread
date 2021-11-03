@@ -43,8 +43,6 @@ extern int _ebss;
 #endif
 
 
-rt_uint32_t ch32_get_sysclock_frequency(void);
-
 #ifdef BSP_USING_UART
 void ch32f1_usart_clock_and_io_init(USART_TypeDef* usartx);
 #endif
