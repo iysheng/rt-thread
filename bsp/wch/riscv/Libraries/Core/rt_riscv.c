@@ -28,6 +28,7 @@ void HardFault_Handler(void)
 }
 
 int def;
+static int gs_ticks = 89999;
 __attribute__((interrupt()))
 void SysTick_Handler(void)
 {
@@ -49,7 +50,8 @@ void SysTick_Handler(void)
       rt_interrupt_enter();
 
 #if 1
-      SysTick->CTLR = 0;
+      rt_tick_increase();
+    SysTick->CTLR = 0;
       SysTick->CNTL0 = 0;
       SysTick->CNTL1 = 0;
       SysTick->CNTL2 = 0;
@@ -58,11 +60,19 @@ void SysTick_Handler(void)
       SysTick->CNTH1 = 0;
       SysTick->CNTH2 = 0;
       SysTick->CNTH3 = 0;
-      SysTick->CTLR = 1;
+    SysTick->CMPLR0 = (gs_ticks >>  0) & 0xff;
+    SysTick->CMPLR1 = (gs_ticks >>  8) & 0xff;
+    SysTick->CMPLR2 = (gs_ticks >> 16) & 0xff;
+    SysTick->CMPLR3 = (gs_ticks >> 24) & 0xff;
 
-      rt_tick_increase();
+    SysTick->CMPHR0 = 0;
+    SysTick->CMPHR1 = 0;
+    SysTick->CMPHR2 = 0;
+    SysTick->CMPHR3 = 0;
+
+    SysTick->CTLR = 1;
 #endif
-      NVIC_ClearPendingIRQ(SysTicK_IRQn);
+      //NVIC_ClearPendingIRQ(SysTicK_IRQn);
 
       rt_interrupt_leave();
 }

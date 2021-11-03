@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2018, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author       Notes
  * 2018/10/28     Bernard      The unify RISC-V porting code.
- * 2020/11/20     BalanceTWK   Add FPU support
  */
 
 #include <rthw.h>
@@ -54,6 +53,8 @@ struct rt_hw_stack_frame
     rt_ubase_t t4;         /* x29 - t4     - temporary register 4                */
     rt_ubase_t t5;         /* x30 - t5     - temporary register 5                */
     rt_ubase_t t6;         /* x31 - t6     - temporary register 6                */
+
+/* 增加浮点寄存器组 */
 #ifdef ARCH_RISCV_FPU
     rv_floatreg_t f0;      /* f0  */
     rv_floatreg_t f1;      /* f1  */
@@ -122,33 +123,14 @@ rt_uint8_t *rt_hw_stack_init(void       *tentry,
 
     frame->ra      = (rt_ubase_t)texit;
     frame->a0      = (rt_ubase_t)parameter;
-    frame->epc     = (rt_ubase_t)tentry;
+    frame->epc     = (rt_ubase_t)tentry;     /* 初始化为入口，这样mret之后第一次切换应该切到入口执行  */
 
     /* force to machine mode(MPP=11) and set MPIE to 1 */
-    frame->mstatus = 0x00007880;
-
+   // frame->mstatus = 0x00007880;
+     frame->mstatus = 0x00001888; //mstatus 初始化
     return stk;
 }
 
-void rt_hw_taskswitch(void)
-{
-    rt_thread_switch_interrupt_flag = 0;
-
-}
-
-/**
- * @brief Do rt-thread context switch in task context
- *
- * @param from thread sp of from thread
- * @param to thread sp of to thread
- */
-void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to)
-{
-    rt_interrupt_from_thread = from;
-    rt_interrupt_to_thread = to;
-    /* 瑙﹀彂 SW 涓柇 */
-    *((volatile unsigned int *)(0xe000e200)) = (1 << 14);
-}
 /*
  * #ifdef RT_USING_SMP
  * void rt_hw_context_switch_interrupt(void *context, rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
@@ -165,19 +147,12 @@ void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to)
     rt_interrupt_to_thread = to;
     rt_thread_switch_interrupt_flag = 1;
 
-    if (to)
-    {
-        rt_hw_context_switch_to(rt_interrupt_to_thread);
-        rt_thread_switch_interrupt_flag = 0;
-    }
-
-    *((volatile unsigned int *)(0xe000e200)) = (1 << 14);
     return ;
 }
 #endif /* end of RT_USING_SMP */
 
 /** shutdown CPU */
-RT_WEAK void rt_hw_cpu_shutdown()
+void rt_hw_cpu_shutdown()
 {
     rt_uint32_t level;
     rt_kprintf("shutdown...\n");

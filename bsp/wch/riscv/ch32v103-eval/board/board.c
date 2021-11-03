@@ -53,8 +53,11 @@ static int systick_init(rt_uint32_t ticks)
     SysTick->CMPHR3 = 0;
 
  //   __set_MSTATUS(0x8);
-    NVIC_SetPriority(SysTicK_IRQn, 255);
+    PFIC->CFGR = 0xFA050004;
+    NVIC_SetPriority(SysTicK_IRQn, 0xf0);
+    NVIC_SetPriority(Software_IRQn, 0xf0);
     NVIC_EnableIRQ(SysTicK_IRQn);
+    NVIC_EnableIRQ(Software_IRQn);
 //*(volatile unsigned int *)(0xe000e100) = 1 << 12;
     SysTick->CTLR = 1;
 
@@ -75,7 +78,7 @@ void rt_hw_board_init(void)
 
     /* Heap initialization */
 #if defined(RT_USING_HEAP)
-    rt_system_heap_init((void *)HEAP_BEGIN, (void *)HEAP_END);
+    rt_system_heap_init((void *)HEAP_BEGIN, (void *)(HEAP_BEGIN + 5*1024));
 #endif
 }
 

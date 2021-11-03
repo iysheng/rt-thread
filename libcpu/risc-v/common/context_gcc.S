@@ -10,15 +10,6 @@
  */
 
 #include "cpuport.h"
-//#include "riscv_encoding.h"
-
-
-
-#define RT_SAVED_REGNUM         32
-#define RT_CONTEXT_SIZE         (RT_SAVED_REGNUM * REGBYTES)
-
-    .extern rt_interrupt_from_thread
-    .extern rt_interrupt_to_thread
 
 #ifdef RT_USING_SMP
 #define rt_hw_interrupt_disable rt_hw_local_irq_disable
@@ -41,39 +32,108 @@ rt_hw_interrupt_enable:
     csrw mstatus, a0
     ret
 
+/*
+ * #ifdef RT_USING_SMP
+ * void rt_hw_context_switch_to(rt_ubase_t to, stuct rt_thread *to_thread);
+ * #else
+ * void rt_hw_context_switch_to(rt_ubase_t to);
+ * #endif
+ * a0 --> to
+ * a1 --> to_thread
+ */
+    .globl rt_hw_context_switch_to
+rt_hw_context_switch_to:  /* 用于直接切换，不关心'from',其主要在开始启动调度器的时候运用 */
+	la t0, _eusrstack     /* 首次切换前将main的sp存入寄存器，以后用作中断栈 */
+    csrw mscratch,t0
 
-.globl rt_hw_context_switch_to
+    LOAD sp, (a0)         /* 传入的'to'线程的sp指针值赋给mcu的sp */
 
-/* Start the first task.  This also clears the bit that indicates the FPU is
-	in use in case the FPU was used before the scheduler was started - which
-	would otherwise result in the unnecessary leaving of space in the stack
-	for lazy saving of FPU registers. */
-.align 2
-rt_hw_context_switch_to:
-    /* Setup Interrupt Stack using
-       The stack that was used by main()
-       before the scheduler is started is
-       no longer required after the scheduler is started.
-       Interrupt stack pointer is stored in CSR_MSCRATCH */
-    la t0, _eusrstack
-    csrw 0x340, t0
-    LOAD sp, 0x0(a0)                /* Read sp from first TCB member(a0) */
+#ifdef RT_USING_SMP       /* 多核的，本单片机不关心 */
+    mv   a0,   a1
+    jal  rt_cpus_lock_status_restore
+#endif
+    LOAD a0,   2 * REGBYTES(sp)
+    csrw mstatus, a0      /* 恢复'to'线程的mstatus值 */
+    j    rt_hw_context_switch_exit
 
-    j rt_hw_context_switch_exit
+/*
+ * #ifdef RT_USING_SMP
+ * void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
+ * #else
+ * void rt_hw_context_switch(rt_ubase_t from, rt_ubase_t to);
+ * #endif
+ *
+ * a0 --> from
+ * a1 --> to
+ * a2 --> to_thread
+ */
+    .globl rt_hw_context_switch
+rt_hw_context_switch:
+    /* saved from thread context
+     *     x1/ra       -> sp(0)
+     *     x1/ra       -> sp(1)
+     *     mstatus.mie -> sp(2)
+     *     x(i)        -> sp(i-4)
+     *     这里保存'from'线程
+     *     增加浮点寄存器，放在通用寄存器的前面
+     */
 
+#ifdef ARCH_RISCV_FPU
+    addi    sp, sp, -32 * FREGBYTES
 
-    .align 2
-.global SW_Handler
-SW_Handler:
-    addi sp, sp, -RT_CONTEXT_SIZE
-    STORE x1,  1  * REGBYTES(sp)    /* RA */
+    FSTORE  f0, 0 * FREGBYTES(sp)
+    FSTORE  f1, 1 * FREGBYTES(sp)
+    FSTORE  f2, 2 * FREGBYTES(sp)
+    FSTORE  f3, 3 * FREGBYTES(sp)
+    FSTORE  f4, 4 * FREGBYTES(sp)
+    FSTORE  f5, 5 * FREGBYTES(sp)
+    FSTORE  f6, 6 * FREGBYTES(sp)
+    FSTORE  f7, 7 * FREGBYTES(sp)
+    FSTORE  f8, 8 * FREGBYTES(sp)
+    FSTORE  f9, 9 * FREGBYTES(sp)
+    FSTORE  f10, 10 * FREGBYTES(sp)
+    FSTORE  f11, 11 * FREGBYTES(sp)
+    FSTORE  f12, 12 * FREGBYTES(sp)
+    FSTORE  f13, 13 * FREGBYTES(sp)
+    FSTORE  f14, 14 * FREGBYTES(sp)
+    FSTORE  f15, 15 * FREGBYTES(sp)
+    FSTORE  f16, 16 * FREGBYTES(sp)
+    FSTORE  f17, 17 * FREGBYTES(sp)
+    FSTORE  f18, 18 * FREGBYTES(sp)
+    FSTORE  f19, 19 * FREGBYTES(sp)
+    FSTORE  f20, 20 * FREGBYTES(sp)
+    FSTORE  f21, 21 * FREGBYTES(sp)
+    FSTORE  f22, 22 * FREGBYTES(sp)
+    FSTORE  f23, 23 * FREGBYTES(sp)
+    FSTORE  f24, 24 * FREGBYTES(sp)
+    FSTORE  f25, 25 * FREGBYTES(sp)
+    FSTORE  f26, 26 * FREGBYTES(sp)
+    FSTORE  f27, 27 * FREGBYTES(sp)
+    FSTORE  f28, 28 * FREGBYTES(sp)
+    FSTORE  f29, 29 * FREGBYTES(sp)
+    FSTORE  f30, 30 * FREGBYTES(sp)
+    FSTORE  f31, 31 * FREGBYTES(sp)
+#endif
 
-    STORE x4,  4  * REGBYTES(sp)
-    STORE x5,  5  * REGBYTES(sp)
-    STORE x6,  6  * REGBYTES(sp)
-    STORE x7,  7  * REGBYTES(sp)
-    STORE x8,  8  * REGBYTES(sp)
-    STORE x9,  9  * REGBYTES(sp)
+    addi  sp,  sp, -32 * REGBYTES /* 切换线程前from的sp向下32个字用于存储其寄存器值 */
+    STORE sp,  (a0)               /* from的sp值要及时存入ram，便于下次切回来时候调用 */
+
+    STORE x1,   0 * REGBYTES(sp)  /* 线程from往to的切换，把ra存到结构体epc的位置 */
+    STORE x1,   1 * REGBYTES(sp)  /* ra存到机构体ra位置 */
+
+    csrr a0, mstatus              /* 这里修改为直接保存mstatus */
+    andi a0, a0, 8
+    beqz a0, save_mpie
+    li   a0, 0x80
+save_mpie:
+    STORE a0,   2 * REGBYTES(sp)
+
+    STORE x4,   4 * REGBYTES(sp)
+    STORE x5,   5 * REGBYTES(sp)
+    STORE x6,   6 * REGBYTES(sp)
+    STORE x7,   7 * REGBYTES(sp)
+    STORE x8,   8 * REGBYTES(sp)
+    STORE x9,   9 * REGBYTES(sp)
     STORE x10, 10 * REGBYTES(sp)
     STORE x11, 11 * REGBYTES(sp)
     STORE x12, 12 * REGBYTES(sp)
@@ -97,48 +157,78 @@ SW_Handler:
     STORE x30, 30 * REGBYTES(sp)
     STORE x31, 31 * REGBYTES(sp)
 
-    /* Push mstatus to stack */
-    csrr t0, mstatus
-    STORE t0,  2  * REGBYTES(sp)
+    /* restore to thread context
+     * sp(0) -> epc;
+     * sp(1) -> ra;
+     * sp(i) -> x(i+2)
+     */
+    LOAD sp,  (a1)	/* 获取'to'线程sp值 */
 
-    /* Push additional registers */
+#ifdef RT_USING_SMP
+    mv   a0,   a2
+    jal  rt_cpus_lock_status_restore
+#endif /*RT_USING_SMP*/
 
-    /* Store sp to task stack */
-    LOAD t0, rt_interrupt_from_thread
-    STORE sp, 0(t0)
+    j rt_hw_context_switch_exit
 
-    csrr t0, mepc
-    STORE t0, 0(sp)
+#ifdef RT_USING_SMP
+/*
+ * void rt_hw_context_switch_interrupt(void *context, rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
+ *
+ * a0 --> context
+ * a1 --> from
+ * a2 --> to
+ * a3 --> to_thread
+ */
+    .globl rt_hw_context_switch_interrupt
+rt_hw_context_switch_interrupt:
 
-    jal rt_hw_taskswitch
+    STORE a0, 0(a1)
 
-    /* Switch task context */
-    LOAD t0, rt_interrupt_to_thread
-    LOAD sp, 0x0(t0)
+    LOAD  sp, 0(a2)
+    move  a0, a3
+    call rt_cpus_lock_status_restore
 
-	j rt_hw_context_switch_exit
+    j rt_hw_context_switch_exit
 
+#endif
 
-
-.align 2
-    .global rt_hw_context_switch_exit
+.global rt_hw_context_switch_exit
 rt_hw_context_switch_exit:
+#ifdef RT_USING_SMP
+#ifdef RT_USING_SIGNALS
+    mv a0, sp
 
-	LOAD t0,  0  * REGBYTES(sp)
-    csrw mepc, t0
-    /* Pop mstatus from stack and set it */
-    LOAD t0,  2  * REGBYTES(sp)
-    csrw mstatus, t0
-    /* Interrupt still disable here */
-    /* Restore Registers from Stack */
-    LOAD x1,  1  * REGBYTES(sp)    /* RA */
+    csrr  t0, mhartid
+    /* switch interrupt stack of current cpu */
+    la    sp, __stack_start__
+    addi  t1, t0, 1
+    li    t2, __STACKSIZE__
+    mul   t1, t1, t2
+    add   sp, sp, t1 /* sp = (cpuid + 1) * __STACKSIZE__ + __stack_start__ */
 
-    LOAD x4,  4  * REGBYTES(sp)
-    LOAD x5,  5  * REGBYTES(sp)
-    LOAD x6,  6  * REGBYTES(sp)
-    LOAD x7,  7  * REGBYTES(sp)
-    LOAD x8,  8  * REGBYTES(sp)
-    LOAD x9,  9  * REGBYTES(sp)
+    call rt_signal_check
+    mv sp, a0
+#endif
+#endif
+    /* resw ra to mepc */
+    LOAD a0,   0 * REGBYTES(sp)   /* 这里相当于把ra赋值给mepc */
+    csrw mepc, a0
+
+    LOAD x1,   1 * REGBYTES(sp)  /* 恢复ra */
+
+    li    t0, 0x00001800
+    csrs  mstatus, t0
+    LOAD a0,   2 * REGBYTES(sp)
+ #	csrw mstatus ,a0            /* 恢复mstatus */
+    csrs mstatus, a0
+
+    LOAD x4,   4 * REGBYTES(sp)
+    LOAD x5,   5 * REGBYTES(sp)
+    LOAD x6,   6 * REGBYTES(sp)
+    LOAD x7,   7 * REGBYTES(sp)
+    LOAD x8,   8 * REGBYTES(sp)
+    LOAD x9,   9 * REGBYTES(sp)
     LOAD x10, 10 * REGBYTES(sp)
     LOAD x11, 11 * REGBYTES(sp)
     LOAD x12, 12 * REGBYTES(sp)
@@ -162,6 +252,43 @@ rt_hw_context_switch_exit:
     LOAD x30, 30 * REGBYTES(sp)
     LOAD x31, 31 * REGBYTES(sp)
 
-    addi sp, sp, RT_CONTEXT_SIZE
+    addi sp,  sp, 32 * REGBYTES /* 恢复sp */
 
-    mret
+#ifdef ARCH_RISCV_FPU  /* 浮点寄存器先入后出，如果定义浮点寄存器，注意线程栈的大小 */
+    FLOAD   f0, 0 * FREGBYTES(sp)
+    FLOAD   f1, 1 * FREGBYTES(sp)
+    FLOAD   f2, 2 * FREGBYTES(sp)
+    FLOAD   f3, 3 * FREGBYTES(sp)
+    FLOAD   f4, 4 * FREGBYTES(sp)
+    FLOAD   f5, 5 * FREGBYTES(sp)
+    FLOAD   f6, 6 * FREGBYTES(sp)
+    FLOAD   f7, 7 * FREGBYTES(sp)
+    FLOAD   f8, 8 * FREGBYTES(sp)
+    FLOAD   f9, 9 * FREGBYTES(sp)
+    FLOAD   f10, 10 * FREGBYTES(sp)
+    FLOAD   f11, 11 * FREGBYTES(sp)
+    FLOAD   f12, 12 * FREGBYTES(sp)
+    FLOAD   f13, 13 * FREGBYTES(sp)
+    FLOAD   f14, 14 * FREGBYTES(sp)
+    FLOAD   f15, 15 * FREGBYTES(sp)
+    FLOAD   f16, 16 * FREGBYTES(sp)
+    FLOAD   f17, 17 * FREGBYTES(sp)
+    FLOAD   f18, 18 * FREGBYTES(sp)
+    FLOAD   f19, 19 * FREGBYTES(sp)
+    FLOAD   f20, 20 * FREGBYTES(sp)
+    FLOAD   f21, 21 * FREGBYTES(sp)
+    FLOAD   f22, 22 * FREGBYTES(sp)
+    FLOAD   f23, 23 * FREGBYTES(sp)
+    FLOAD   f24, 24 * FREGBYTES(sp)
+    FLOAD   f25, 25 * FREGBYTES(sp)
+    FLOAD   f26, 26 * FREGBYTES(sp)
+    FLOAD   f27, 27 * FREGBYTES(sp)
+    FLOAD   f28, 28 * FREGBYTES(sp)
+    FLOAD   f29, 29 * FREGBYTES(sp)
+    FLOAD   f30, 30 * FREGBYTES(sp)
+    FLOAD   f31, 31 * FREGBYTES(sp)
+
+    addi    sp, sp, 32 * FREGBYTES
+#endif
+
+    mret                        /* 这时候返回的是mepc,即ra的值 */

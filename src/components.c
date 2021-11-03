@@ -199,13 +199,14 @@ void main_thread_entry(void *parameter)
 #endif
 }
 
+extern void main1(void * abc);
 /**
  * @brief  This function will create and start the main thread, but this thread
  *         will not run until the scheduler starts.
  */
 void rt_application_init(void)
 {
-    rt_thread_t tid;
+    rt_thread_t tid, tid1;
 
 #ifdef RT_USING_HEAP
     tid = rt_thread_create("main", main_thread_entry, RT_NULL,

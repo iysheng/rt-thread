@@ -521,6 +521,7 @@ void rt_schedule(void)
 
                     rt_hw_context_switch_interrupt((rt_ubase_t)&from_thread->sp,
                             (rt_ubase_t)&to_thread->sp);
+                    *((volatile unsigned int *)0xe000e200) |= 1 << 14;
                 }
             }
             else

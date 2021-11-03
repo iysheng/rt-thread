@@ -22,7 +22,7 @@ extern "C" {
 #define CH32_FLASH_SIZE             (64 * 1024)
 #define CH32_FLASH_END_ADDRESS      ((uint32_t)(CH32_FLASH_START_ADRESS + CH32_FLASH_SIZE))
 
-#define CH32_SRAM_SIZE      15
+#define CH32_SRAM_SIZE      5
 #define CH32_SRAM_END       (0x20000000 + CH32_SRAM_SIZE * 1024)
 
 #if defined(__CC_ARM) || defined(__CLANG_ARM)

@@ -39,3 +39,21 @@ int main(void)
 
     return RT_EOK;
 }
+
+void main1(void * abc)
+{
+
+    /* TODO set pa6 to 0 */
+
+    *(volatile uint32_t *)0x40021018 |= 0x1 << 2;
+    *(volatile rt_uint32_t *)0x40010800 = 0x43444444;
+    *(volatile rt_uint32_t *)0x4001080c &= (~(1 << 6));
+
+    while(1)
+    {
+
+    rt_thread_mdelay(1000);
+    }
+
+    return RT_EOK;
+}
