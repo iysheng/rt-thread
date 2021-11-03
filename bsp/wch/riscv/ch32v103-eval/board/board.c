@@ -23,7 +23,6 @@ rt_uint32_t ch32_get_sysclock_frequency(void)
     return RCC_Clocks.SYSCLK_Frequency;
 }
 
-extern void __set_MSTATUS(uint32_t value);
 static int systick_init(rt_uint32_t ticks)
 {
     if ((ticks - 1) > 0xFFFFFFFF)
@@ -52,13 +51,11 @@ static int systick_init(rt_uint32_t ticks)
     SysTick->CMPHR2 = 0;
     SysTick->CMPHR3 = 0;
 
- //   __set_MSTATUS(0x8);
-    PFIC->CFGR = 0xFA050004;
+    PFIC->CFGR = 0xFA050003;
     NVIC_SetPriority(SysTicK_IRQn, 0xf0);
     NVIC_SetPriority(Software_IRQn, 0xf0);
     NVIC_EnableIRQ(SysTicK_IRQn);
     NVIC_EnableIRQ(Software_IRQn);
-//*(volatile unsigned int *)(0xe000e100) = 1 << 12;
     SysTick->CTLR = 1;
 
     return 0;
