@@ -20,7 +20,7 @@
 /*
  * rt_base_t rt_hw_interrupt_disable(void);
  */
-    .globl rt_hw_interrupt_disable
+    .global rt_hw_interrupt_disable
 rt_hw_interrupt_disable:
     csrrci a0, mstatus, 8
     ret
@@ -28,11 +28,14 @@ rt_hw_interrupt_disable:
 /*
  * void rt_hw_interrupt_enable(rt_base_t level);
  */
-    .globl rt_hw_interrupt_enable
+    .global rt_hw_interrupt_enable
 rt_hw_interrupt_enable:
     csrw mstatus, a0
     ret
 
+.extern rt_thread_switch_interrupt_flag
+.extern rt_interrupt_from_thread
+.extern rt_interrupt_to_thread
 /*
  * #ifdef RT_USING_SMP
  * void rt_hw_context_switch_to(rt_ubase_t to, stuct rt_thread *to_thread);
@@ -42,8 +45,10 @@ rt_hw_interrupt_enable:
  * a0 --> to
  * a1 --> to_thread
  */
-    .globl rt_hw_context_switch_to
+    .global rt_hw_context_switch_to
 rt_hw_context_switch_to:
+    la t0, _eusrstack     /* 首次切换前将main的sp存入寄存器，以后用作中断栈 */
+    csrw mscratch,t0
     LOAD sp, (a0)    /* lw sp, (a0)  将 a0 的值加载到 sp */
 
 #ifdef RT_USING_SMP
@@ -65,7 +70,7 @@ rt_hw_context_switch_to:
  * a1 --> to
  * a2 --> to_thread
  */
-    .globl rt_hw_context_switch
+    .global rt_hw_context_switch
 rt_hw_context_switch:
     /* saved from thread context
      *     x1/ra       -> sp(0)
@@ -116,12 +121,9 @@ rt_hw_context_switch:
     STORE x1,   0 * REGBYTES(sp) /* 为什么要保存两份 x1 */
     STORE x1,   1 * REGBYTES(sp)
 
-    csrr a0, mstatus
-    andi a0, a0, 8 /* 按位与 */
-    beqz a0, save_mpie  /* 如果 a0 == 0, 那么跳转到 save_mpie */
-    li   a0, 0x80 /* 装载立即数 */
+    csrr t0, mstatus
 save_mpie:
-    STORE a0,   2 * REGBYTES(sp) /*sw a0,8(sp) -> sw a0,sp+8 -> save mstatus */
+    STORE t0,   2 * REGBYTES(sp) /*sw a0,8(sp) -> sw a0,sp+8 -> save mstatus */
 
     STORE x4,   4 * REGBYTES(sp)
     STORE x5,   5 * REGBYTES(sp)
@@ -175,7 +177,7 @@ save_mpie:
  * a2 --> to
  * a3 --> to_thread
  */
-    .globl rt_hw_context_switch_interrupt
+    .global rt_hw_context_switch_interrupt
 rt_hw_context_switch_interrupt:
 
     STORE a0, 0(a1)
@@ -207,15 +209,15 @@ rt_hw_context_switch_exit:
 #endif
 #endif
     /* resw ra to mepc */
-    LOAD a0,   0 * REGBYTES(sp)
-    csrw mepc, a0
+    LOAD t0,   0 * REGBYTES(sp)
+    csrw mepc, t0
 
     LOAD x1,   1 * REGBYTES(sp)
 
-    li    t0, 0x00007800
-    csrw  mstatus, t0
-    LOAD a0,   2 * REGBYTES(sp)
-    csrs mstatus, a0
+    #li   t0, 0x00001800
+    #csrs mstatus, t0 # 切换到 M 级
+    LOAD t0,   2 * REGBYTES(sp)
+    csrs mstatus, t0
 
     LOAD x4,   4 * REGBYTES(sp)
     LOAD x5,   5 * REGBYTES(sp)

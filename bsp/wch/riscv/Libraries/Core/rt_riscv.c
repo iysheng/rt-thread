@@ -14,7 +14,7 @@
 
 void NMI_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void HardFault_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-void SysTick_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void SysTick_Handler(void) __attribute__((interrupt()));
 
 void NMI_Handler(void)
 {
@@ -27,24 +27,8 @@ void HardFault_Handler(void)
   }
 }
 
-int def;
 void SysTick_Handler(void)
 {
-      def++;
-#if 0
-      if (def % 100 == 1)
-      {
-
-            if (def / 100 % 2)
-            {
-            *(volatile rt_uint32_t *)0x4001080c |= 0x40;
-            }
-            else
-            {
-            *(volatile rt_uint32_t *)0x4001080c &= 0xbf;
-            }
-      }
-#endif
       rt_interrupt_enter();
 
       SysTick->CNTL0 = 0;
@@ -57,7 +41,6 @@ void SysTick_Handler(void)
       SysTick->CNTH3 = 0;
 
       rt_tick_increase();
-      NVIC_ClearPendingIRQ(SysTicK_IRQn);
 
       rt_interrupt_leave();
 }
