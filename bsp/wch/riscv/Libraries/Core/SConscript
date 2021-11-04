@@ -7,7 +7,6 @@ cwd = GetCurrentDir()
 
 src = Split("""
 core_riscv.c
-rt_riscv.c
 """)
 
 path = [cwd]

@@ -42,7 +42,7 @@ _vector_base:
     .word   0
         j   SysTick_Handler            /* SysTick Handler */
     .word   0
-        j   SW_handler                 /* SW Handler */
+        j   SW_Handler                 /* SW Handler */
     .word   0
     /* External Interrupts */
         j   WWDG_IRQHandler            /* Window Watchdog */
