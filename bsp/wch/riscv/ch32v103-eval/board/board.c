@@ -12,7 +12,9 @@
 #include <rtdevice.h>
 #include <rthw.h>
 #include "board.h"
+#include "ch32_pinmux.h"
 #include "ch32v10x_rcc.h"
+#include "drv_uart.h"
 #include "riscv-ops.h"
 
 rt_uint32_t ch32_get_sysclock_frequency(void)
@@ -74,5 +76,20 @@ void rt_hw_board_init(void)
     /* Heap initialization */
 #if defined(RT_USING_HEAP)
     rt_system_heap_init((void *)HEAP_BEGIN, (void *)&_susrstack);
+#endif
+
+    ch32v103_pinmux_init();
+    /* USART driver initialization is open by default */
+#ifdef RT_USING_SERIAL
+    rt_hw_uart_init();
+#endif
+
+    /* Set the shell console output device */
+#ifdef RT_USING_CONSOLE
+    rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
+#endif
+
+#ifdef RT_USING_COMPONENTS_INIT
+    rt_components_board_init();
 #endif
 }

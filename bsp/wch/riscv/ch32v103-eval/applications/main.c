@@ -14,10 +14,8 @@
 
 int main(void)
 {
-    *(volatile uint32_t *)0x40021018 |= 0x1 << 2;
-    *(volatile rt_uint32_t *)0x40010800 = 0x43444444;
-    *(volatile rt_uint32_t *)0x4001080c &= (~(1 << 6));
 
+    rt_kprintf("Hello CHINA.");
     while(1)
     {
 
