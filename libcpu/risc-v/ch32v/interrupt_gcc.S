@@ -10,9 +10,9 @@
 
 #include "cpuport.h"
 
-.global kick_interrupt4sw
+.global kick_sw4switch
 .align 2
-kick_interrupt4sw:
+kick_sw4switch:
     li  t1, 0XE000E200
     lw  t2, 0x0(t1)
     li  t3, 0X4000

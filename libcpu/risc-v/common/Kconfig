@@ -1,0 +1,9 @@
+menu "RT-Thread RISC-V CPU"
+
+    config RT_USING_SW4SWITCH
+        bool "Using Similar software interrupt to kick context switch"
+        default n
+        help
+            Using Software interrupt to kick context switch.
+
+endmenu

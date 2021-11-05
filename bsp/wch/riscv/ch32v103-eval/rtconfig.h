@@ -104,6 +104,10 @@
 /* RT-Thread Utestcases */
 
 
+/* RT-Thread RISC-V CPU */
+
+#define RT_USING_SW4SWITCH
+
 /* RT-Thread online packages */
 
 /* IoT - internet of things */

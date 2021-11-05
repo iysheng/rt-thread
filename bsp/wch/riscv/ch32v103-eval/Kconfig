@@ -16,6 +16,7 @@ config PKGS_DIR
     default "packages"
 
 source "$RTT_DIR/Kconfig"
+source "$RTT_DIR/libcpu/risc-v/common/Kconfig"
 source "$PKGS_DIR/Kconfig"
 source "../Libraries/Kconfig"
 source "board/Kconfig"
