@@ -1,53 +1,16 @@
 /*
-
- * File      : drv_usart.c
-
- * This file is part of RT-Thread RTOS
-
- * COPYRIGHT (C) 2006-2013, RT-Thread Development Team
-
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
-
- * The license and distribution terms for this file may be
-
- * found in the file LICENSE in this distribution or at
-
- * http://www.rt-thread.org/license/LICENSE
-
+ * SPDX-License-Identifier: Apache-2.0
  *
-
  * Change Logs:
-
- * Date           Author       Notes
-
- * 2009-01-05     Bernard      the first version
-
- * 2010-03-29     Bernard      remove interrupt Tx and DMA Rx mode
-
- * 2013-05-13     aozima       update for kehong-lingtai.
-
- * 2015-01-31     armink       make sure the serial transmit complete in putc()
-
- * 2016-05-13     armink       add DMA Rx mode
-
- * 2017-01-19     aubr.cool    add interrupt Tx mode
-
- * 2017-04-13     aubr.cool    correct Rx parity err
-
- * 2017-10-20     ZYH          porting to HAL Libraries(with out DMA)
-
- * 2017-11-15     ZYH          update to 3.0.0
-
+ * Date           Author            Notes
+ * 2021-11-05     iysheng           initial version
  */
-
-
 
 #include "board.h"
 #include <rtdevice.h>
-
 #include <drv_usart.h>
-
-
 
 /*  uart driver */
 
@@ -62,8 +25,6 @@ struct ch32_uart
     IRQn_Type irq;
 
 };
-
-
 
 static rt_err_t ch32_configure(struct rt_serial_device *serial, struct serial_configure *cfg)
 

@@ -606,7 +606,7 @@ rt_err_t ch32_pin_irq_enable(struct rt_device *device, rt_base_t pin,
         GPIO_InitStruct.GPIO_Pin = index->pin;
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
 
-        EXTI_InitStructure.EXTI_Line=index->pin;/* Íâ²¿ÖĞ¶ÏÏßºÍÒı½ÅºÅ¶ÔÓ¦ */
+        EXTI_InitStructure.EXTI_Line=index->pin;/* å¤–éƒ¨ä¸­æ–­çº¿å’Œå¼•è„šå·å¯¹åº” */
         EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
         EXTI_InitStructure.EXTI_LineCmd = ENABLE;
         switch (pin_irq_hdr_tab[irqindex].mode)
