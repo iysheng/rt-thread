@@ -492,7 +492,7 @@ static rt_size_t _serial_fifo_tx_blocking_buf(struct rt_device        *dev,
     RT_ASSERT(tx_fifo != RT_NULL);
     /* When serial transmit in tx_blocking mode,
      * if the activated mode is RT_TRUE, it will return directly */
-    if (tx_fifo->activated == RT_TRUE)  return 0;
+    //if (tx_fifo->activated == RT_TRUE)  return 0;
 
     tx_fifo->activated = RT_TRUE;
     rt_size_t length = size;
@@ -506,15 +506,15 @@ static rt_size_t _serial_fifo_tx_blocking_buf(struct rt_device        *dev,
                                                (rt_uint8_t *)buffer + offset,
                                                size);
 
-        offset += tx_fifo->put_size;
-        size -= tx_fifo->put_size;
         /* Call the transmit interface for transmission */
         serial->ops->transmit(serial,
                              (rt_uint8_t *)buffer + offset,
                              tx_fifo->put_size,
                              RT_SERIAL_TX_BLOCKING);
         /* Waiting for the transmission to complete */
-        rt_completion_wait(&(tx_fifo->tx_cpt), RT_WAITING_FOREVER);
+    //    rt_completion_wait(&(tx_fifo->tx_cpt), RT_WAITING_FOREVER);
+        offset += tx_fifo->put_size;
+        size -= tx_fifo->put_size;
     }
 
     return length;
@@ -627,11 +627,14 @@ static rt_err_t rt_serial_tx_enable(struct rt_device        *dev,
          * whether serial device needs to use buffer */
         rt_err_t optmode;  /* The operating mode used by serial device */
         /* Call the Control() API to get the operating mode */
+        serial->ops->control(serial,
+                             RT_DEVICE_CTRL_SET_INT,
+                             (void *)RT_NULL);
         optmode = serial->ops->control(serial,
                                        RT_DEVICE_CHECK_OPTMODE,
                                        (void *)RT_DEVICE_FLAG_TX_BLOCKING);
         if (optmode == RT_SERIAL_TX_BLOCKING_BUFFER)
-        {
+        { 
             /* If use RT_SERIAL_TX_BLOCKING_BUFFER, the ringbuffer is initialized */
             tx_fifo = (struct rt_serial_tx_fifo *) rt_malloc
                     (sizeof(struct rt_serial_tx_fifo) + serial->config.tx_bufsz);
@@ -871,7 +874,7 @@ static rt_err_t rt_serial_tx_disable(struct rt_device        *dev,
   * @param dev The pointer of device driver structure
   * @return Return the status of the operation.
   */
-static rt_err_t rt_serial_init(struct rt_device *dev)
+rt_err_t rt_serial_init(struct rt_device *dev)
 {
     rt_err_t result = RT_EOK;
     struct rt_serial_device *serial;
@@ -896,7 +899,7 @@ static rt_err_t rt_serial_init(struct rt_device *dev)
   * @param oflag The flag of that the serial port opens.
   * @return Return the status of the operation.
   */
-static rt_err_t rt_serial_open(struct rt_device *dev, rt_uint16_t oflag)
+rt_err_t rt_serial_open(struct rt_device *dev, rt_uint16_t oflag)
 {
     struct rt_serial_device *serial;
 
@@ -1053,7 +1056,7 @@ static rt_size_t rt_serial_read(struct rt_device *dev,
 }
 
 
-static rt_size_t rt_serial_write(struct rt_device *dev,
+rt_size_t rt_serial_write(struct rt_device *dev,
                                  rt_off_t          pos,
                                  const void       *buffer,
                                  rt_size_t         size)

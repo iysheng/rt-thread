@@ -89,6 +89,7 @@ void rt_hw_board_init(void)
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif
 
+    *((volatile rt_uint32_t *)0x4001080c) = 0x40;
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();
 #endif

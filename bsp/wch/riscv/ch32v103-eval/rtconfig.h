@@ -30,9 +30,10 @@
 /* Kernel Device Object */
 
 #define RT_USING_DEVICE
+#define RT_USING_DEVICE_OPS
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE 128
-#define RT_CONSOLE_DEVICE_NAME "uart1"
+#define RT_CONSOLE_DEVICE_NAME "uart2"
 #define RT_VER_NUM 0x40004
 #define ARCH_RISCV
 #define ARCH_RISCV32
@@ -41,7 +42,7 @@
 
 #define RT_USING_COMPONENTS_INIT
 #define RT_USING_USER_MAIN
-#define RT_MAIN_THREAD_STACK_SIZE 1024
+#define RT_MAIN_THREAD_STACK_SIZE 2048
 #define RT_MAIN_THREAD_PRIORITY 5
 
 /* C++ features */
@@ -166,6 +167,7 @@
 
 #define BSP_USING_UART
 #define BSP_USING_UART1
+#define BSP_USING_UART2
 #define LSI_VALUE 40000
 
 /* Onboard Peripheral Drivers */

@@ -127,6 +127,7 @@ static rt_err_t ch32v1_usart_control(struct rt_serial_device *serial, int cmd, v
 
     NVIC_InitTypeDef NVIC_InitStruct;
 
+//    return 0;
     RT_ASSERT(serial != RT_NULL);
 
     usart_dev = (struct usart_device *)serial;
@@ -149,7 +150,11 @@ static rt_err_t ch32v1_usart_control(struct rt_serial_device *serial, int cmd, v
         NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStruct);
         USART_ITConfig(usart_dev->periph, USART_IT_RXNE, ENABLE);
+        USART_ITConfig(usart_dev->periph, USART_IT_TC, ENABLE);
         break;
+
+    case RT_DEVICE_CHECK_OPTMODE:
+        return RT_SERIAL_TX_BLOCKING_BUFFER;
     }
 
     return RT_EOK;
@@ -192,12 +197,36 @@ static int ch32v1_usart_getc(struct rt_serial_device *serial)
     return ch;
 }
 
+
+rt_size_t ch32v1_usart_transmit(struct rt_serial_device       *serial,
+                             rt_uint8_t             *buf,
+                             rt_size_t               size,
+                             rt_uint32_t             tx_flag)
+{
+    rt_size_t index = 0;
+    struct usart_device *usart_dev;
+
+    RT_ASSERT(serial != RT_NULL);
+
+    usart_dev = (struct usart_device *)serial;
+
+    RT_ASSERT(usart_dev != RT_NULL);
+
+    for (; index < size; index ++)
+    {
+        USART_SendData(usart_dev->periph, (uint8_t)buf[index]);
+        while (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TXE) == RESET);
+    }
+
+    return size;
+}
+
 static const struct rt_uart_ops usart_ops = {
     .configure = ch32v1_usart_configure,
     .control = ch32v1_usart_control,
     .putc = ch32v1_usart_putc,
     .getc = ch32v1_usart_getc,
-    //.dma_transmit = RT_NULL
+    .transmit = ch32v1_usart_transmit,
 };
 
 static void usart_isr(struct usart_device *usart_dev)
@@ -233,17 +262,18 @@ static void usart_isr(struct usart_device *usart_dev)
 #ifdef BSP_USING_UART1
 void USART1_IRQHandler(void)
 {
-    switch_to_interrupt_stack();
+    //switch_to_interrupt_stack();
     rt_interrupt_enter();
 
     usart_isr(&usart_device1);
 
     rt_interrupt_leave();
-    switch_from_interrupt_stack();
+    //switch_from_interrupt_stack();
 }
 #endif
 
 #ifdef BSP_USING_UART2
+__attribute__((interrupt()))
 void USART2_IRQHandler(void)
 {
     switch_to_interrupt_stack();
@@ -282,6 +312,7 @@ int rt_hw_uart_init(void)
 #endif
 
 #ifdef BSP_USING_UART2
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
     usart_device2.parent.ops = &usart_ops;
     usart_device2.parent.config = config;
     rt_hw_serial_register(&usart_device2.parent, usart_device2.name,
