@@ -475,7 +475,7 @@ static rt_size_t _serial_fifo_tx_blocking_nbuf(struct rt_device        *dev,
   * @param size Transmit data buffer length.
   * @return Return the final length of data transmit.
   */
-static rt_size_t _serial_fifo_tx_blocking_buf(struct rt_device        *dev,
+rt_size_t _serial_fifo_tx_blocking_buf(struct rt_device        *dev,
                                                      rt_off_t          pos,
                                                const void             *buffer,
                                                     rt_size_t          size)
@@ -512,7 +512,7 @@ static rt_size_t _serial_fifo_tx_blocking_buf(struct rt_device        *dev,
                              tx_fifo->put_size,
                              RT_SERIAL_TX_BLOCKING);
         /* Waiting for the transmission to complete */
-    //    rt_completion_wait(&(tx_fifo->tx_cpt), RT_WAITING_FOREVER);
+        rt_completion_wait(&(tx_fifo->tx_cpt), RT_WAITING_NO);
         offset += tx_fifo->put_size;
         size -= tx_fifo->put_size;
     }
@@ -552,7 +552,7 @@ static rt_size_t _serial_fifo_tx_nonblocking(struct rt_device        *dev,
     {
         /* When serial transmit in tx_non_blocking mode, if the activated mode is RT_FALSE,
          * start copying data into the ringbuffer */
-        tx_fifo->activated = RT_TRUE;
+    //    tx_fifo->activated = RT_TRUE;
         /* Copying data into the ringbuffer */
         length = rt_ringbuffer_put(&(tx_fifo->rb), buffer, size);
 
@@ -566,6 +566,7 @@ static rt_size_t _serial_fifo_tx_nonblocking(struct rt_device        *dev,
                               put_ptr,
                               tx_fifo->put_size,
                               RT_SERIAL_TX_NON_BLOCKING);
+        rt_ringbuffer_reset(&(tx_fifo->rb));
         /* In tx_nonblocking mode, there is no need to call rt_completion_wait() APIs to wait
          * for the rt_current_thread to resume */
         return length;
@@ -922,12 +923,16 @@ rt_err_t rt_serial_open(struct rt_device *dev, rt_uint16_t oflag)
     else
         dev->open_flag |= RT_SERIAL_RX_NON_BLOCKING;
 
+#if 0
     /* By default, the transmit mode of a serial devide is RT_SERIAL_TX_BLOCKING */
     if ((oflag & RT_SERIAL_TX_NON_BLOCKING) == RT_SERIAL_TX_NON_BLOCKING)
         dev->open_flag |= RT_SERIAL_TX_NON_BLOCKING;
     else
+        /* 设置 blocking 模式 */
         dev->open_flag |= RT_SERIAL_TX_BLOCKING;
-
+#endif
+/* 测试下 noblocking */
+    dev->open_flag |= RT_SERIAL_TX_NON_BLOCKING;
     /* set steam flag */
     if ((oflag & RT_DEVICE_FLAG_STREAM) ||
         (dev->open_flag & RT_DEVICE_FLAG_STREAM))
@@ -1076,7 +1081,7 @@ rt_size_t rt_serial_write(struct rt_device *dev,
         return _serial_poll_tx(dev, pos, buffer, size);
     }
 
-    if (dev->open_flag | RT_SERIAL_TX_BLOCKING)
+    if (dev->open_flag & RT_SERIAL_TX_BLOCKING)
     {
         if ((tx_fifo->rb.buffer_ptr) == RT_NULL)
         {
@@ -1213,7 +1218,7 @@ void rt_hw_serial_isr(struct rt_serial_device *serial, int event)
 
                 break;
             }
-
+#if 0
             /* Call the transmit interface for transmission again */
             /* Note that in interrupt mode, tx_fifo->buffer and tx_length
              * are inactive parameters */
@@ -1223,6 +1228,7 @@ void rt_hw_serial_isr(struct rt_serial_device *serial, int event)
                                 serial->parent.open_flag & ( \
                                 RT_SERIAL_TX_BLOCKING | \
                                 RT_SERIAL_TX_NON_BLOCKING));
+#endif
             break;
         }
 

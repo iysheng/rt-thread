@@ -43,6 +43,7 @@ void rt_ringbuffer_init(struct rt_ringbuffer *rb,
     RT_ASSERT(size > 0);
 
     /* initialize read and write index */
+    /* mirror 号是一样的 */
     rb->read_mirror = rb->read_index = 0;
     rb->write_mirror = rb->write_index = 0;
 

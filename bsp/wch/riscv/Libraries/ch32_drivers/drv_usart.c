@@ -150,7 +150,7 @@ static rt_err_t ch32v1_usart_control(struct rt_serial_device *serial, int cmd, v
         NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStruct);
         USART_ITConfig(usart_dev->periph, USART_IT_RXNE, ENABLE);
-        USART_ITConfig(usart_dev->periph, USART_IT_TC, ENABLE);
+//        USART_ITConfig(usart_dev->periph, USART_IT_TC, ENABLE);
         break;
 
     case RT_DEVICE_CHECK_OPTMODE:
@@ -215,7 +215,7 @@ rt_size_t ch32v1_usart_transmit(struct rt_serial_device       *serial,
     for (; index < size; index ++)
     {
         USART_SendData(usart_dev->periph, (uint8_t)buf[index]);
-        while (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TXE) == RESET);
+        while (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TC) == RESET);
     }
 
     return size;
@@ -242,9 +242,23 @@ static void usart_isr(struct usart_device *usart_dev)
     }
     else
     {
+#if 0
+        if ((USART_GetITStatus(usart_dev->periph, USART_IT_TC) != RESET) && USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TC) != RESET)
+        {
+            rt_hw_serial_isr(&usart_dev->parent, RT_SERIAL_EVENT_TX_DONE);
+            USART_ClearITPendingBit(usart_dev->periph, USART_IT_TC);
+            USART_ClearFlag(usart_dev->periph, USART_FLAG_TC);
+        }
+#endif
+
         if (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_CTS) != RESET)
         {
             USART_ClearFlag(usart_dev->periph, USART_FLAG_CTS);
+        }
+
+        if (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TXE) != RESET)
+        {
+            USART_ClearFlag(usart_dev->periph, USART_FLAG_TXE);
         }
 
         if (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_LBD) != RESET)
@@ -252,10 +266,6 @@ static void usart_isr(struct usart_device *usart_dev)
             USART_ClearFlag(usart_dev->periph, USART_FLAG_LBD);
         }
 
-        if (USART_GetFlagStatus(usart_dev->periph, USART_FLAG_TC) != RESET)
-        {
-            USART_ClearFlag(usart_dev->periph, USART_FLAG_TC);
-        }
     }
 }
 

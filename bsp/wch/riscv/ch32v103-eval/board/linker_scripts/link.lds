@@ -41,6 +41,24 @@ SECTIONS
 		. = ALIGN(4);
 	} >FLASH AT>FLASH 
 
+    .sysmtab :
+    {
+        /* section information for finsh shell */
+        . = ALIGN(4);
+        __fsymtab_start = .;
+        KEEP(*(FSymTab))
+        __fsymtab_end = .;
+	} >FLASH AT>FLASH
+
+    .rt_init :
+    {
+        /* section information for initial. */
+        . = ALIGN(4);
+        __rt_init_start = .;
+        KEEP(*(SORT(.rti_fn*)))
+        __rt_init_end = .;
+	} >FLASH AT>FLASH
+
 	.fini :
 	{
 		KEEP(*(SORT_NONE(.fini)))
