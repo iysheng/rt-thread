@@ -151,7 +151,6 @@ void TIMER1_IRQHandler(void)
     /* enter interrupt */
     rt_interrupt_enter();
 
-    LOG_I("Hello china");
     if (timer_flag_get(TIMER1, TIMER_FLAG_CH1))
     {
 
@@ -176,7 +175,6 @@ void DMA1_Channel0_IRQHandler(void)
         dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_FTF);
         timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
         timer_disable(TIMER4);
-        LOG_I("WOW DMA1 CHANNEL0 OK-----------------------");
     }
 #if 0
     if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_HTF))
@@ -203,7 +201,6 @@ void DMA1_Channel1_IRQHandler(void)
         dma_flag_clear(DMA1, DMA_CH1, DMA_FLAG_FTF);
         timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
         timer_disable(TIMER4);
-        LOG_I("WOW DMA1 CHANNEL1 OK-----------------------");
         s_index = AD9945_DATA_COUNTS;
     }
     /* leave interrupt */
@@ -249,6 +246,34 @@ static void dma_init4ad9945(void)
     dma_interrupt_enable(DMA1, DMA_CH0, DMA_INT_FTF | DMA_INT_ERR);
     dma_interrupt_enable(DMA1, DMA_CH1, DMA_INT_FTF | DMA_INT_ERR);
     LOG_I("DMA init ok");
+}
+
+/**
+  * @brief 初始化调节 pwm 补光灯
+  * @param void: 
+  * retval N/A.
+  */
+static void pwm_adj4led_init(void)
+{
+    timer_parameter_struct timer4led;
+
+    timer4led.prescaler         = 119U;
+    timer4led.alignedmode       = TIMER_COUNTER_EDGE;
+    timer4led.counterdirection  = TIMER_COUNTER_UP;
+    timer4led.period            = 0U;
+    timer4led.clockdivision     = TIMER_CKDIV_DIV1;
+    timer4led.repetitioncounter = 0U;
+
+    rcu_periph_clock_enable(RCU_TIMER11);
+    timer_init(TIMER11, &timer4led);
+    timer_channel_output_mode_config(TIMER11, TIMER_CH_0, TIMER_OC_MODE_PWM0);
+    timer_autoreload_value_config(TIMER11, 1000);
+    timer_channel_output_pulse_value_config(TIMER11, TIMER_CH_0, 300);
+    timer_channel_output_state_config(TIMER11, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER11, TIMER_INT_CH0);
+    timer_enable(TIMER11);
+
+    LOG_I("pwm for adj led init");
 }
 
 /**
@@ -335,12 +360,12 @@ static void ad9945_device_init(void)
     NVIC_EnableIRQ(TIMER4_IRQn);
 #endif
 
-    rt_pin_write(GD32_AD9945_PBLK_PIN, RESET);
+    rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
     rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
-    _set_ad9945_reg_value(0x00, 0x04);
+    _set_ad9945_reg_value(0x00, 0x08);
     _set_ad9945_reg_value(0x01, 0x00);
     _set_ad9945_reg_value(0x02, 0x80);
-    _set_ad9945_reg_value(0x03, 0x00);
+    _set_ad9945_reg_value(0x03, 0x01);
     _set_ad9945_reg_value(0x0d, 0x838);
     dma_init4ad9945();
     LOG_I("AD9945 START");
@@ -392,7 +417,7 @@ int tcd1209_hw_init(void)
     rcu_periph_clock_enable(RCU_TIMER1);
     timer_init(TIMER1, &timer4sh);
     timer_channel_output_mode_config(TIMER1, TIMER_CH_1, TIMER_OC_MODE_PWM0);
-    timer_autoreload_value_config(TIMER1, AD9945_DATA_COUNTS - 1);
+    timer_autoreload_value_config(TIMER1, AD9945_DATA_COUNTS);
     timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_1, 1);
     timer_channel_output_state_config(TIMER1, TIMER_CH_1, ENABLE);
     timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
@@ -438,6 +463,7 @@ int tcd1209_hw_init(void)
     timer_enable(TIMER10);
 
     ad9945_device_init();
+    pwm_adj4led_init();
     return ret;
 }
 INIT_PREV_EXPORT(tcd1209_hw_init);
@@ -463,10 +489,14 @@ long show_ad9945(void)
     {
         gs_ad9945_data4portc[i] &= 0x1c00;
         gs_ad9945_data4portc[i] >>= 10;
-        rt_kprintf("%d:%u\r\n", i, (gs_ad9945_data[i] & 0xc7f) | gs_ad9945_data4portc[i] << 7);
+        rt_kprintf("%u,", (gs_ad9945_data[i] & 0xc7f) | gs_ad9945_data4portc[i] << 7);
     }
 #endif
-
-    LOG_I("aHa");
 }
 MSH_CMD_EXPORT(show_ad9945, list device in system);
+
+long adj_led(int argc, char *argv[])
+{
+    timer_channel_output_pulse_value_config(TIMER11, TIMER_CH_0, atoi(argv[1]));
+}
+MSH_CMD_EXPORT(adj_led, adjust led level);

@@ -41,6 +41,6 @@
 #define GD32_AD9945_D10_PIN            GET_PIN(B, 10)
 #define GD32_AD9945_D11_PIN            GET_PIN(B, 11)
 
-#define AD9945_DATA_COUNTS             2500
+#define AD9945_DATA_COUNTS             2100
 #endif /* ifndef __TCD_1209_H__ */
 
