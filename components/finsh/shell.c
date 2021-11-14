@@ -84,7 +84,7 @@ int finsh_set_prompt(const char *prompt)
 }
 #endif /* RT_USING_HEAP */
 
-#define _MSH_PROMPT "msh "
+#define _MSH_PROMPT "msh"
 
 const char *finsh_get_prompt(void)
 {
@@ -109,7 +109,7 @@ const char *finsh_get_prompt(void)
     getcwd(&finsh_prompt[rt_strlen(finsh_prompt)], RT_CONSOLEBUF_SIZE - rt_strlen(finsh_prompt));
 #endif
 
-    strcat(finsh_prompt, ">");
+    //strcat(finsh_prompt, ">");
 
     return finsh_prompt;
 }

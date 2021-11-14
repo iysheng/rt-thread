@@ -44,7 +44,7 @@ static uint16_t _get_ad9945_reg_value(uint8_t reg_addr)
 
     for (; addr_index < 4; addr_index ++)
     {
-        rt_pin_write(GD32_AD9945_SDA_PIN, reg_addr >> addr_index & 0x01);
+        rt_pin_write(GD33_AD9945_SDA_PIN, reg_addr >> addr_index & 0x01);
         rt_pin_write(GD32_AD9945_SCK_PIN, PIN_LOW);
         rt_thread_mdelay(1);
         rt_pin_write(GD32_AD9945_SCK_PIN, PIN_HIGH);
@@ -362,10 +362,13 @@ static void ad9945_device_init(void)
 
     rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
     rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
-    _set_ad9945_reg_value(0x00, 0x08);
+    /* 放开钳位 */
+    _set_ad9945_reg_value(0x00, 0x00);
     _set_ad9945_reg_value(0x01, 0x00);
+    /* 修改钳位 */
     _set_ad9945_reg_value(0x02, 0x80);
-    _set_ad9945_reg_value(0x03, 0x01);
+    /* 设置增益为 6dB */
+    _set_ad9945_reg_value(0x03, 0x00);
     _set_ad9945_reg_value(0x0d, 0x838);
     dma_init4ad9945();
     LOG_I("AD9945 START");
@@ -500,3 +503,15 @@ long adj_led(int argc, char *argv[])
     timer_channel_output_pulse_value_config(TIMER11, TIMER_CH_0, atoi(argv[1]));
 }
 MSH_CMD_EXPORT(adj_led, adjust led level);
+
+/* 设置钳位 */
+long adj_ob_clamp(int argc, char *argv[])
+{
+    if (argc > 1)
+    {
+        _set_ad9945_reg_value(0x02, 0xff & atoi(argv[1]));
+    }
+
+    return 0;
+}
+MSH_CMD_EXPORT(adj_ob_clamp, adjust ob clamp level);
