@@ -1,0 +1,7 @@
+menu "Board Drivers"
+
+config BSP_USING_TCD1209
+    bool "Using tcd1209 device"
+    default y
+
+endmenu

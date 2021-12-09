@@ -285,7 +285,7 @@ static void ad9945_device_init(void)
 {
     /* timer 4 AD9945 device */
     timer_parameter_struct timer4shp, timer4shd, timer4dataclk, timer4clpob, timer4pblk;
-    timer_oc_parameter_struct timer_oc4shd;
+    timer_oc_parameter_struct timer_oc4shd, timer_oc4clpob;
 
     timer4shp.prescaler         = 5U;
     timer4shp.alignedmode       = TIMER_COUNTER_EDGE;
@@ -344,6 +344,34 @@ static void ad9945_device_init(void)
     timer_channel_output_state_config(TIMER4, TIMER_CH_3, ENABLE);
     timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
 
+#if 1
+#if 1
+    timer4clpob.prescaler         = 119U;
+    timer4clpob.alignedmode       = TIMER_COUNTER_EDGE;
+    timer4clpob.counterdirection  = TIMER_COUNTER_UP;
+    timer4clpob.period            = 0U;
+    timer4clpob.clockdivision     = TIMER_CKDIV_DIV1;
+    timer4clpob.repetitioncounter = 0U;
+
+    timer_oc4clpob.outputstate  = TIMER_CCX_DISABLE;
+    timer_oc4clpob.outputnstate = TIMER_CCXN_ENABLE;
+    timer_oc4clpob.ocpolarity   = TIMER_OC_POLARITY_HIGH;
+    timer_oc4clpob.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
+    timer_oc4clpob.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
+    timer_oc4clpob.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
+#endif
+    rcu_periph_clock_enable(RCU_TIMER0);
+    timer_init(TIMER0, &timer4clpob);
+    timer_channel_output_mode_config(TIMER0, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER0, AD9945_DATA_COUNTS);
+    timer_channel_output_pulse_value_config(TIMER0, TIMER_CH_0, 6);
+    timer_channel_output_state_config(TIMER0, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER0, TIMER_INT_CH0);
+    timer_channel_output_config(TIMER0, TIMER_CH_0, &timer_oc4clpob);
+    timer_primary_output_config(TIMER0, ENABLE);
+    timer_channel_output_fast_config(TIMER0, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
+#endif
+
     /* just for another dma for portc */
     timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM1);
     timer_autoreload_value_config(TIMER4, 19);
@@ -361,14 +389,13 @@ static void ad9945_device_init(void)
 #endif
 
     rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
-    rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
     /* 放开钳位 */
-    _set_ad9945_reg_value(0x00, 0x00);
+    _set_ad9945_reg_value(0x00, 0x08);
     _set_ad9945_reg_value(0x01, 0x00);
     /* 修改钳位 */
     _set_ad9945_reg_value(0x02, 0x80);
     /* 设置增益为 6dB */
-    _set_ad9945_reg_value(0x03, 0x00);
+    _set_ad9945_reg_value(0x03, 0x80);
     _set_ad9945_reg_value(0x0d, 0x838);
     dma_init4ad9945();
     LOG_I("AD9945 START");
@@ -505,13 +532,14 @@ long adj_led(int argc, char *argv[])
 MSH_CMD_EXPORT(adj_led, adjust led level);
 
 /* 设置钳位 */
-long adj_ob_clamp(int argc, char *argv[])
+long adj_ob(int argc, char *argv[])
 {
     if (argc > 1)
     {
         _set_ad9945_reg_value(0x02, 0xff & atoi(argv[1]));
+        _set_ad9945_reg_value(0x0d, 0x838);
     }
 
     return 0;
 }
-MSH_CMD_EXPORT(adj_ob_clamp, adjust ob clamp level);
+MSH_CMD_EXPORT(adj_ob, adjust ob clamp level);
