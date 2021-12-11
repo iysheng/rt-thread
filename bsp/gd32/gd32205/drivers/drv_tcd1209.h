@@ -11,18 +11,18 @@
 #ifndef __TCD_1209_H__
 #define __TCD_1209_H__
 
-#define GD32_F1_PIN                    GET_PIN(B, 7)    /* TIMER3_CH1 */
-#define GD32_F2_PIN                    GET_PIN(A, 7)    /* TIMER2_CH1 */
-#define GD32_CP_PIN                    GET_PIN(B, 8)    /* TIMER9_CH0 */
-#define GD32_RS_PIN                    GET_PIN(B, 9)    /* TIMER10_CH0 */
-#define GD32_SH_PIN                    GET_PIN(A, 1)    /* TIMER1_CH1 */
+#define GD32_F1_PIN                    GET_PIN(B, 13)   /* TIMER0_CH0_ON R*/
+#define GD32_F2_PIN                    GET_PIN(A, 8)    /* TIMER0_CH0 R*/
+#define GD32_CP_PIN                    GET_PIN(B, 4)    /* TIMER2_CH0 */
+#define GD32_RS_PIN                    GET_PIN(B, 6)    /* TIMER3_CH0 R*/
+#define GD32_SH_PIN                    GET_PIN(C, 9)    /* TIMER7_CH3 R*/
 
 /* AD9945 涉及到的管脚 */
-#define GD32_AD9945_SHP_PIN            GET_PIN(A, 2)    /* TIMER8_CH0 */
-#define GD32_AD9945_SHD_PIN            GET_PIN(C, 6)    /* TIMER7_CH0 */
-#define GD32_AD9945_DATACLK_PIN        GET_PIN(A, 3)    /* TIMER4_CH3 */
-#define GD32_AD9945_CLPOB_PIN          GET_PIN(B, 13)   /* TIMER0_CH0_ON */
-#define GD32_AD9945_PBLK_PIN           GET_PIN(A, 8)    /* TIMER0_CH0 这个是可选的 */
+#define GD32_AD9945_SHP_PIN            GET_PIN(A, 3)    /* TIMER8_CH1 R*/
+#define GD32_AD9945_SHD_PIN            GET_PIN(A, 2)    /* TIMER4_CH2 R*/
+#define GD32_AD9945_DATACLK_PIN        GET_PIN(A, 5)    /* TIMER1_CH0 R*/
+#define GD32_AD9945_CLPOB_PIN          GET_PIN(A, 6)    /* TIMER12_CH0 R*/
+#define GD32_AD9945_PBLK_PIN           GET_PIN(A, 7)    /* TIMER13_CH0 R*/
 
 #define GD32_AD9945_SCK_PIN            GET_PIN(C, 7)
 #define GD32_AD9945_SDA_PIN            GET_PIN(C, 8)

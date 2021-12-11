@@ -16,18 +16,18 @@ static struct _gd32_pinmux_map gs_gd32f2xx_map = {
      * 8 9 a b
      * c d e f */
     {{{PINMUX_DEFAULT, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP,
-     PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, GPIO_MODE_AF_PP,
-     GPIO_MODE_OUT_PP, GPIO_MODE_AF_PP, GPIO_MODE_IN_FLOATING, PINMUX_DEFAULT,
+     PINMUX_DEFAULT, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP,
+     GPIO_MODE_AF_PP, GPIO_MODE_AF_PP, GPIO_MODE_IN_FLOATING, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT},
      GPIOA, RCU_GPIOA}, /* GPIOA */
     {{GPIO_MODE_IPD, GPIO_MODE_IPD, GPIO_MODE_IPD, GPIO_MODE_IPD,
-     GPIO_MODE_IPD, GPIO_MODE_IPD, GPIO_MODE_IPD, GPIO_MODE_AF_PP,
+     GPIO_MODE_AF_PP, GPIO_MODE_IPD, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP,
      GPIO_MODE_AF_PP, GPIO_MODE_AF_PP, GPIO_MODE_IPD, GPIO_MODE_IPD,
      PINMUX_DEFAULT, GPIO_MODE_AF_PP, GPIO_MODE_AF_PP, GPIO_MODE_OUT_PP},
      GPIOB, RCU_GPIOB}, /* GPIOB */
     {{PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
      PINMUX_DEFAULT, PINMUX_DEFAULT, GPIO_MODE_AF_PP, GPIO_MODE_OUT_PP,
-     GPIO_MODE_OUT_PP, GPIO_MODE_OUT_PP, GPIO_MODE_IPD, GPIO_MODE_IPD,
+     GPIO_MODE_OUT_PP, GPIO_MODE_AF_PP, GPIO_MODE_IPD, GPIO_MODE_IPD,
      GPIO_MODE_IPD, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
     }, GPIOC, RCU_GPIOC}, /* GPIOC */
     {{PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT, PINMUX_DEFAULT,
@@ -63,6 +63,29 @@ static struct _gd32_pinmux_map gs_gd32f2xx_map = {
     },
 };
 
+typedef struct {
+    uint32_t gpio_remap;
+    ControlStatus value;
+} remap_set_t;
+
+static remap_set_t gs_remap_sets[] = {
+    {GPIO_SWJ_NONJTRST_REMAP, ENABLE},
+    {GPIO_TIMER2_PARTIAL_REMAP, ENABLE},
+};
+
+static void afio_init(void)
+{
+    int i = 0;
+
+    rcu_periph_clock_enable(RCU_AF);
+    for (; i < sizeof(gs_remap_sets) / sizeof(remap_set_t); i++)
+    {
+        gpio_pin_remap_config(gs_remap_sets[i].gpio_remap, gs_remap_sets[i].value);
+    }
+
+    gpio_pin_remap1_config(GPIO_PCF5, GPIO_PCF5_TIMER1_CH0_REMAP, ENABLE);
+}
+
 /**
   * @brief Init pin mux config
   * retval .
@@ -92,6 +115,7 @@ static int gd32f2xx_pinmux_init(void)
             }
         }
     }
+    afio_init();
 
     return 0;
 }

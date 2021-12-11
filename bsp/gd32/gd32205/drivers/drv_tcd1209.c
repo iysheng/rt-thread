@@ -285,7 +285,7 @@ static void ad9945_device_init(void)
 {
     /* timer 4 AD9945 device */
     timer_parameter_struct timer4shp, timer4shd, timer4dataclk, timer4clpob, timer4pblk;
-    timer_oc_parameter_struct timer_oc4shd, timer_oc4clpob;
+    timer_oc_parameter_struct timer_oc4clpob;
 
     timer4shp.prescaler         = 5U;
     timer4shp.alignedmode       = TIMER_COUNTER_EDGE;
@@ -301,13 +301,6 @@ static void ad9945_device_init(void)
     timer4shd.clockdivision     = TIMER_CKDIV_DIV1;
     timer4shd.repetitioncounter = 0U;
 
-    timer_oc4shd.outputstate  = TIMER_CCX_ENABLE;
-    timer_oc4shd.outputnstate = TIMER_CCXN_DISABLE;
-    timer_oc4shd.ocpolarity   = TIMER_OC_POLARITY_HIGH;
-    timer_oc4shd.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
-    timer_oc4shd.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
-    timer_oc4shd.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
-
     timer4dataclk.prescaler         = 5U;
     timer4dataclk.alignedmode       = TIMER_COUNTER_EDGE;
     timer4dataclk.counterdirection  = TIMER_COUNTER_UP;
@@ -317,42 +310,39 @@ static void ad9945_device_init(void)
 
     rcu_periph_clock_enable(RCU_TIMER8);
     timer_init(TIMER8, &timer4shp);
-    timer_channel_output_mode_config(TIMER8, TIMER_CH_0, TIMER_OC_MODE_PWM0);
+    timer_channel_output_mode_config(TIMER8, TIMER_CH_1, TIMER_OC_MODE_PWM0);
     timer_autoreload_value_config(TIMER8, 19);
-    timer_channel_output_pulse_value_config(TIMER8, TIMER_CH_0, 15);
-    timer_channel_output_state_config(TIMER8, TIMER_CH_0, ENABLE);
-    timer_interrupt_disable(TIMER8, TIMER_INT_CH0);
-
-    rcu_periph_clock_enable(RCU_TIMER7);
-    timer_init(TIMER7, &timer4shd);
-    timer_channel_output_mode_config(TIMER7, TIMER_CH_0, TIMER_OC_MODE_PWM1);
-    timer_autoreload_value_config(TIMER7, 19);
-    timer_channel_output_pulse_value_config(TIMER7, TIMER_CH_0, 5);
-    timer_channel_output_state_config(TIMER7, TIMER_CH_0, ENABLE);
-    timer_interrupt_disable(TIMER7, TIMER_INT_CH0);
-    timer_channel_output_config(TIMER7, TIMER_CH_0, &timer_oc4shd);
-    timer_primary_output_config(TIMER7, ENABLE);
-    timer_channel_output_fast_config(TIMER7, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
-    timer_enable(TIMER8);
-    timer_enable(TIMER7);
+    timer_channel_output_pulse_value_config(TIMER8, TIMER_CH_1, 15);
+    timer_channel_output_state_config(TIMER8, TIMER_CH_1, ENABLE);
+    timer_interrupt_disable(TIMER8, TIMER_INT_CH1);
 
     rcu_periph_clock_enable(RCU_TIMER4);
-    timer_init(TIMER4, &timer4dataclk);
-    timer_channel_output_mode_config(TIMER4, TIMER_CH_3, TIMER_OC_MODE_PWM1);
+    timer_init(TIMER4, &timer4shd);
+    timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM1);
     timer_autoreload_value_config(TIMER4, 19);
-    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_3, 10);
-    timer_channel_output_state_config(TIMER4, TIMER_CH_3, ENABLE);
-    timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
+    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_2, 15);
+    timer_channel_output_state_config(TIMER4, TIMER_CH_2, ENABLE);
+    timer_interrupt_disable(TIMER4, TIMER_INT_CH2);
+    timer_enable(TIMER8);
+    timer_enable(TIMER4);
 
-#if 1
-#if 1
-    timer4clpob.prescaler         = 119U;
+    rcu_periph_clock_enable(RCU_TIMER1);
+    timer_init(TIMER1, &timer4dataclk);
+    timer_channel_output_mode_config(TIMER1, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER1, 19);
+    timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_0, 10);
+    timer_channel_output_state_config(TIMER1, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
+    timer_enable(TIMER1);
+
+    timer4clpob.prescaler         = 5U;
     timer4clpob.alignedmode       = TIMER_COUNTER_EDGE;
     timer4clpob.counterdirection  = TIMER_COUNTER_UP;
     timer4clpob.period            = 0U;
     timer4clpob.clockdivision     = TIMER_CKDIV_DIV1;
     timer4clpob.repetitioncounter = 0U;
 
+#if 0
     timer_oc4clpob.outputstate  = TIMER_CCX_DISABLE;
     timer_oc4clpob.outputnstate = TIMER_CCXN_ENABLE;
     timer_oc4clpob.ocpolarity   = TIMER_OC_POLARITY_HIGH;
@@ -360,6 +350,32 @@ static void ad9945_device_init(void)
     timer_oc4clpob.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
     timer_oc4clpob.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
 #endif
+
+    rcu_periph_clock_enable(RCU_TIMER12);
+    timer_init(TIMER12, &timer4clpob);
+    timer_channel_output_mode_config(TIMER12, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER12, 19);
+    timer_channel_output_pulse_value_config(TIMER12, TIMER_CH_0, 10);
+    timer_channel_output_state_config(TIMER12, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER12, TIMER_INT_CH0);
+    timer_enable(TIMER12);
+
+    timer4pblk.prescaler         = 5U;
+    timer4pblk.alignedmode       = TIMER_COUNTER_EDGE;
+    timer4pblk.counterdirection  = TIMER_COUNTER_UP;
+    timer4pblk.period            = 0U;
+    timer4pblk.clockdivision     = TIMER_CKDIV_DIV1;
+    timer4pblk.repetitioncounter = 0U;
+
+    rcu_periph_clock_enable(RCU_TIMER13);
+    timer_init(TIMER13, &timer4pblk);
+    timer_channel_output_mode_config(TIMER13, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER13, 19);
+    timer_channel_output_pulse_value_config(TIMER13, TIMER_CH_0, 10);
+    timer_channel_output_state_config(TIMER13, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER13, TIMER_INT_CH0);
+    timer_enable(TIMER13);
+#if 0
     rcu_periph_clock_enable(RCU_TIMER0);
     timer_init(TIMER0, &timer4clpob);
     timer_channel_output_mode_config(TIMER0, TIMER_CH_0, TIMER_OC_MODE_PWM1);
@@ -370,33 +386,37 @@ static void ad9945_device_init(void)
     timer_channel_output_config(TIMER0, TIMER_CH_0, &timer_oc4clpob);
     timer_primary_output_config(TIMER0, ENABLE);
     timer_channel_output_fast_config(TIMER0, TIMER_CH_0, TIMER_OC_FAST_ENABLE);
+    timer_enable(TIMER0);
 #endif
 
+#if 0
     /* just for another dma for portc */
-    timer_channel_output_mode_config(TIMER4, TIMER_CH_2, TIMER_OC_MODE_PWM1);
-    timer_autoreload_value_config(TIMER4, 19);
-    timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_2, 10);
-    timer_channel_output_state_config(TIMER4, TIMER_CH_2, ENABLE);
-    timer_interrupt_disable(TIMER4, TIMER_INT_CH2);
-
+    timer_channel_output_mode_config(TIMER1, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER1, 19);
+    timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_0, 10);
+    timer_channel_output_state_config(TIMER1, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
     timer_channel_dma_request_source_select(TIMER4, TIMER_DMAREQUEST_CHANNELEVENT);
     timer_dma_enable(TIMER4, TIMER_DMA_CH3D);
     timer_dma_enable(TIMER4, TIMER_DMA_CH2D);
+#endif
 
 #if 0
     NVIC_SetPriority(TIMER4_IRQn, 0);
     NVIC_EnableIRQ(TIMER4_IRQn);
 #endif
 
+#if 1
     rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
     /* 放开钳位 */
-    _set_ad9945_reg_value(0x00, 0x08);
+    _set_ad9945_reg_value(0x00, 0xC8);
     _set_ad9945_reg_value(0x01, 0x00);
     /* 修改钳位 */
     _set_ad9945_reg_value(0x02, 0x80);
     /* 设置增益为 6dB */
-    _set_ad9945_reg_value(0x03, 0x80);
+    _set_ad9945_reg_value(0x03, 0x00);
     _set_ad9945_reg_value(0x0d, 0x838);
+#endif
     dma_init4ad9945();
     LOG_I("AD9945 START");
 }
@@ -405,7 +425,8 @@ int tcd1209_hw_init(void)
 {
     int ret;
     /* timer 4 TCD1209 device */
-    timer_parameter_struct timer4f1, timer4f2, timer4cp, timer4rs, timer4sh;
+    timer_parameter_struct timer4f1, timer4cp, timer4rs, timer4sh;
+    timer_oc_parameter_struct timer_oc4f;
 
     timer4f1.prescaler         = 5U;
     timer4f1.alignedmode       = TIMER_COUNTER_EDGE;
@@ -414,12 +435,12 @@ int tcd1209_hw_init(void)
     timer4f1.clockdivision     = TIMER_CKDIV_DIV1;
     timer4f1.repetitioncounter = 0U;
 
-    timer4f2.prescaler         = 5U;
-    timer4f2.alignedmode       = TIMER_COUNTER_EDGE;
-    timer4f2.counterdirection  = TIMER_COUNTER_UP;
-    timer4f2.period            = 0U;
-    timer4f2.clockdivision     = TIMER_CKDIV_DIV1;
-    timer4f2.repetitioncounter = 0U;
+    timer_oc4f.outputstate  = TIMER_CCX_ENABLE;
+    timer_oc4f.outputnstate = TIMER_CCXN_ENABLE;
+    timer_oc4f.ocpolarity   = TIMER_OC_POLARITY_HIGH;
+    timer_oc4f.ocnpolarity  = TIMER_OCN_POLARITY_HIGH;
+    timer_oc4f.ocidlestate  = TIMER_OC_IDLE_STATE_LOW;
+    timer_oc4f.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
 
     timer4cp.prescaler         = 5U;
     timer4cp.alignedmode       = TIMER_COUNTER_EDGE;
@@ -435,7 +456,7 @@ int tcd1209_hw_init(void)
     timer4rs.clockdivision     = TIMER_CKDIV_DIV1;
     timer4rs.repetitioncounter = 0U;
 
-    timer4sh.prescaler         = 119U;
+    timer4sh.prescaler         = 19U;
     timer4sh.alignedmode       = TIMER_COUNTER_EDGE;
     timer4sh.counterdirection  = TIMER_COUNTER_UP;
     timer4sh.period            = 0U;
@@ -444,27 +465,47 @@ int tcd1209_hw_init(void)
 
     LOG_I("Hello TCD1209");
 
-    rcu_periph_clock_enable(RCU_TIMER1);
-    timer_init(TIMER1, &timer4sh);
-    timer_channel_output_mode_config(TIMER1, TIMER_CH_1, TIMER_OC_MODE_PWM0);
-    timer_autoreload_value_config(TIMER1, AD9945_DATA_COUNTS);
-    timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_1, 1);
-    timer_channel_output_state_config(TIMER1, TIMER_CH_1, ENABLE);
-    timer_interrupt_disable(TIMER1, TIMER_INT_CH1);
-    timer_enable(TIMER1);
-    NVIC_SetPriority(TIMER1_IRQn, 10);
-    NVIC_EnableIRQ(TIMER1_IRQn);
+    rcu_periph_clock_enable(RCU_TIMER7);
+    timer_init(TIMER7, &timer4sh);
+    timer_channel_output_mode_config(TIMER7, TIMER_CH_3, TIMER_OC_MODE_PWM0);
+    timer_autoreload_value_config(TIMER7, AD9945_DATA_COUNTS);
+    timer_channel_output_pulse_value_config(TIMER7, TIMER_CH_3, 1000);
+    timer_channel_output_state_config(TIMER7, TIMER_CH_3, ENABLE);
+    timer_primary_output_config(TIMER7, ENABLE);
+    timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
+    timer_enable(TIMER7);
+    //NVIC_SetPriority(TIMER7_IRQn, 70);
+    //NVIC_EnableIRQ(TIMER7_IRQn);
     //rt_thread_mdelay(1);
+    rcu_periph_clock_enable(RCU_TIMER0);
+    timer_init(TIMER0, &timer4f1);
+    timer_channel_output_mode_config(TIMER0, TIMER_CH_0, TIMER_OC_MODE_PWM0);
+    timer_autoreload_value_config(TIMER0, 19);
+    timer_channel_output_pulse_value_config(TIMER0, TIMER_CH_0, 10);
+    timer_channel_output_state_config(TIMER0, TIMER_CH_0, ENABLE);
+    timer_channel_output_config(TIMER0, TIMER_CH_0, &timer_oc4f);
+    timer_primary_output_config(TIMER0, ENABLE);
+    timer_interrupt_disable(TIMER0, TIMER_INT_CH0);
+    timer_enable(TIMER0);
+
+    rcu_periph_clock_enable(RCU_TIMER2);
+    timer_init(TIMER2, &timer4cp);
+    timer_channel_output_mode_config(TIMER2, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_autoreload_value_config(TIMER2, 19);
+    timer_channel_output_pulse_value_config(TIMER2, TIMER_CH_0, 6);
+    timer_channel_output_state_config(TIMER2, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER2, TIMER_INT_CH0);
+    timer_enable(TIMER2);
 
     rcu_periph_clock_enable(RCU_TIMER3);
-    timer_init(TIMER3, &timer4f1);
-    timer_channel_output_mode_config(TIMER3, TIMER_CH_1, TIMER_OC_MODE_PWM0);
+    timer_init(TIMER3, &timer4rs);
+    timer_channel_output_mode_config(TIMER3, TIMER_CH_0, TIMER_OC_MODE_PWM0);
     timer_autoreload_value_config(TIMER3, 19);
-    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_1, 10);
-    timer_channel_output_state_config(TIMER3, TIMER_CH_1, ENABLE);
-    timer_interrupt_disable(TIMER3, TIMER_INT_CH1);
+    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_0, 6);
+    timer_channel_output_state_config(TIMER3, TIMER_CH_0, ENABLE);
+    timer_interrupt_disable(TIMER3, TIMER_INT_CH0);
     timer_enable(TIMER3);
-
+#if 0
     rcu_periph_clock_enable(RCU_TIMER2);
     timer_init(TIMER2, &timer4f2);
     timer_channel_output_mode_config(TIMER2, TIMER_CH_1, TIMER_OC_MODE_PWM1);
@@ -483,15 +524,7 @@ int tcd1209_hw_init(void)
     timer_interrupt_disable(TIMER9, TIMER_INT_CH0);
     timer_enable(TIMER9);
 
-    rcu_periph_clock_enable(RCU_TIMER10);
-    timer_init(TIMER10, &timer4rs);
-    timer_channel_output_mode_config(TIMER10, TIMER_CH_0, TIMER_OC_MODE_PWM0);
-    timer_autoreload_value_config(TIMER10, 19);
-    timer_channel_output_pulse_value_config(TIMER10, TIMER_CH_0, 6);
-    timer_channel_output_state_config(TIMER10, TIMER_CH_0, ENABLE);
-    timer_interrupt_disable(TIMER10, TIMER_INT_CH0);
-    timer_enable(TIMER10);
-
+#endif
     ad9945_device_init();
     pwm_adj4led_init();
     return ret;
