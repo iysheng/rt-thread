@@ -427,6 +427,7 @@ int tcd1209_hw_init(void)
     /* timer 4 TCD1209 device */
     timer_parameter_struct timer4f1, timer4cp, timer4rs, timer4sh;
     timer_oc_parameter_struct timer_oc4f;
+    uint32_t init_value4f = 4, init_value4cp = 14, init_value4rs = 0, init_value4sh = 0;
 
     timer4f1.prescaler         = 5U;
     timer4f1.alignedmode       = TIMER_COUNTER_EDGE;
@@ -486,24 +487,28 @@ int tcd1209_hw_init(void)
     timer_channel_output_config(TIMER0, TIMER_CH_0, &timer_oc4f);
     timer_primary_output_config(TIMER0, ENABLE);
     timer_interrupt_disable(TIMER0, TIMER_INT_CH0);
-    timer_enable(TIMER0);
 
     rcu_periph_clock_enable(RCU_TIMER2);
     timer_init(TIMER2, &timer4cp);
-    timer_channel_output_mode_config(TIMER2, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_channel_output_mode_config(TIMER2, TIMER_CH_0, TIMER_OC_MODE_PWM0);
     timer_autoreload_value_config(TIMER2, 19);
-    timer_channel_output_pulse_value_config(TIMER2, TIMER_CH_0, 6);
+    timer_channel_output_pulse_value_config(TIMER2, TIMER_CH_0, 2);
     timer_channel_output_state_config(TIMER2, TIMER_CH_0, ENABLE);
     timer_interrupt_disable(TIMER2, TIMER_INT_CH0);
-    timer_enable(TIMER2);
 
     rcu_periph_clock_enable(RCU_TIMER3);
     timer_init(TIMER3, &timer4rs);
     timer_channel_output_mode_config(TIMER3, TIMER_CH_0, TIMER_OC_MODE_PWM0);
     timer_autoreload_value_config(TIMER3, 19);
-    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_0, 6);
+    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_0, 2);
     timer_channel_output_state_config(TIMER3, TIMER_CH_0, ENABLE);
     timer_interrupt_disable(TIMER3, TIMER_INT_CH0);
+
+    timer_counter_value_config(TIMER2, init_value4cp);
+    timer_counter_value_config(TIMER0, init_value4f);
+    timer_counter_value_config(TIMER3, init_value4rs);
+    timer_enable(TIMER2);
+    timer_enable(TIMER0);
     timer_enable(TIMER3);
 #if 0
     rcu_periph_clock_enable(RCU_TIMER2);
