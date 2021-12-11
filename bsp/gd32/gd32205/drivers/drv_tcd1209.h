@@ -24,22 +24,22 @@
 #define GD32_AD9945_CLPOB_PIN          GET_PIN(A, 6)    /* TIMER12_CH0 R*/
 #define GD32_AD9945_PBLK_PIN           GET_PIN(A, 7)    /* TIMER13_CH0 R*/
 
-#define GD32_AD9945_SCK_PIN            GET_PIN(C, 7)
-#define GD32_AD9945_SDA_PIN            GET_PIN(C, 8)
-#define GD32_AD9945_SL_PIN             GET_PIN(C, 9)
+#define GD32_AD9945_SCK_PIN            GET_PIN(C, 2)
+#define GD32_AD9945_SDA_PIN            GET_PIN(C, 3)
+#define GD32_AD9945_SL_PIN             GET_PIN(A, 1)
 
-#define GD32_AD9945_D0_PIN             GET_PIN(B, 0)
-#define GD32_AD9945_D1_PIN             GET_PIN(B, 1)
-#define GD32_AD9945_D2_PIN             GET_PIN(B, 2)
-#define GD32_AD9945_D3_PIN             GET_PIN(B, 3)
-#define GD32_AD9945_D4_PIN             GET_PIN(B, 4)
-#define GD32_AD9945_D5_PIN             GET_PIN(B, 5)
-#define GD32_AD9945_D6_PIN             GET_PIN(B, 6)
-#define GD32_AD9945_D7_PIN             GET_PIN(C, 10)
-#define GD32_AD9945_D8_PIN             GET_PIN(C, 11)
-#define GD32_AD9945_D9_PIN             GET_PIN(C, 12)
-#define GD32_AD9945_D10_PIN            GET_PIN(B, 10)
-#define GD32_AD9945_D11_PIN            GET_PIN(B, 11)
+#define GD32_AD9945_D0_PIN             GET_PIN(C, 1)
+#define GD32_AD9945_D1_PIN             GET_PIN(C, 0)
+#define GD32_AD9945_D2_PIN             GET_PIN(B, 9)
+#define GD32_AD9945_D3_PIN             GET_PIN(B, 8)
+#define GD32_AD9945_D4_PIN             GET_PIN(B, 7)
+#define GD32_AD9945_D5_PIN             GET_PIN(B, 11)
+#define GD32_AD9945_D6_PIN             GET_PIN(B, 10)
+#define GD32_AD9945_D7_PIN             GET_PIN(B, 2)
+#define GD32_AD9945_D8_PIN             GET_PIN(B, 1)
+#define GD32_AD9945_D9_PIN             GET_PIN(B, 0)
+#define GD32_AD9945_D10_PIN            GET_PIN(C, 5)
+#define GD32_AD9945_D11_PIN            GET_PIN(C, 4)
 
 #define AD9945_DATA_COUNTS             2100
 #endif /* ifndef __TCD_1209_H__ */
