@@ -358,7 +358,7 @@ static void ad9945_device_init(void)
     timer_init(TIMER12, &timer4clpob);
     timer_channel_output_mode_config(TIMER12, TIMER_CH_0, TIMER_OC_MODE_PWM1);
     timer_autoreload_value_config(TIMER12, AD9945_DATA_COUNTS);
-    timer_channel_output_pulse_value_config(TIMER12, TIMER_CH_0, 10);
+    timer_channel_output_pulse_value_config(TIMER12, TIMER_CH_0, 32);
     timer_channel_output_state_config(TIMER12, TIMER_CH_0, ENABLE);
     timer_interrupt_disable(TIMER12, TIMER_INT_CH0);
     timer_counter_value_config(TIMER12, 23);
@@ -407,10 +407,10 @@ static void ad9945_device_init(void)
 #if 1
     //rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
     /* 放开钳位 */
-    _set_ad9945_reg_value(0x00, 0x00);
+    _set_ad9945_reg_value(0x00, 0x08);
     _set_ad9945_reg_value(0x01, 0x00);
     /* 修改钳位 */
-    _set_ad9945_reg_value(0x02, 0x00);
+    _set_ad9945_reg_value(0x02, 00);
     /* 设置增益为 6dB */
     _set_ad9945_reg_value(0x03, 0x00);
     _set_ad9945_reg_value(0x0d, 0x838);
