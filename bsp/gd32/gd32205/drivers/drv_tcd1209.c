@@ -170,7 +170,6 @@ void DMA0_Channel0_IRQHandler(void)
     rt_interrupt_enter();
     if (SET == dma_flag_get(DMA0, DMA_CH0, DMA_FLAG_FTF))
     {
-        rt_kprintf("dma00");
         dma_flag_clear(DMA0, DMA_CH0, DMA_FLAG_FTF);
         timer_interrupt_disable(TIMER1, TIMER_INT_CH2);
         //timer_disable(TIMER1);
@@ -197,7 +196,6 @@ void DMA0_Channel4_IRQHandler(void)
     rt_interrupt_enter();
     if (SET == dma_flag_get(DMA0, DMA_CH4, DMA_FLAG_FTF))
     {
-        rt_kprintf("dma04");
         dma_flag_clear(DMA0, DMA_CH4, DMA_FLAG_FTF);
         timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
         timer_disable(TIMER1);
@@ -286,7 +284,7 @@ static void ad9945_device_init(void)
     /* timer 4 AD9945 device */
     timer_parameter_struct timer4shp, timer4shd, timer4dataclk, timer4clpob, timer4pblk;
     timer_oc_parameter_struct timer_oc4clpob;
-    uint32_t init_value4shp = 6, init_value4shd = 10, init_value4dataclk = 10;
+    uint32_t init_value4shp = 6, init_value4shd = 12, init_value4dataclk = 10;
     uint32_t init_value4clpob = 0, init_value4pblk = 0;
 
     timer4shp.prescaler         = 5U;
@@ -340,7 +338,7 @@ static void ad9945_device_init(void)
     timer_enable(TIMER8);
     //timer_enable(TIMER1);
 
-    timer4clpob.prescaler         = 5U;
+    timer4clpob.prescaler         = 119U;
     timer4clpob.alignedmode       = TIMER_COUNTER_EDGE;
     timer4clpob.counterdirection  = TIMER_COUNTER_UP;
     timer4clpob.period            = 0U;
@@ -359,13 +357,14 @@ static void ad9945_device_init(void)
     rcu_periph_clock_enable(RCU_TIMER12);
     timer_init(TIMER12, &timer4clpob);
     timer_channel_output_mode_config(TIMER12, TIMER_CH_0, TIMER_OC_MODE_PWM1);
-    timer_autoreload_value_config(TIMER12, 19);
+    timer_autoreload_value_config(TIMER12, AD9945_DATA_COUNTS);
     timer_channel_output_pulse_value_config(TIMER12, TIMER_CH_0, 10);
     timer_channel_output_state_config(TIMER12, TIMER_CH_0, ENABLE);
     timer_interrupt_disable(TIMER12, TIMER_INT_CH0);
-    //timer_enable(TIMER12);
+    timer_counter_value_config(TIMER12, 23);
+    timer_enable(TIMER12);
 
-    timer4pblk.prescaler         = 5U;
+    timer4pblk.prescaler         = 119U;
     timer4pblk.alignedmode       = TIMER_COUNTER_EDGE;
     timer4pblk.counterdirection  = TIMER_COUNTER_UP;
     timer4pblk.period            = 0U;
@@ -375,18 +374,18 @@ static void ad9945_device_init(void)
     rcu_periph_clock_enable(RCU_TIMER13);
     timer_init(TIMER13, &timer4pblk);
     timer_channel_output_mode_config(TIMER13, TIMER_CH_0, TIMER_OC_MODE_PWM1);
-    timer_autoreload_value_config(TIMER13, 19);
-    timer_channel_output_pulse_value_config(TIMER13, TIMER_CH_0, 10);
+    timer_autoreload_value_config(TIMER13, AD9945_DATA_COUNTS);
+    timer_channel_output_pulse_value_config(TIMER13, TIMER_CH_0, 30);
     timer_channel_output_state_config(TIMER13, TIMER_CH_0, ENABLE);
     timer_interrupt_disable(TIMER13, TIMER_INT_CH0);
 
-#if 0
+#if 1
     timer_enable(TIMER13);
 #else
     gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_7);
     gpio_bit_set(GPIOA, GPIO_PIN_7);
-    gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
-    gpio_bit_set(GPIOA, GPIO_PIN_6);
+    //gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
+    //gpio_bit_set(GPIOA, GPIO_PIN_6);
 #endif
 
 #if 1
@@ -406,14 +405,14 @@ static void ad9945_device_init(void)
 #endif
 
 #if 1
-    rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
+    //rt_pin_write(GD32_AD9945_PBLK_PIN, SET);
     /* 放开钳位 */
-    _set_ad9945_reg_value(0x00, 0x08);
+    _set_ad9945_reg_value(0x00, 0x00);
     _set_ad9945_reg_value(0x01, 0x00);
     /* 修改钳位 */
-    _set_ad9945_reg_value(0x02, 0x80);
+    _set_ad9945_reg_value(0x02, 0x00);
     /* 设置增益为 6dB */
-    _set_ad9945_reg_value(0x03, 0x08);
+    _set_ad9945_reg_value(0x03, 0x00);
     _set_ad9945_reg_value(0x0d, 0x838);
 #endif
     dma_init4ad9945();
@@ -469,7 +468,7 @@ int tcd1209_hw_init(void)
     timer_init(TIMER7, &timer4sh);
     timer_channel_output_mode_config(TIMER7, TIMER_CH_3, TIMER_OC_MODE_PWM0);
     timer_autoreload_value_config(TIMER7, AD9945_DATA_COUNTS);
-    timer_channel_output_pulse_value_config(TIMER7, TIMER_CH_3, 2);
+    timer_channel_output_pulse_value_config(TIMER7, TIMER_CH_3, 1);
     timer_channel_output_state_config(TIMER7, TIMER_CH_3, ENABLE);
     timer_primary_output_config(TIMER7, ENABLE);
     timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
@@ -525,7 +524,7 @@ uint16_t get_ccd_value2index(uint16_t index)
      * C4:C5:B0:B1:B2:B10:B11:B7:B8:B9:C0:C1
      * */
 
-    rt_kprintf("partc=%x portb=%x. ", gs_ad9945_data4portc[index] & 0x33, gs_ad9945_data[index] & 0xf87);
+//    rt_kprintf("partc=%x portb=%x. ", gs_ad9945_data4portc[index] & 0x33, gs_ad9945_data[index] & 0xf87);
     ccd_value = (gs_ad9945_data4portc[index] & 0x10) << 7;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x20) << 5;
     ccd_value |= (gs_ad9945_data[index] & 0x01) << 9;
@@ -538,7 +537,7 @@ uint16_t get_ccd_value2index(uint16_t index)
     ccd_value |= (gs_ad9945_data[index] & 0x200) >> 7;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x01) << 1;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x02) >> 1;
-    rt_kprintf("ccd_value=%u\r\n", ccd_value);
+//    rt_kprintf("ccd_value=%u\r\n", ccd_value);
 
     return ccd_value;
 }
@@ -563,7 +562,7 @@ long show_ad9945(void)
 #if 1
     for (; i < AD9945_DATA_COUNTS; i++)
     {
-        //rt_kprintf("%hu,", get_ccd_value2index(i));
+        rt_kprintf("%hu,", get_ccd_value2index(i));
         get_ccd_value2index(i);
     }
 #endif

@@ -13,7 +13,7 @@
 
 #define GD32_F1_PIN                    GET_PIN(B, 13)   /* TIMER0_CH0_ON R*/
 #define GD32_F2_PIN                    GET_PIN(A, 8)    /* TIMER0_CH0 R*/
-#define GD32_CP_PIN                    GET_PIN(B, 4)    /* TIMER2_CH0 */
+#define GD32_CP_PIN                    GET_PIN(B, 4)    /* TIMER2_CH0 R*/
 #define GD32_RS_PIN                    GET_PIN(B, 6)    /* TIMER3_CH0 R*/
 #define GD32_SH_PIN                    GET_PIN(C, 9)    /* TIMER7_CH3 R*/
 
