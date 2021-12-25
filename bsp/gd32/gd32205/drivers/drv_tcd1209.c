@@ -416,6 +416,7 @@ static void ad9945_device_init(void)
     _set_ad9945_reg_value(0x0d, 0x838);
 #endif
     dma_init4ad9945();
+    gpio_bit_set(GPIOB, GPIO_PIN_5);
     LOG_I("AD9945 START");
 }
 
