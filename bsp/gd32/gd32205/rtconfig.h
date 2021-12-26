@@ -87,6 +87,7 @@
 #define RT_USING_SERIAL_V1
 #define RT_SERIAL_USING_DMA
 #define RT_SERIAL_RB_BUFSZ 64
+#define RT_USING_CAN
 #define RT_USING_PIN
 
 /* Using USB */
@@ -159,7 +160,12 @@
 
 #define SOC_FAMILY_GD32
 #define SOC_SERIES_GD32F2
+
+/* Board Drivers */
+
 #define BSP_USING_TCD1209
+#define BSP_USING_CAN
+#define BSP_USING_CAN0
 #define SOC_GD32205Rx
 #define BSP_USING_UART0
 

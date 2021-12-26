@@ -4,4 +4,13 @@ config BSP_USING_TCD1209
     bool "Using tcd1209 device"
     default y
 
+menuconfig BSP_USING_CAN
+    bool "Using can device"
+    default y
+    if BSP_USING_CAN
+    config BSP_USING_CAN0
+        bool "Using can0 device"
+        default y
+    endif
+
 endmenu
