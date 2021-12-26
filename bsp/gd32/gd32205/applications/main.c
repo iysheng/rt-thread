@@ -15,14 +15,29 @@
 /* HEART PIN is GPIOB_15 */
 #define HEART_PIN    31
 
+static rt_thread_t gs_can_thread;
+extern void can_backend_entry(void * arg);
+
 int main(void)
 {
+    gs_can_thread = rt_thread_create("canBack", can_backend_entry, RT_NULL, 0x800, 5, 10);
+    if (!gs_can_thread)
+    {
+        LOG_E("Failed create can backend thread.");
+        return -1;
+    }
+    else if (RT_EOK != rt_thread_startup(gs_can_thread))
+    {
+        LOG_E("Failed startup can backend thread.");
+        return -2;
+    }
+
     while(1)
     {
-        rt_pin_write(HEART_PIN, PIN_HIGH);
-        rt_thread_mdelay(500);
         rt_pin_write(HEART_PIN, PIN_LOW);
-        rt_thread_mdelay(500);
+        rt_thread_mdelay(60000);
+        rt_pin_write(HEART_PIN, PIN_HIGH);
+        rt_thread_mdelay(1000);
     }
 
     return 0;
