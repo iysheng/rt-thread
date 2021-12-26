@@ -12,6 +12,10 @@
 #include <rtthread.h>
 #include "rtdevice.h"
 
+#define DBG_LVL               DBG_INFO
+#define DBG_TAG               "app.MAIN"
+#include <rtdbg.h>
+
 /* HEART PIN is GPIOB_15 */
 #define HEART_PIN    31
 

@@ -45,6 +45,7 @@ static rt_device_t gs_can_dev;
 extern int set_tcd1304_device_marktimes(int data);
 extern int set_tcd1304_device_data(int data);
 extern int get_ccd_check_ans(void);
+
 /**
   * @brief 控制 CCD 设备进行标定
   *
