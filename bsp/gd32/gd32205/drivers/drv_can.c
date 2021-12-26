@@ -37,7 +37,7 @@ static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
         | 3)},
 };
 
-#ifdef RT_USING_CAN0
+#ifdef BSP_USING_CAN0
 static struct gd32_can drv_can0 =
 {
     .name = "can0",
@@ -45,7 +45,7 @@ static struct gd32_can drv_can0 =
 };
 #endif
 
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
 static struct gd32_can drv_can1 =
 {
     "can1",
@@ -141,7 +141,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_disable(CAN1_RX0_IRQn);
                 nvic_irq_disable(CAN1_RX1_IRQn);
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN2 == drv_can->CanHandle)
             {
                 nvic_irq_disable(CAN2_RX0_IRQn);
@@ -161,7 +161,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
             {
                 nvic_irq_disable(CAN1_TX_IRQn);
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN2 == drv_can->CanHandle)
             {
                 nvic_irq_disable(CAN2_TX_IRQn);
@@ -175,7 +175,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
             {
                 nvic_irq_disable(CAN1_SCE_IRQn);
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN2 == drv_can->CanHandle)
             {
                 nvic_irq_disable(CAN2_SCE_IRQn);
@@ -210,7 +210,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
 #endif
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN2 == drv_can->CanHandle)
             {
                 nvic_irq_enable(CAN2_RX0_IRQn, 1, 0);
@@ -230,7 +230,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_enable(CAN1_TX_IRQn, 1, 0);
 #endif
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN2 == drv_can->CanHandle)
             {
                 nvic_irq_enable(CAN2_TX_IRQn, 1, 0);
@@ -249,7 +249,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
             {
                 nvic_irq_enable(CAN0_EWMC_IRQn, 1, 0);
             }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
             if (CAN1 == drv_can->CanHandle)
             {
                 nvic_irq_enable(CAN1_EWMC_IRQn, 1, 0);
@@ -474,7 +474,7 @@ static int _can_recvmsg(struct rt_can_device *can, void *buf, rt_uint32_t fifo)
     {
         //pmsg->hdr = (rxmsg.FI + 1) >> 1;
     }
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
     else if (hcan == CAN1)
     {
        //pmsg->hdr = (rxmsg.FI>> 1) + 14;
@@ -550,7 +550,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
     }
 }
 
-#ifdef RT_USING_CAN0
+#ifdef BSP_USING_CAN0
 /**
  * @brief This function handles CAN1 TX interrupts. transmit fifo0/1/2 is empty can trigger this interrupt
  */
@@ -560,44 +560,47 @@ void USBD_HP_CAN0_TX_IRQHandler(void)
     uint32_t hcan;
     hcan = drv_can0.CanHandle;
 
-    if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTF0_FINISH))
+    if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF0_FINISH))
     {
-        if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTFNERR0_FINISH))
+        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR0_FINISH))
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 0 << 8);
+            /* Write 0 to Clear transmission status flag RQCPx */
+            can_flag_clear(hcan, CAN_FLAG_MTF0);
         }
         else
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 0 << 8);
+            can_flag_clear(hcan, CAN_FLAG_MTE0);
         }
-        /* Write 0 to Clear transmission status flag RQCPx */
-        SET_BIT(hcan->TSTR, CAN_IT_MTF0_FINISH);
     }
-    else if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTF1_FINISH))
+    else if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF1_FINISH))
     {
-        if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTFNERR1_FINISH))
+        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR1_FINISH))
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 1 << 8);
+            /* Write 0 to Clear transmission status flag RQCPx */
+            can_flag_clear(hcan, CAN_FLAG_MTF1);
         }
         else
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 1 << 8);
+            can_flag_clear(hcan, CAN_FLAG_MTE1);
         }
-        /* Write 0 to Clear transmission status flag RQCPx */
-        SET_BIT(hcan->TSTR, CAN_IT_MTF1_FINISH);
     }
-    else if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTF2_FINISH))
+    else if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF2_FINISH))
     {
-        if (IS_BIT_SET(hcan->TSTR, CAN_IT_MTFNERR2_FINISH))
+        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR2_FINISH))
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 2 << 8);
+            can_flag_clear(hcan, CAN_FLAG_MTF2);
         }
         else
         {
             rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 2 << 8);
+            can_flag_clear(hcan, CAN_FLAG_MTE2);
         }
         /* Write 0 to Clear transmission status flag RQCPx */
-        SET_BIT(hcan->TSTR, CAN_IT_MTF2_FINISH);
     }
     rt_interrupt_leave();
 }
@@ -631,7 +634,7 @@ void CAN0_EWMC_IRQHandler(void)
     uint32_t hcan;
 
     hcan = drv_can0.CanHandle;
-    errtype = hcan->ER;
+    errtype = can_error_get(hcan);
 
 	rt_kprintf("err--------, errtype=%x\n", errtype);
     rt_interrupt_enter();
@@ -669,12 +672,15 @@ void CAN0_EWMC_IRQHandler(void)
     drv_can0.device.status.snderrcnt = (errtype >> 16 & 0xFF);
     drv_can0.device.status.errcode = errtype & 0x07;
 #endif
-    hcan->STR |= CAN_MSR_ERRI;
+
+    can_flag_clear(hcan, CAN_FLAG_WERR);
+    can_flag_clear(hcan, CAN_FLAG_PERR);
+    can_flag_clear(hcan, CAN_FLAG_BOERR);
     rt_interrupt_leave();
 }
-#endif /* RT_USING_CAN0 */
+#endif /* BSP_USING_CAN0 */
 
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
 /**
  * @brief This function handles CAN2 TX interrupts.
  */
@@ -793,7 +799,7 @@ void CAN1_EWMC_IRQHandler(void)
     hcan->MSR |= CAN_MSR_ERRI;
     rt_interrupt_leave();
 }
-#endif /* RT_USING_CAN1 */
+#endif /* BSP_USING_CAN1 */
 
 int rt_hw_can_init(void)
 {
@@ -845,7 +851,7 @@ int rt_hw_can_init(void)
 
     /* TODO config default filter */
 
-#ifdef RT_USING_CAN0
+#ifdef BSP_USING_CAN0
     drv_can0.CanFilter = can_filter_default;
     drv_can0.device.config = config;
     /* register CAN0 device */
@@ -853,9 +859,9 @@ int rt_hw_can_init(void)
                        drv_can0.name,
                        &_can_ops,
                        &drv_can0);
-#endif /* RT_USING_CAN0 */
+#endif /* BSP_USING_CAN0 */
 
-#ifdef RT_USING_CAN1
+#ifdef BSP_USING_CAN1
     drv_can1.device.config = config;
     drv_can0.CanFilter = can_filter_default;
     /* register CAN1 device */
@@ -863,7 +869,7 @@ int rt_hw_can_init(void)
                        drv_can1.name,
                        &_can_ops,
                        &drv_can1);
-#endif /* RT_USING_CAN1 */
+#endif /* BSP_USING_CAN1 */
 
     return 0;
 }
