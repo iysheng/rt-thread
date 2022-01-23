@@ -442,10 +442,8 @@ static int _can_recvmsg(struct rt_can_device *can, void *buf, rt_uint32_t fifo)
 
     /* get data */
     can_message_receive(hcan, fifo, &rxmsg);
-    LOG_E("red can len=%u.", rxmsg.rx_dlen);
     if (rxmsg.rx_dlen == 0)
         return -RT_ERROR;
-    LOG_E("red can come on.");
     /* get id */
     if (CAN_ID_STD == rxmsg.rx_ff)
     {
