@@ -468,6 +468,71 @@ uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct* t
 }
 
 /*!
+    \brief       transmit CAN message with mailbox number
+    \param[in]  can_periph
+      \arg        CANx(x=0,1)
+    \param[in]  transmit_message: struct for CAN transmit message
+      \arg        tx_sfid: 0x00000000 - 0x000007FF
+      \arg        tx_efid: 0x00000000 - 0x1FFFFFFF
+      \arg        tx_ff: CAN_FF_STANDARD, CAN_FF_EXTENDED
+      \arg        tx_ft: CAN_FT_DATA, CAN_FT_REMOTE
+      \arg        tx_dlen: 0 - 8
+      \arg        tx_data[]: 0x00 - 0xFF
+    \param[in]  box_num
+      \arg        CAN_MAILBOXx(x=0,1,2)
+    \param[out] none
+    \retval     mailbox_number
+*/
+uint8_t can_message_transmit_with_boxnum(uint32_t can_periph, can_trasnmit_message_struct* transmit_message, uint8_t box_num)
+{
+    uint8_t mailbox_number = CAN_MAILBOX0;
+
+    /* select one empty mailbox */
+    if(box_num == CAN_MAILBOX0 && CAN_TSTAT_TME0 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME0)){
+        mailbox_number = CAN_MAILBOX0;
+    }else if(box_num == CAN_MAILBOX1 && CAN_TSTAT_TME1 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME1)){
+        mailbox_number = CAN_MAILBOX1;
+    }else if(box_num == CAN_MAILBOX2 && CAN_TSTAT_TME2 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME2)){
+        mailbox_number = CAN_MAILBOX2;
+    }else{
+        mailbox_number = CAN_NOMAILBOX;
+    }
+
+    /* return no mailbox empty */
+    if(CAN_NOMAILBOX == mailbox_number){
+        return CAN_NOMAILBOX;
+    }
+
+    CAN_TMI(can_periph, mailbox_number) &= CAN_TMI_TEN;
+    if(CAN_FF_STANDARD == transmit_message->tx_ff){
+        /* set transmit mailbox standard identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_SFID(transmit_message->tx_sfid) | \
+                                                transmit_message->tx_ft);
+    }else{
+        /* set transmit mailbox extended identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_EFID(transmit_message->tx_efid) | \
+                                                transmit_message->tx_ff | \
+                                                transmit_message->tx_ft);
+    }
+    /* set the data length */
+    CAN_TMP(can_periph, mailbox_number) &= ((uint32_t)~CAN_TMP_DLENC);
+    CAN_TMP(can_periph, mailbox_number) |= transmit_message->tx_dlen;
+    /* set the data */
+    CAN_TMDATA0(can_periph, mailbox_number) = TMDATA0_DB3(transmit_message->tx_data[3]) | \
+                                              TMDATA0_DB2(transmit_message->tx_data[2]) | \
+                                              TMDATA0_DB1(transmit_message->tx_data[1]) | \
+                                              TMDATA0_DB0(transmit_message->tx_data[0]);
+    CAN_TMDATA1(can_periph, mailbox_number) = TMDATA1_DB7(transmit_message->tx_data[7]) | \
+                                              TMDATA1_DB6(transmit_message->tx_data[6]) | \
+                                              TMDATA1_DB5(transmit_message->tx_data[5]) | \
+                                              TMDATA1_DB4(transmit_message->tx_data[4]);
+    /* enable transmission */
+    CAN_TMI(can_periph, mailbox_number) |= CAN_TMI_TEN;
+
+    return mailbox_number;
+}
+
+/*!
     \brief      get CAN transmit state
     \param[in]  can_periph
       \arg        CANx(x=0,1)

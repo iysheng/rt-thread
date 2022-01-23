@@ -72,33 +72,6 @@ struct gd32_baud_rate_tab
 
 #define READ_REG(REG)         ((REG))
 
-/* can interrupt config */
-#define CAN_IT_TX_MAILBOX_EMPTY         (1 << 0)
-
-#define CAN_IT_RX_FIFO0_MSG_PENDING     (1 << 1)
-#define CAN_IT_RX_FIFO0_FULL            (1 << 2)
-#define CAN_IT_RX_FIFO0_OVERRUN         (1 << 3)
-#define CAN_IT_RX_FIFO1_MSG_PENDING     (1 << 4)
-#define CAN_IT_RX_FIFO1_FULL            (1 << 5)
-#define CAN_IT_RX_FIFO1_OVERRUN         (1 << 6)
-
-#define CAN_IT_ERROR_WARNING            (1 << 8)
-#define CAN_IT_ERROR_PASSIVE            (1 << 9)
-#define CAN_IT_BUSOFF                   (1 << 10)
-#define CAN_IT_LAST_ERROR_CODE          (1 << 11)
-#define CAN_IT_ERROR                    (1 << 15)
-
-#define CAN_IT_MTF0_FINISH              (1 << 0)
-#define CAN_IT_MTFNERR0_FINISH          (1 << 1)
-#define CAN_IT_MTF1_FINISH              (1 << 8)
-#define CAN_IT_MTFNERR1_FINISH          (1 << 9)
-#define CAN_IT_MTF2_FINISH              (1 << 16)
-#define CAN_IT_MTFNERR2_FINISH          (1 << 17)
-
-#define CAN_RX_RFF                      (1 << 3)
-#define CAN_RX_RFO                      (1 << 4)
-#define CAN_RX_RFD                      (1 << 5)
-
 /* gd32 can device */
 struct gd32_can
 {

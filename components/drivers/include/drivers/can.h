@@ -99,8 +99,8 @@ struct rt_can_filter_config
 struct can_configure
 {
     rt_uint32_t baud_rate;
-    rt_uint32_t msgboxsz;
-    rt_uint32_t sndboxnumber;
+    rt_uint32_t msgboxsz; /* 默认是 16 */
+    rt_uint32_t sndboxnumber; /* 默认是 1 */
     rt_uint32_t mode      : 8;
     rt_uint32_t privmode  : 8;
     rt_uint32_t reserved  : 16;

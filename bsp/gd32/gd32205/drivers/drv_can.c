@@ -149,12 +149,12 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_disable(CAN2_RX1_IRQn);
             }
 #endif
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO0_MSG_PENDING);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO0_FULL);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO0_OVERRUN);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO1_MSG_PENDING);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO1_FULL);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_RX_FIFO1_OVERRUN);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFNE0);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFF0);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFO0);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFNE1);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFF1);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_RFO1);
         }
         else if (argval == RT_DEVICE_FLAG_INT_TX)
         {
@@ -168,7 +168,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_disable(CAN2_TX_IRQn);
             }
 #endif
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_TX_MAILBOX_EMPTY);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_TME);
         }
         else if (argval == RT_DEVICE_CAN_INT_ERR)
         {
@@ -182,11 +182,11 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
                 nvic_irq_disable(CAN2_SCE_IRQn);
             }
 #endif
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_ERROR_WARNING);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_ERROR_PASSIVE);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_BUSOFF);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_WERR);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_PERR);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_BO);
             __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_LAST_ERROR_CODE);
-            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_IT_ERROR);
+            __HAL_CAN_DISABLE_IT(&drv_can->CanHandle, CAN_INT_ERR);
         }
         break;
 #endif
@@ -194,57 +194,48 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
         argval = (rt_uint32_t) arg;
         if (argval == RT_DEVICE_FLAG_INT_RX)
         {
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO0_MSG_PENDING);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO0_FULL);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO0_OVERRUN);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO1_MSG_PENDING);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO1_FULL);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_RX_FIFO1_OVERRUN);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFNE0);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFF0);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFO0);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFNE1);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFF1);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_RFO1);
 
-            if (CAN1 == drv_can->CanHandle)
+            if (CAN0 == drv_can->CanHandle)
             {
-#ifdef GD32F10X_HD
-                nvic_irq_enable(USB_LP_CAN1_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
-#elif defined(GD32F10X_CL)
-                nvic_irq_enable(CAN1_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
-#endif
+                nvic_irq_enable(CAN0_RX0_IRQn, 1, 0);
+                nvic_irq_enable(CAN0_RX1_IRQn, 1, 0);
             }
 #ifdef BSP_USING_CAN1
-            if (CAN2 == drv_can->CanHandle)
+            if (CAN1 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN2_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN2_RX1_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_RX0_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
             }
 #endif
         }
         else if (argval == RT_DEVICE_FLAG_INT_TX)
         {
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_TX_MAILBOX_EMPTY);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_TME);
 
-            if (CAN1 == drv_can->CanHandle)
+            if (CAN0 == drv_can->CanHandle)
             {
-#ifdef GD32F10X_HD
-                nvic_irq_enable(USB_HP_CAN1_TX_IRQn, 1, 0);
-#elif defined(GD32F10X_CL)
-                nvic_irq_enable(CAN1_TX_IRQn, 1, 0);
-#endif
+                nvic_irq_enable(CAN0_TX_IRQn, 1, 0);
             }
 #ifdef BSP_USING_CAN1
-            if (CAN2 == drv_can->CanHandle)
+            if (CAN1 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN2_TX_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_TX_IRQn, 1, 0);
             }
 #endif
         }
         else if (argval == RT_DEVICE_CAN_INT_ERR)
         {
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_ERROR_WARNING);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_ERROR_PASSIVE);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_BUSOFF);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_LAST_ERROR_CODE);
-            can_interrupt_enable(drv_can->CanHandle, CAN_IT_ERROR);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_WERR);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_PERR);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_BO);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_ERRN);
+            can_interrupt_enable(drv_can->CanHandle, CAN_INT_ERR);
 
             if (CAN0 == drv_can->CanHandle)
             {
@@ -427,8 +418,14 @@ static int _can_sendmsg(struct rt_can_device *can, const void *buf, rt_uint32_t 
     }
     txheader.tx_dlen = pmsg->len;
     rt_memcpy(txheader.tx_data, pmsg->data, txheader.tx_dlen);
-    can_message_transmit(hcan, &txheader);
-    return RT_EOK;
+    if (box_num == can_message_transmit_with_boxnum(hcan, &txheader, box_num))
+    {
+        return RT_EOK;
+    }
+    else
+    {
+        return RT_ERROR;
+    }
 }
 
 static int _can_recvmsg(struct rt_can_device *can, void *buf, rt_uint32_t fifo)
@@ -445,8 +442,10 @@ static int _can_recvmsg(struct rt_can_device *can, void *buf, rt_uint32_t fifo)
 
     /* get data */
     can_message_receive(hcan, fifo, &rxmsg);
-    if (rxmsg.rx_dlen == len)
+    LOG_E("red can len=%u.", rxmsg.rx_dlen);
+    if (rxmsg.rx_dlen == 0)
         return -RT_ERROR;
+    LOG_E("red can come on.");
     /* get id */
     if (CAN_ID_STD == rxmsg.rx_ff)
     {
@@ -473,7 +472,7 @@ static int _can_recvmsg(struct rt_can_device *can, void *buf, rt_uint32_t fifo)
     /* get hdr */
     if (hcan == CAN0)
     {
-        //pmsg->hdr = (rxmsg.FI + 1) >> 1;
+        pmsg->hdr = (rxmsg.rx_fi + 1) >> 1;
     }
 #ifdef BSP_USING_CAN1
     else if (hcan == CAN1)
@@ -500,6 +499,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
     RT_ASSERT(can);
     hcan = ((struct gd32_can *) can->parent.user_data)->CanHandle;
 
+    //LOG_E("Wow can rx isr");
     switch (fifo)
     {
     case CAN_RX_FIFO0:
@@ -561,47 +561,20 @@ void USBD_HP_CAN0_TX_IRQHandler(void)
     uint32_t hcan;
     hcan = drv_can0.CanHandle;
 
-    if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF0_FINISH))
+    if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF0))
     {
-        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR0_FINISH))
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 0 << 8);
-            /* Write 0 to Clear transmission status flag RQCPx */
-            can_flag_clear(hcan, CAN_FLAG_MTF0);
-        }
-        else
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 0 << 8);
-            can_flag_clear(hcan, CAN_FLAG_MTE0);
-        }
+        rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 0 << 8);
+        can_flag_clear(hcan, CAN_FLAG_MTF0);
     }
-    else if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF1_FINISH))
+    else if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF1))
     {
-        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR1_FINISH))
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 1 << 8);
-            /* Write 0 to Clear transmission status flag RQCPx */
-            can_flag_clear(hcan, CAN_FLAG_MTF1);
-        }
-        else
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 1 << 8);
-            can_flag_clear(hcan, CAN_FLAG_MTE1);
-        }
+        rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 1 << 8);
+        can_flag_clear(hcan, CAN_FLAG_MTF1);
     }
-    else if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTF2_FINISH))
+    else if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF2))
     {
-        if (SET == can_interrupt_flag_get(hcan, CAN_IT_MTFNERR2_FINISH))
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 2 << 8);
-            can_flag_clear(hcan, CAN_FLAG_MTF2);
-        }
-        else
-        {
-            rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_FAIL | 2 << 8);
-            can_flag_clear(hcan, CAN_FLAG_MTE2);
-        }
-        /* Write 0 to Clear transmission status flag RQCPx */
+        rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 2 << 8);
+        can_flag_clear(hcan, CAN_FLAG_MTF2);
     }
     rt_interrupt_leave();
 }
@@ -805,6 +778,7 @@ void CAN1_EWMC_IRQHandler(void)
 int rt_hw_can_init(void)
 {
     struct can_configure config = CANDEFAULTCONFIG;
+    config.sndboxnumber = 3;
 #if 0
     GPIO_InitPara GPIO_InitStruct = {0};
 #endif

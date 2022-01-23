@@ -81,6 +81,7 @@ rt_inline int _can_int_rx(struct rt_can_device *can, struct rt_can_msg *data, in
         else if (hdr == -1)
 #endif /*RT_CAN_USING_HDR*/
         {
+            /* 如果这个 uselist 不为空 */
             if (!rt_list_isempty(&rx_fifo->uselist))
             {
                 listmsg = rt_list_entry(rx_fifo->uselist.next, struct rt_can_msg_list, list);
@@ -790,8 +791,10 @@ void rt_hw_can_isr(struct rt_can_device *can, int event)
         level = rt_hw_interrupt_disable();
         can->status.rcvpkg++;
         can->status.rcvchange = 1;
+        /* 如果 freelist 不为空 */
         if (!rt_list_isempty(&rx_fifo->freelist))
         {
+            /* 取 freelist 中的一个 listmsg */
             listmsg = rt_list_entry(rx_fifo->freelist.next, struct rt_can_msg_list, list);
             rt_list_remove(&listmsg->list);
 #ifdef RT_CAN_USING_HDR
@@ -805,6 +808,7 @@ void rt_hw_can_isr(struct rt_can_device *can, int event)
             RT_ASSERT(rx_fifo->freenumbers > 0);
             rx_fifo->freenumbers--;
         }
+        /* 如果 uselist 不为空, 从 uselist 中取空间 */
         else if (!rt_list_isempty(&rx_fifo->uselist))
         {
             listmsg = rt_list_entry(rx_fifo->uselist.next, struct rt_can_msg_list, list);
@@ -822,10 +826,12 @@ void rt_hw_can_isr(struct rt_can_device *can, int event)
         /* enable interrupt */
         rt_hw_interrupt_enable(level);
 
+        /* 如果找到了存储接收数据的位置 */
         if (listmsg != RT_NULL)
         {
             rt_memcpy(&listmsg->data, &tmpmsg, sizeof(struct rt_can_msg));
             level = rt_hw_interrupt_disable();
+            /* 添加到 uselist 链表 */
             rt_list_insert_before(&rx_fifo->uselist, &listmsg->list);
 #ifdef RT_CAN_USING_HDR
             hdr = tmpmsg.hdr;
