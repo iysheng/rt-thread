@@ -26,14 +26,15 @@
 #include <rtdbg.h>
 
 /* attention !!! baud calculation example: Tclk / ((ss + bs1 + bs2) * brp)
- * 54 / ((1 + 9 + 8) * 30) = 100kHz */
+ * 54 / ((1 + 9 + 8) * 30) = 100kHz
+ * 60000KHz / ((1 + 11 + 8) * 3) = 1000kHz */
 static const struct gd32_baud_rate_tab can_baud_rate_tab[] =
 {
     {CAN100kBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
-        | BAUD_DATA_SET(CAN_BT_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
+        | BAUD_DATA_SET(CAN_BT_BS1_11TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
         | 30)},
     {CAN1MBaud, (BAUD_DATA_SET(CAN_BT_SJW_1TQ, SJW) \
-        | BAUD_DATA_SET(CAN_BT_BS1_9TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
+        | BAUD_DATA_SET(CAN_BT_BS1_11TQ, BS1) | BAUD_DATA_SET(CAN_BT_BS2_8TQ, BS2) \
         | 3)},
 };
 
