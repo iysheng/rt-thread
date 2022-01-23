@@ -25,14 +25,10 @@ enum {
     CCD_DUANLUO_CANKAO_DELTA_INFO_RESPON = 0x0E,
 } can_comm_cmd_E;
 
-#define DBG_LVL               DBG_INFO
+#define RED_ENABLE_DEBUG_HEX
+#define DBG_LVL               DBG_LOG
 #define DBG_TAG               "thread.CAN"
 #include <rtdbg.h>
-
-#ifdef LOG_HEX
-#undef LOG_HEX
-#define LOG_HEX(a,b,c,d)
-#endif
 
 #define REMOTE_CCD_MAIN_ADDR  0x01
 #define CAN_DEV_NAME       "can0"               /* CAN 设备名称 */

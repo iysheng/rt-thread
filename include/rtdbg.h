@@ -178,8 +178,22 @@ extern "C" {
 
 #define LOG_RAW(...)         dbg_raw(__VA_ARGS__)
 
+#ifdef RED_ENABLE_DEBUG_HEX
+#define LOG_HEX(name, width, buf, size) \
+    { \
+        int t_log_hex_index = 0; \
+        do { \
+            rt_kprintf("[%s(%d):", name, (size)); \
+            for (; t_log_hex_index < (size); t_log_hex_index++) \
+            { \
+                rt_kprintf(" %x",*((unsigned char *)buf + t_log_hex_index)); \
+            } \
+            rt_kprintf("]\n"); \
+        } while(0); \
+    }
+#else
 #define LOG_HEX(name, width, buf, size)
-
+#endif
 #endif /* defined(RT_USING_ULOG) && define(DBG_ENABLE) */
 
 #ifdef __cplusplus
