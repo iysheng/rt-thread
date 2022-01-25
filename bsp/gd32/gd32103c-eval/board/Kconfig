@@ -80,6 +80,11 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_WDT
         default n
 
+    config BSP_USING_RTC
+        bool "Enable Internal RTC"
+        select RT_USING_RTC
+        default n
+
     source "../libraries/gd32_drivers/Kconfig"
     
 endmenu
