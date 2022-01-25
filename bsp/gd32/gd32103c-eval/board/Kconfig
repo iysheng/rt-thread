@@ -115,12 +115,25 @@ menu "On-chip Peripheral Drivers"
                 bool "using hwtimer7"
                 default n
         endif
+
+    menuconfig BSP_USING_ADC
+        bool "Enable ADC"
+        default n
+        select RT_USING_ADC
+        if BSP_USING_ADC
+            config BSP_USING_ADC0
+                bool "using adc0"
+                default n
+            config BSP_USING_ADC1
+                bool "using adc1"
+                default n
+        endif
     source "../libraries/gd32_drivers/Kconfig"
-    
+
 endmenu
 
 menu "Board extended module Drivers"
 
 endmenu
- 
+
 endmenu

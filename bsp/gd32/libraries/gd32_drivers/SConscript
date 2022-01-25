@@ -38,6 +38,9 @@ if GetDepend('RT_USING_RTC'):
 if GetDepend('RT_USING_HWTIMER'):
     src += ['drv_hwtimer.c']
 
+if GetDepend('RT_USING_ADC'):
+    src += ['drv_adc.c']
+
 path = [cwd]
 
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = path)
