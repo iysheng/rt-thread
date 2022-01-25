@@ -29,6 +29,9 @@ if GetDepend('RT_USING_SPI'):
 if GetDepend('RT_USING_SFUD'):
     src += ['drv_spi_flash.c', 'drv_spi.c']   
 
+if GetDepend('RT_USING_WDT'):
+    src += ['drv_wdt.c']
+
 path =  [cwd]
 
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = path)
