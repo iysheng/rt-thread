@@ -38,8 +38,8 @@ enum {
 static struct rt_semaphore gs_can_rx_sem;
 static rt_device_t gs_can_dev;
 
-extern int set_tcd1304_device_marktimes(int data);
-extern int set_tcd1304_device_data(int data);
+extern int set_abs_ccd_device_marktimes(int data);
+extern int set_abs_ccd_device_data(int data);
 extern int get_ccd_check_ans(void);
 
 /**
@@ -87,9 +87,9 @@ static int _set_ccd_check(rt_device_t dev, rt_can_msg_t msg)
     static int times;
     ret = times++ % 2;
 #else
-    set_tcd1304_device_data(3);
+    set_abs_ccd_device_data(3);
     ret = get_ccd_check_ans();
-    set_tcd1304_device_data(1);
+    set_abs_ccd_device_data(1);
     LOG_D("<<<<<<< ret=%d.", ret);
 #endif
     /* 设置检测结果 */
@@ -122,8 +122,8 @@ int set_ccd_calibrate(rt_can_msg_t msg)
   */
 int get_ccd_calibrate_info(rt_can_msg_t msg)
 {
-extern int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
-    return get_tcd1304_calibrate_info(&msg->data[1], 6);
+extern int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
+    return get_abs_ccd_calibrate_info(&msg->data[1], 6);
 }
 
 /**
@@ -136,8 +136,8 @@ extern int get_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
   */
 int set_ccd_calibrate_info(rt_can_msg_t msg)
 {
-extern int set_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
-    return set_tcd1304_calibrate_info(&msg->data[1], 6);
+extern int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
+    return set_abs_ccd_calibrate_info(&msg->data[1], 6);
 }
 
 /**
@@ -150,8 +150,8 @@ extern int set_tcd1304_calibrate_info(unsigned char *value, unsigned char len);
   */
 int get_ccd_check_info(rt_can_msg_t msg)
 {
-extern int get_tcd1304_check_info(unsigned char *value, unsigned char len);
-    return get_tcd1304_check_info(&msg->data[1], 6);
+extern int get_abs_ccd_check_info(unsigned char *value, unsigned char len);
+    return get_abs_ccd_check_info(&msg->data[1], 6);
 }
 
 /**
@@ -162,8 +162,8 @@ extern int get_tcd1304_check_info(unsigned char *value, unsigned char len);
   */
 int set_ccd_duanluo_info(rt_can_msg_t msg)
 {
-extern int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
-    return set_tcd1304_duanluo_info(&msg->data[1], 6);
+extern int set_abs_ccd_duanluo_info(unsigned char *value, unsigned char len);
+    return set_abs_ccd_duanluo_info(&msg->data[1], 6);
 }
 
 /**
@@ -174,8 +174,8 @@ extern int set_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
   */
 int get_ccd_duanluo_info(rt_can_msg_t msg)
 {
-extern int get_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
-    return get_tcd1304_duanluo_info(&msg->data[1], 6);
+extern int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len);
+    return get_abs_ccd_duanluo_info(&msg->data[1], 6);
 }
 
 /**
@@ -188,8 +188,8 @@ extern int get_tcd1304_duanluo_info(unsigned char *value, unsigned char len);
   */
 int get_ccd_calibrate_delta_info(rt_can_msg_t msg)
 {
-extern int get_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len);
-    return get_tcd1304_calibrate_delta_info(&msg->data[1], 6);
+extern int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len);
+    return get_abs_ccd_calibrate_delta_info(&msg->data[1], 6);
 }
 
 /**
@@ -202,8 +202,8 @@ extern int get_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char 
   */
 int set_ccd_calibrate_delta_info(rt_can_msg_t msg)
 {
-extern int set_tcd1304_calibrate_delta_info(unsigned char *value, unsigned char len);
-    return set_tcd1304_calibrate_delta_info(&msg->data[1], 6);
+extern int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len);
+    return set_abs_ccd_calibrate_delta_info(&msg->data[1], 6);
 }
 /**
   * @brief 控制 CCD 进行检测并返回检测结果
