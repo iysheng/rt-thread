@@ -559,17 +559,17 @@ void USBD_HP_CAN0_TX_IRQHandler(void)
     uint32_t hcan;
     hcan = drv_can0.CanHandle;
 
-    if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF0))
+    if (SET == can_flag_get(hcan, CAN_FLAG_MTF0))
     {
         rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 0 << 8);
         can_flag_clear(hcan, CAN_FLAG_MTF0);
     }
-    else if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF1))
+    else if (SET == can_flag_get(hcan, CAN_FLAG_MTF1))
     {
         rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 1 << 8);
         can_flag_clear(hcan, CAN_FLAG_MTF1);
     }
-    else if (SET == can_interrupt_flag_get(hcan, CAN_INT_FLAG_MTF2))
+    else if (SET == can_flag_get(hcan, CAN_FLAG_MTF2))
     {
         rt_hw_can_isr(&drv_can0.device, RT_CAN_EVENT_TX_DONE | 2 << 8);
         can_flag_clear(hcan, CAN_FLAG_MTF2);
