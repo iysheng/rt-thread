@@ -60,7 +60,8 @@ static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
         /* TODO 采样标定 */
         LOG_D("times=%d", msg->data[1]);
         set_tcd1304_device_marktimes(!!msg->data[1]);
-        NVIC_EnableIRQ(TIMER3_IRQn);
+        /* 开 SH 中断 */
+        NVIC_EnableIRQ(TIMER7_Channel_IRQn);
         /* 设置标定成功 */
         msg->data[2] = 0;
         LOG_HEX("ccdCal", 8, msg->data, 8);
@@ -314,13 +315,16 @@ void can_backend_entry(void * arg)
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
+                    /* 进行校准 */
                 case CCD_CALIBRATE:
+                    show_ad9945();
                     /* TODO check wether match */
                     set_ccd_calibrate(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_CALIBRATE_RESPON;
                     /* TODO respon to remote */
-                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    //rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    rt_kprintf("aaaa\n");
                     break;
                 case CCD_CALIBRATE_INFO:
                     /* TODO check wether match */

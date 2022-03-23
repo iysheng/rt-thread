@@ -20,6 +20,9 @@
 #include <rtdbg.h>
 
 static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS], gs_ad9945_data4portc[AD9945_DATA_COUNTS];
+static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
+static uint16_t s_index;
+static uint8_t gs_sync4dma_flag;
 /*
  * AHB = 120M
  * APB2 = 120M
@@ -31,7 +34,7 @@ static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS], gs_ad9945_data4portc[AD9945_
 #if 0
 /**
   * @brief 获取指定寄存器地址的数据
-  * @param uint8_t reg_addr: 
+  * @param uint8_t reg_addr:
   * retval 寄存器地址的数据.
   */
 static uint16_t _get_ad9945_reg_value(uint8_t reg_addr)
@@ -66,8 +69,8 @@ static uint16_t _get_ad9945_reg_value(uint8_t reg_addr)
 
 /**
   * @brief 设置指定寄存器地址的数据
-  * @param uint8_t reg_addr: 
-  * @param uint16_t reg_data: 
+  * @param uint8_t reg_addr:
+  * @param uint16_t reg_data:
   * retval N/A.
   */
 static void _set_ad9945_reg_value(uint8_t reg_addr, uint16_t reg_data)
@@ -98,7 +101,7 @@ static void _set_ad9945_reg_value(uint8_t reg_addr, uint16_t reg_data)
 
 /**
   * @brief 获取指定寄存器地址的数据
-  * @param uint8_t reg_addr: 
+  * @param uint8_t reg_addr:
   * retval 寄存器地址的数据.
   */
 static uint16_t _get_ad9945_ad_value(void)
@@ -116,19 +119,19 @@ static uint16_t _get_ad9945_ad_value(void)
     return port_b_value;
 }
 
-static int s_index;
 static int s_start_sample;
-void TIMER4_IRQHandler(void)
+#if 0
+void TIMER1_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
 
     if (s_index == AD9945_DATA_COUNTS)
     {
-        timer_interrupt_disable(TIMER4, TIMER_INT_CH3);
+        timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
     }
 #if 0
-    else if (s_index < 400)
+    else if (s_index < 100)
     {
         rt_pin_write(GD32_AD9945_CLPOB_PIN, RESET);
     }
@@ -137,21 +140,22 @@ void TIMER4_IRQHandler(void)
         rt_pin_write(GD32_AD9945_CLPOB_PIN, SET);
     }
 #endif
-    if (SET == timer_interrupt_flag_get(TIMER4, TIMER_INT_FLAG_CH3))
+    if (SET == timer_interrupt_flag_get(TIMER1, TIMER_INT_FLAG_CH0))
     {
-        timer_interrupt_flag_clear(TIMER4, TIMER_INT_FLAG_CH3);
-     //   gs_ad9945_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9945_ad_value();
+        timer_interrupt_flag_clear(TIMER1, TIMER_INT_FLAG_CH0);
+     //   gs_ad9915_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9915_ad_value();
     }
     /* leave interrupt */
     rt_interrupt_leave();
 }
+#endif
 
 void TIMER7_Channel_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
 
-    if (timer_flag_get(TIMER7, TIMER_FLAG_CH3))
+    if (SET == timer_flag_get(TIMER7, TIMER_FLAG_CH3))
     {
         if (0 == s_start_sample)
         {
@@ -166,27 +170,23 @@ void TIMER7_Channel_IRQHandler(void)
 
 void DMA0_Channel0_IRQHandler(void)
 {
-    /* enter interrupt */
     rt_interrupt_enter();
     if (SET == dma_flag_get(DMA0, DMA_CH0, DMA_FLAG_FTF))
     {
         dma_flag_clear(DMA0, DMA_CH0, DMA_FLAG_FTF);
-        timer_interrupt_disable(TIMER1, TIMER_INT_CH2);
-        //timer_disable(TIMER1);
+        dma_channel_disable(DMA0, DMA_CH0);
+        if (gs_sync4dma_flag & 0x10)
+        {
+            /* mark DMA transmit done */
+            s_index = AD9945_DATA_COUNTS;
+            timer_disable(TIMER1);
+        }
+        else
+        {
+            /* mark DMA channel0 done */
+            gs_sync4dma_flag |= 1;
+        }
     }
-#if 0
-    if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_HTF))
-    {
-        dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_HTF);
-        LOG_I("WOW DMA1 CHANNEL0 HTF***********************");
-    }
-    if (SET == dma_flag_get(DMA1, DMA_CH0, DMA_FLAG_G))
-    {
-        dma_flag_clear(DMA1, DMA_CH0, DMA_FLAG_G);
-        LOG_I("WOW DMA1 CHANNEL0 GLOBAL***********************");
-    }
-#endif
-    /* leave interrupt */
     rt_interrupt_leave();
 }
 
@@ -197,9 +197,18 @@ void DMA0_Channel4_IRQHandler(void)
     if (SET == dma_flag_get(DMA0, DMA_CH4, DMA_FLAG_FTF))
     {
         dma_flag_clear(DMA0, DMA_CH4, DMA_FLAG_FTF);
-        timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
-        timer_disable(TIMER1);
-        s_index = AD9945_DATA_COUNTS;
+        dma_channel_disable(DMA0, DMA_CH4);
+        if (gs_sync4dma_flag & 0x01)
+        {
+            /* mark DMA transmit done */
+            s_index = AD9945_DATA_COUNTS;
+            timer_disable(TIMER1);
+        }
+        else
+        {
+            /* mark DMA channel4 done */
+            gs_sync4dma_flag |= 0x10;
+        }
     }
     /* leave interrupt */
     rt_interrupt_leave();
@@ -207,7 +216,7 @@ void DMA0_Channel4_IRQHandler(void)
 
 /**
   * @brief 初始化 DMA 完成 AD9945 输出的 AD 数据搬移
-  * @param void: 
+  * @param void:
   * retval N/A.
   */
 static void dma_init4ad9945(void)
@@ -248,7 +257,7 @@ static void dma_init4ad9945(void)
 
 /**
   * @brief 初始化调节 pwm 补光灯
-  * @param void: 
+  * @param void:
   * retval N/A.
   */
 static void pwm_adj4led_init(void)
@@ -276,7 +285,7 @@ static void pwm_adj4led_init(void)
 
 /**
   * @brief AD9945 初始化
-  * @param void: 
+  * param void:
   * retval .
   */
 static void ad9945_device_init(void)
@@ -543,29 +552,68 @@ uint16_t get_ccd_value2index(uint16_t index)
     return ccd_value;
 }
 
+typedef struct {
+    uint16_t left[2];
+    uint16_t middle[2];
+    uint16_t right[2];
+} ccd_data_map_t;
+
+int get_sample_ans(uint16_t *data, uint16_t data_len)
+{
+    uint32_t sum = 0;
+    int i = 0;
+    ccd_data_map_t sample_test = {
+        .left[0] = 600,
+        .middle[0] = 900,
+        .right[0] = 600,
+    };
+
+    for (; i < data_len; i++)
+    {
+        sum += data[i];
+    }
+    sum /= data_len;
+    rt_kprintf("sum:%u, left=%u\n", sum, sample_test.left[0]);
+
+    for (i = 0; i < sample_test.left[0]; i++)
+    {
+        sample_test.left[1] += data[i] > sum ? 1 : 0;
+    }
+    for (; i < sample_test.left[0] + sample_test.middle[0]; i++)
+    {
+        sample_test.middle[1] += data[i] > sum ? 1 : 0;
+    }
+    for (; i < sample_test.left[0] + sample_test.middle[0] + sample_test.right[0]; i++)
+    {
+        sample_test.right[1] += data[i] > sum ? 1 : 0;
+    }
+
+    rt_kprintf("ans:%hu,%hu,%hu\n", sample_test.left[1], sample_test.middle[1], sample_test.right[1]);
+    return 0;
+}
+
 long show_ad9945(void)
 {
     int i = 0;
 
     s_start_sample = 0;
 
+    dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
+    dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
     dma_channel_enable(DMA0, DMA_CH0);
     dma_channel_enable(DMA0, DMA_CH4);
     timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
     while(s_index < AD9945_DATA_COUNTS);
     timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
-    dma_channel_disable(DMA0, DMA_CH0);
-    dma_channel_disable(DMA0, DMA_CH4);
-    dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
-    dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
     s_index = 0;
 #if 1
     for (; i < AD9945_DATA_COUNTS; i++)
     {
-        rt_kprintf("%hu,", get_ccd_value2index(i));
-        get_ccd_value2index(i);
+        //rt_kprintf("%hu,", get_ccd_value2index(i));
+        gs_ccd_raw_value[i] = get_ccd_value2index(i);
     }
+    get_sample_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
 #endif
 }
 MSH_CMD_EXPORT(show_ad9945, list device in system);
