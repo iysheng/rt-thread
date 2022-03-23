@@ -320,7 +320,6 @@ void can_backend_entry(void * arg)
                     msg.data[0] = CCD_CALIBRATE_RESPON;
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
-                    rt_kprintf("aaaa\n");
                     break;
                 case CCD_CALIBRATE_INFO:
                     /* TODO check wether match */
