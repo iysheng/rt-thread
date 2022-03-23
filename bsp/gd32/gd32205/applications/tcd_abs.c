@@ -8,7 +8,9 @@
  * 2021-12-26     iysheng           tcd abstract layer
  */
 
-int set_tcd1304_device_marktimes(int data){};
+int set_tcd1304_device_marktimes(int data){
+    tcd1209_calibrate_triger(data);
+};
 
 int set_tcd1304_device_data(int data){};
 

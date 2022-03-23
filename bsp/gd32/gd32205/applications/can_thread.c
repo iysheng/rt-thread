@@ -59,9 +59,7 @@ static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
     {
         /* TODO 采样标定 */
         LOG_D("times=%d", msg->data[1]);
-        set_tcd1304_device_marktimes(!!msg->data[1]);
-        /* 开 SH 中断 */
-        NVIC_EnableIRQ(TIMER7_Channel_IRQn);
+        tcd1209_calibrate_triger();
         /* 设置标定成功 */
         msg->data[2] = 0;
         LOG_HEX("ccdCal", 8, msg->data, 8);

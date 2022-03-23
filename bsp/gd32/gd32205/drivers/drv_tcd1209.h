@@ -42,5 +42,8 @@
 #define GD32_AD9945_D11_PIN            GET_PIN(C, 4)
 
 #define AD9945_DATA_COUNTS             2100
+
+int tcd1209_calibrate_triger(int times);
+
 #endif /* ifndef __TCD_1209_H__ */
 

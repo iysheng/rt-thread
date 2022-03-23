@@ -23,6 +23,7 @@ static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS], gs_ad9945_data4portc[AD9945_
 static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
 static uint16_t s_index;
 static uint8_t gs_sync4dma_flag;
+static uint8_t gs_start_sample;
 /*
  * AHB = 120M
  * APB2 = 120M
@@ -119,7 +120,6 @@ static uint16_t _get_ad9945_ad_value(void)
     return port_b_value;
 }
 
-static int s_start_sample;
 #if 0
 void TIMER1_IRQHandler(void)
 {
@@ -157,10 +157,11 @@ void TIMER7_Channel_IRQHandler(void)
 
     if (SET == timer_flag_get(TIMER7, TIMER_FLAG_CH3))
     {
-        if (0 == s_start_sample)
+        if (0 == gs_start_sample)
         {
+            /* DATACLK 定时器开启 */
             timer_enable(TIMER1);
-            s_start_sample = 1;
+            gs_start_sample = 1;
         }
         timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     }
@@ -180,6 +181,7 @@ void DMA0_Channel0_IRQHandler(void)
             /* mark DMA transmit done */
             s_index = AD9945_DATA_COUNTS;
             timer_disable(TIMER1);
+            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
         }
         else
         {
@@ -203,6 +205,7 @@ void DMA0_Channel4_IRQHandler(void)
             /* mark DMA transmit done */
             s_index = AD9945_DATA_COUNTS;
             timer_disable(TIMER1);
+            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
         }
         else
         {
@@ -525,7 +528,7 @@ int tcd1209_hw_init(void)
 }
 INIT_PREV_EXPORT(tcd1209_hw_init);
 
-uint16_t get_ccd_value2index(uint16_t index)
+static inline uint16_t get_ccd_value2index(uint16_t index)
 {
     uint16_t ccd_value = 0;
 
@@ -534,7 +537,7 @@ uint16_t get_ccd_value2index(uint16_t index)
      * C4:C5:B0:B1:B2:B10:B11:B7:B8:B9:C0:C1
      * */
 
-//    rt_kprintf("partc=%x portb=%x. ", gs_ad9945_data4portc[index] & 0x33, gs_ad9945_data[index] & 0xf87);
+    ccd_value = 0;
     ccd_value = (gs_ad9945_data4portc[index] & 0x10) << 7;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x20) << 5;
     ccd_value |= (gs_ad9945_data[index] & 0x01) << 9;
@@ -547,57 +550,73 @@ uint16_t get_ccd_value2index(uint16_t index)
     ccd_value |= (gs_ad9945_data[index] & 0x200) >> 7;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x01) << 1;
     ccd_value |= (gs_ad9945_data4portc[index] & 0x02) >> 1;
-//    rt_kprintf("ccd_value=%u\r\n", ccd_value);
 
     return ccd_value;
 }
 
 typedef struct {
-    uint16_t left[2];
-    uint16_t middle[2];
-    uint16_t right[2];
+    struct {
+        uint16_t left;
+        uint16_t middle;
+        uint16_t right;
+    } postion;
+    struct {
+        uint16_t left;
+        uint16_t middle;
+        uint16_t right;
+    } value;
 } ccd_data_map_t;
 
-int get_sample_ans(uint16_t *data, uint16_t data_len)
+/*
+ * CCD 标定位置以及参数配置
+ * */
+static ccd_data_map_t gs_sample_test = {
+    .postion = {
+        600,900,600,
+    },
+};
+
+int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
 {
     uint32_t sum = 0;
-    int i = 0;
-    ccd_data_map_t sample_test = {
-        .left[0] = 600,
-        .middle[0] = 900,
-        .right[0] = 600,
-    };
+    uint16_t i = 0;
 
     for (; i < data_len; i++)
     {
         sum += data[i];
     }
     sum /= data_len;
-    rt_kprintf("sum:%u, left=%u\n", sum, sample_test.left[0]);
+    rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.postion.left);
 
-    for (i = 0; i < sample_test.left[0]; i++)
+    for (i = 0; i < gs_sample_test.postion.left; i++)
     {
-        sample_test.left[1] += data[i] > sum ? 1 : 0;
+        gs_sample_test.value.left += data[i] > sum ? 1 : 0;
     }
-    for (; i < sample_test.left[0] + sample_test.middle[0]; i++)
+    for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle; i++)
     {
-        sample_test.middle[1] += data[i] > sum ? 1 : 0;
+        gs_sample_test.value.middle += data[i] > sum ? 1 : 0;
     }
-    for (; i < sample_test.left[0] + sample_test.middle[0] + sample_test.right[0]; i++)
+    for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle + gs_sample_test.postion.right; i++)
     {
-        sample_test.right[1] += data[i] > sum ? 1 : 0;
+        gs_sample_test.postion.right += data[i] > sum ? 1 : 0;
     }
 
-    rt_kprintf("ans:%hu,%hu,%hu\n", sample_test.left[1], sample_test.middle[1], sample_test.right[1]);
+    rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
     return 0;
 }
 
-long show_ad9945(void)
+long show_calibrate_ans(void)
+{
+    rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
+}
+MSH_CMD_EXPORT(show_calibrate_ans, show calibrate info now);
+
+int tcd1209_calibrate_triger(int times)
 {
     int i = 0;
 
-    s_start_sample = 0;
-
+    s_index = 0;
+    gs_start_sample = 0;
     dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
     dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
     dma_channel_enable(DMA0, DMA_CH0);
@@ -605,15 +624,25 @@ long show_ad9945(void)
     timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
     while(s_index < AD9945_DATA_COUNTS);
-    timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
-    s_index = 0;
+    for (; i < AD9945_DATA_COUNTS; i++)
+    {
+        gs_ccd_raw_value[i] = get_ccd_value2index(i);
+    }
+    convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
+}
+
+long show_ad9945(void)
+{
+    int i = 0;
+
+    while(s_index < AD9945_DATA_COUNTS);
 #if 1
     for (; i < AD9945_DATA_COUNTS; i++)
     {
         //rt_kprintf("%hu,", get_ccd_value2index(i));
         gs_ccd_raw_value[i] = get_ccd_value2index(i);
     }
-    get_sample_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
+    convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
 #endif
 }
 MSH_CMD_EXPORT(show_ad9945, list device in system);
