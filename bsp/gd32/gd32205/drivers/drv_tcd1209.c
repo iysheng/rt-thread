@@ -635,7 +635,6 @@ long show_ad9945(void)
 {
     int i = 0;
 
-    while(s_index < AD9945_DATA_COUNTS);
 #if 1
     for (; i < AD9945_DATA_COUNTS; i++)
     {

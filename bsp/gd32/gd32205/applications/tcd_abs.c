@@ -8,6 +8,8 @@
  * 2021-12-26     iysheng           tcd abstract layer
  */
 
+#include "drv_tcd1209.h"
+
 int set_abs_ccd_device_marktimes(int data){
     tcd1209_calibrate_triger(data);
 };

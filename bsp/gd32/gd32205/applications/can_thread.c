@@ -8,6 +8,7 @@
 #include <rtdevice.h>
 #include <board.h>
 #include <drivers/can.h>
+#include "tcd_abs.h"
 
 enum {
     CCD_CHECK = 0x01,
@@ -38,10 +39,6 @@ enum {
 static struct rt_semaphore gs_can_rx_sem;
 static rt_device_t gs_can_dev;
 
-extern int set_abs_ccd_device_marktimes(int data);
-extern int set_abs_ccd_device_data(int data);
-extern int get_ccd_check_ans(void);
-
 /**
   * @brief 控制 CCD 设备进行标定
   *
@@ -57,9 +54,9 @@ static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
     /* 限制最大校准次数为 10 */
     if (msg->data[1] < 10)
     {
+        set_abs_ccd_device_marktimes(msg->data[1]);
         /* TODO 采样标定 */
         LOG_D("times=%d", msg->data[1]);
-        tcd1209_calibrate_triger();
         /* 设置标定成功 */
         msg->data[2] = 0;
         LOG_HEX("ccdCal", 8, msg->data, 8);
@@ -297,6 +294,7 @@ void can_backend_entry(void * arg)
 
     while (1)
     {
+        rt_sem_take(&gs_can_rx_sem, RT_WAITING_FOREVER);
         rt_memset(&msg, 0, sizeof msg);
         ret = rt_device_read(gs_can_dev, 0, &msg, sizeof(msg));
         if (ret)
@@ -315,13 +313,13 @@ void can_backend_entry(void * arg)
                     break;
                     /* 进行校准 */
                 case CCD_CALIBRATE:
-                    show_ad9945();
+                    //show_ad9945();
                     /* TODO check wether match */
                     set_ccd_calibrate(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_CALIBRATE_RESPON;
                     /* TODO respon to remote */
-                    //rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     rt_kprintf("aaaa\n");
                     break;
                 case CCD_CALIBRATE_INFO:
@@ -371,6 +369,7 @@ void can_backend_entry(void * arg)
                     LOG_D("Invalid cmd:%x", msg.data[0]);
             }
         }
+        rt_kprintf("hello can\n");
         rt_thread_mdelay(100);
     }
 }
