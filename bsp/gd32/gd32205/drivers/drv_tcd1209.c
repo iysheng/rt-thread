@@ -588,7 +588,7 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     sum /= data_len;
     rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.postion.left);
 
-    if (gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0)
+    if (likely(gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0))
     {
         for (i = 0; i < gs_sample_test.postion.left; i++)
         {

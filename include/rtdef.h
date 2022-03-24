@@ -163,6 +163,8 @@ typedef rt_base_t                       rt_off_t;       /**< Type for offset */
     #define RT_WEAK                     __attribute__((weak))
     #define rt_inline                   static __inline
     #define RTT_API
+    #define unlikely(x)                 __builtin_expect(!!(x), 0)
+    #define likely(x)                   __builtin_expect(!!(x), 1)
 #elif defined (__ADSPBLACKFIN__)        /* for VisualDSP++ Compiler */
     #include <stdarg.h>
     #define RT_SECTION(x)               __attribute__((section(x)))
