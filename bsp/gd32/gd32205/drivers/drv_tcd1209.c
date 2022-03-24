@@ -23,7 +23,6 @@ static uint16_t _gs_ad9945_data[AD9945_DATA_COUNTS], _gs_ad9945_data4portc[AD994
 static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
 static uint16_t gs_index;
 static uint8_t gs_sync4dma_flag;
-static uint8_t gs_start_sample;
 
 /*
  * CCD 标定位置以及参数配置
@@ -68,6 +67,17 @@ static inline void raw_data_sync(void)
     {
         gs_ccd_raw_value[i] = get_ccd_value2index(i);
     }
+}
+
+static inline void ccd_scan_restart(void)
+{
+    gs_index = 0;
+    dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
+    dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
+    dma_channel_enable(DMA0, DMA_CH0);
+    dma_channel_enable(DMA0, DMA_CH4);
+    timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
+    timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
 }
 
 /*
@@ -203,11 +213,11 @@ void TIMER7_Channel_IRQHandler(void)
 
     if (SET == timer_flag_get(TIMER7, TIMER_FLAG_CH3))
     {
-        if (0 == gs_start_sample)
+        if (gs_index == 0)
         {
             /* DATACLK 定时器开启 */
             timer_enable(TIMER1);
-            gs_start_sample = 1;
+            gs_index = 1;
         }
         timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     }
@@ -640,14 +650,7 @@ MSH_CMD_EXPORT(calibrate_ans, show calibrate info now);
 
 int tcd1209_calibrate_triger(int times)
 {
-    gs_index = 0;
-    gs_start_sample = 0;
-    dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
-    dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
-    dma_channel_enable(DMA0, DMA_CH0);
-    dma_channel_enable(DMA0, DMA_CH4);
-    timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
-    timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
+    ccd_scan_restart();
     while(gs_index < AD9945_DATA_COUNTS);
     convert_data_sync();
 
