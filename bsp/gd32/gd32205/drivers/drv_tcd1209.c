@@ -19,11 +19,57 @@
 #define DBG_TAG    "tcd1209"
 #include <rtdbg.h>
 
-static uint16_t gs_ad9945_data[AD9945_DATA_COUNTS], gs_ad9945_data4portc[AD9945_DATA_COUNTS];
+static uint16_t _gs_ad9945_data[AD9945_DATA_COUNTS], _gs_ad9945_data4portc[AD9945_DATA_COUNTS];
 static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
-static uint16_t s_index;
+static uint16_t gs_index;
 static uint8_t gs_sync4dma_flag;
 static uint8_t gs_start_sample;
+
+/*
+ * CCD 标定位置以及参数配置
+ * */
+static ccd_data_map_t gs_sample_test = {
+    .postion = {
+        600,900,600,
+    },
+};
+
+static inline uint16_t get_ccd_value2index(uint16_t index)
+{
+    uint16_t ccd_value = 0;
+
+    /*
+     * bit [11:0]
+     * C4:C5:B0:B1:B2:B10:B11:B7:B8:B9:C0:C1
+     * */
+
+    ccd_value = 0;
+    ccd_value = (_gs_ad9945_data4portc[index] & 0x10) << 7;
+    ccd_value |= (_gs_ad9945_data4portc[index] & 0x20) << 5;
+    ccd_value |= (_gs_ad9945_data[index] & 0x01) << 9;
+    ccd_value |= (_gs_ad9945_data[index] & 0x02) << 7;
+    ccd_value |= (_gs_ad9945_data[index] & 0x04) << 5;
+    ccd_value |= (_gs_ad9945_data[index] & 0x400) >> 4;
+    ccd_value |= (_gs_ad9945_data[index] & 0x800) >> 6;
+    ccd_value |= (_gs_ad9945_data[index] & 0x80) >> 3;
+    ccd_value |= (_gs_ad9945_data[index] & 0x100) >> 5;
+    ccd_value |= (_gs_ad9945_data[index] & 0x200) >> 7;
+    ccd_value |= (_gs_ad9945_data4portc[index] & 0x01) << 1;
+    ccd_value |= (_gs_ad9945_data4portc[index] & 0x02) >> 1;
+
+    return ccd_value;
+}
+
+static inline void raw_data_sync(void)
+{
+    int i = 0;
+
+    for (; i < AD9945_DATA_COUNTS; i++)
+    {
+        gs_ccd_raw_value[i] = get_ccd_value2index(i);
+    }
+}
+
 /*
  * AHB = 120M
  * APB2 = 120M
@@ -126,12 +172,12 @@ void TIMER1_IRQHandler(void)
     /* enter interrupt */
     rt_interrupt_enter();
 
-    if (s_index == AD9945_DATA_COUNTS)
+    if (gs_index == AD9945_DATA_COUNTS)
     {
         timer_interrupt_disable(TIMER1, TIMER_INT_CH0);
     }
 #if 0
-    else if (s_index < 100)
+    else if (gs_index < 100)
     {
         rt_pin_write(GD32_AD9945_CLPOB_PIN, RESET);
     }
@@ -143,7 +189,7 @@ void TIMER1_IRQHandler(void)
     if (SET == timer_interrupt_flag_get(TIMER1, TIMER_INT_FLAG_CH0))
     {
         timer_interrupt_flag_clear(TIMER1, TIMER_INT_FLAG_CH0);
-     //   gs_ad9915_data[s_index++ % AD9945_DATA_COUNTS] = _get_ad9915_ad_value();
+     //   gs_ad9915_data[gs_index++ % AD9945_DATA_COUNTS] = _get_ad9915_ad_value();
     }
     /* leave interrupt */
     rt_interrupt_leave();
@@ -179,9 +225,10 @@ void DMA0_Channel0_IRQHandler(void)
         if (gs_sync4dma_flag & 0x10)
         {
             /* mark DMA transmit done */
-            s_index = AD9945_DATA_COUNTS;
+            gs_index = AD9945_DATA_COUNTS;
             timer_disable(TIMER1);
             timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
+            raw_data_sync();
         }
         else
         {
@@ -203,9 +250,10 @@ void DMA0_Channel4_IRQHandler(void)
         if (gs_sync4dma_flag & 0x01)
         {
             /* mark DMA transmit done */
-            s_index = AD9945_DATA_COUNTS;
+            gs_index = AD9945_DATA_COUNTS;
             timer_disable(TIMER1);
             timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
+            raw_data_sync();
         }
         else
         {
@@ -230,7 +278,7 @@ static void dma_init4ad9945(void)
     dma_param4dataclk_portb.periph_addr  = GPIOB + 0x08U;
     dma_param4dataclk_portb.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
     dma_param4dataclk_portb.periph_inc   = (uint8_t)DMA_PERIPH_INCREASE_DISABLE;
-    dma_param4dataclk_portb.memory_addr  = (uint32_t)&gs_ad9945_data[0];
+    dma_param4dataclk_portb.memory_addr  = (uint32_t)&_gs_ad9945_data[0];
     dma_param4dataclk_portb.memory_width = DMA_MEMORY_WIDTH_16BIT;
     dma_param4dataclk_portb.memory_inc   = (uint8_t)DMA_MEMORY_INCREASE_ENABLE;
     dma_param4dataclk_portb.number       = AD9945_DATA_COUNTS;
@@ -240,7 +288,7 @@ static void dma_init4ad9945(void)
     dma_param4dataclk_portc.periph_addr  = GPIOC + 0x08U;
     dma_param4dataclk_portc.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
     dma_param4dataclk_portc.periph_inc   = (uint8_t)DMA_PERIPH_INCREASE_DISABLE;
-    dma_param4dataclk_portc.memory_addr  = (uint32_t)&gs_ad9945_data4portc[0];
+    dma_param4dataclk_portc.memory_addr  = (uint32_t)&_gs_ad9945_data4portc[0];
     dma_param4dataclk_portc.memory_width = DMA_MEMORY_WIDTH_16BIT;
     dma_param4dataclk_portc.memory_inc   = (uint8_t)DMA_MEMORY_INCREASE_ENABLE;
     dma_param4dataclk_portc.number       = AD9945_DATA_COUNTS;
@@ -528,54 +576,6 @@ int tcd1209_hw_init(void)
 }
 INIT_PREV_EXPORT(tcd1209_hw_init);
 
-static inline uint16_t get_ccd_value2index(uint16_t index)
-{
-    uint16_t ccd_value = 0;
-
-    /*
-     * bit [11:0]
-     * C4:C5:B0:B1:B2:B10:B11:B7:B8:B9:C0:C1
-     * */
-
-    ccd_value = 0;
-    ccd_value = (gs_ad9945_data4portc[index] & 0x10) << 7;
-    ccd_value |= (gs_ad9945_data4portc[index] & 0x20) << 5;
-    ccd_value |= (gs_ad9945_data[index] & 0x01) << 9;
-    ccd_value |= (gs_ad9945_data[index] & 0x02) << 7;
-    ccd_value |= (gs_ad9945_data[index] & 0x04) << 5;
-    ccd_value |= (gs_ad9945_data[index] & 0x400) >> 4;
-    ccd_value |= (gs_ad9945_data[index] & 0x800) >> 6;
-    ccd_value |= (gs_ad9945_data[index] & 0x80) >> 3;
-    ccd_value |= (gs_ad9945_data[index] & 0x100) >> 5;
-    ccd_value |= (gs_ad9945_data[index] & 0x200) >> 7;
-    ccd_value |= (gs_ad9945_data4portc[index] & 0x01) << 1;
-    ccd_value |= (gs_ad9945_data4portc[index] & 0x02) >> 1;
-
-    return ccd_value;
-}
-
-typedef struct {
-    struct {
-        uint16_t left;
-        uint16_t middle;
-        uint16_t right;
-    } postion;
-    struct {
-        uint16_t left;
-        uint16_t middle;
-        uint16_t right;
-    } value;
-} ccd_data_map_t;
-
-/*
- * CCD 标定位置以及参数配置
- * */
-static ccd_data_map_t gs_sample_test = {
-    .postion = {
-        600,900,600,
-    },
-};
-
 int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
 {
     uint32_t sum = 0;
@@ -627,6 +627,11 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     return 0;
 }
 
+static inline void convert_data_sync(void)
+{
+    convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
+}
+
 long calibrate_ans(void)
 {
     rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
@@ -635,9 +640,7 @@ MSH_CMD_EXPORT(calibrate_ans, show calibrate info now);
 
 int tcd1209_calibrate_triger(int times)
 {
-    int i = 0;
-
-    s_index = 0;
+    gs_index = 0;
     gs_start_sample = 0;
     dma_transfer_number_config(DMA0, DMA_CH0, AD9945_DATA_COUNTS);
     dma_transfer_number_config(DMA0, DMA_CH4, AD9945_DATA_COUNTS);
@@ -645,12 +648,10 @@ int tcd1209_calibrate_triger(int times)
     dma_channel_enable(DMA0, DMA_CH4);
     timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
-    while(s_index < AD9945_DATA_COUNTS);
-    for (; i < AD9945_DATA_COUNTS; i++)
-    {
-        gs_ccd_raw_value[i] = get_ccd_value2index(i);
-    }
-    convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
+    while(gs_index < AD9945_DATA_COUNTS);
+    convert_data_sync();
+
+    return 0;
 }
 
 int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
@@ -671,10 +672,15 @@ int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
     }
 }
 
+int tcd1209_check_triger(int times)
+{
+
+}
+
 long show_ad9945(void)
 {
     tcd1209_calibrate_triger(1);
-    show_calibrate_ans();
+    calibrate_ans();
     return 0;
 }
 MSH_CMD_EXPORT(show_ad9945, list device in system);

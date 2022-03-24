@@ -43,9 +43,24 @@
 
 #define AD9945_DATA_COUNTS             2100
 
+typedef struct {
+    struct {
+        uint16_t left;
+        uint16_t middle;
+        uint16_t right;
+    } postion;
+    struct {
+        uint16_t left;
+        uint16_t middle;
+        uint16_t right;
+    } value;
+} ccd_data_map_t;
+
 int tcd1209_calibrate_triger(int times);
 
 int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len);
+
+int tcd1209_check_triger(int times);
 
 #endif /* ifndef __TCD_1209_H__ */
 

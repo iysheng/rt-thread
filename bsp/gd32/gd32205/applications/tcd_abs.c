@@ -12,10 +12,12 @@
 
 int set_abs_ccd_device_marktimes(int data)
 {
-    tcd1209_calibrate_triger(data);
+    return tcd1209_calibrate_triger(data);
 };
 
-int set_abs_ccd_device_data(int data){};
+int set_abs_ccd_device_data(int data){
+    return tcd1209_check_triger(data);
+};
 
 int get_ccd_check_ans(void){};
 
