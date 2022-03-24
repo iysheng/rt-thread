@@ -627,11 +627,11 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     return 0;
 }
 
-long show_calibrate_ans(void)
+long calibrate_ans(void)
 {
     rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
 }
-MSH_CMD_EXPORT(show_calibrate_ans, show calibrate info now);
+MSH_CMD_EXPORT(calibrate_ans, show calibrate info now);
 
 int tcd1209_calibrate_triger(int times)
 {
@@ -653,18 +653,29 @@ int tcd1209_calibrate_triger(int times)
     convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
 }
 
+int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
+{
+    if (likely(gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0))
+    {
+        value[0] = gs_sample_test.value.left >> 8 & 0xff;
+        value[1] = gs_sample_test.value.left & 0xff;
+        value[2] = gs_sample_test.value.middle >> 8 & 0xff;
+        value[3] = gs_sample_test.value.middle & 0xff;
+        value[4] = gs_sample_test.value.right >> 8 & 0xff;
+        value[5] = gs_sample_test.value.right & 0xff;
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
 long show_ad9945(void)
 {
-    int i = 0;
-
-#if 1
-    for (; i < AD9945_DATA_COUNTS; i++)
-    {
-        //rt_kprintf("%hu,", get_ccd_value2index(i));
-        gs_ccd_raw_value[i] = get_ccd_value2index(i);
-    }
-    convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
-#endif
+    tcd1209_calibrate_triger(1);
+    show_calibrate_ans();
+    return 0;
 }
 MSH_CMD_EXPORT(show_ad9945, list device in system);
 

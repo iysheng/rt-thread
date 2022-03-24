@@ -45,5 +45,7 @@
 
 int tcd1209_calibrate_triger(int times);
 
+int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len);
+
 #endif /* ifndef __TCD_1209_H__ */
 

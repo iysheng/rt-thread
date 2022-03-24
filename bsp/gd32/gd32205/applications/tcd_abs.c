@@ -10,7 +10,8 @@
 
 #include "drv_tcd1209.h"
 
-int set_abs_ccd_device_marktimes(int data){
+int set_abs_ccd_device_marktimes(int data)
+{
     tcd1209_calibrate_triger(data);
 };
 
@@ -18,7 +19,10 @@ int set_abs_ccd_device_data(int data){};
 
 int get_ccd_check_ans(void){};
 
-int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len){};
+int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_calibrate_get_info(value, len);
+};
 
 int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len){};
 
