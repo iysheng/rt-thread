@@ -277,6 +277,7 @@ void can_backend_entry(void * arg)
     /* 发送一帧 CAN 数据 */
     ret = rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
 
+extern void ccd_scan_recovery(void);
     while (1)
     {
         rt_sem_take(&gs_can_rx_sem, RT_WAITING_FOREVER);
@@ -289,7 +290,6 @@ void can_backend_entry(void * arg)
             LOG_HEX("can_fram", 8, msg.data, msg.len);
             switch(msg.data[0])
             {
-extern void ccd_scan_recovery(void);
                 case CCD_CHECK:
                     /* TODO calibrate */
                     if (-1 != set_ccd_check(&msg))
@@ -299,7 +299,6 @@ extern void ccd_scan_recovery(void);
                         /* TODO respon to remote */
                         rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     }
-                    ccd_scan_recovery();
                     break;
                     /* 进行校准 */
                 case CCD_CALIBRATE:
@@ -357,6 +356,7 @@ extern void ccd_scan_recovery(void);
                 default:
                     LOG_D("Invalid cmd:%x", msg.data[0]);
             }
+            ccd_scan_recovery();
         }
     }
 }
