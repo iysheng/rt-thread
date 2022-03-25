@@ -203,14 +203,14 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
 
             if (CAN0 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN0_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN0_RX1_IRQn, 1, 0);
+                nvic_irq_enable(CAN0_RX0_IRQn, 0, 2);
+                nvic_irq_enable(CAN0_RX1_IRQn, 0, 2);
             }
 #ifdef BSP_USING_CAN1
             if (CAN1 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN1_RX0_IRQn, 1, 0);
-                nvic_irq_enable(CAN1_RX1_IRQn, 1, 0);
+                nvic_irq_enable(CAN1_RX0_IRQn, 1, 2);
+                nvic_irq_enable(CAN1_RX1_IRQn, 1, 2);
             }
 #endif
         }
@@ -220,7 +220,7 @@ static rt_err_t _can_control(struct rt_can_device *can, int cmd, void *arg)
 
             if (CAN0 == drv_can->CanHandle)
             {
-                nvic_irq_enable(CAN0_TX_IRQn, 1, 0);
+                nvic_irq_enable(CAN0_TX_IRQn, 1, 5);
             }
 #ifdef BSP_USING_CAN1
             if (CAN1 == drv_can->CanHandle)
@@ -491,6 +491,7 @@ static const struct rt_can_ops _can_ops =
     _can_recvmsg,
 };
 
+extern void mark_catch_command(uint8_t status);
 static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
 {
     uint32_t hcan;
@@ -513,6 +514,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
         if (can_receive_message_length_get(hcan, CAN_FIFO0))
         {
             rt_hw_can_isr(can, RT_CAN_EVENT_RX_IND | fifo << 8);
+            mark_catch_command(1);
         }
 
         /* Check FULL flag for FIFO0 */
@@ -536,6 +538,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
         if (can_receive_message_length_get(hcan, CAN_FIFO1))
         {
             rt_hw_can_isr(can, RT_CAN_EVENT_RX_IND | fifo << 8);
+            mark_catch_command(1);
         }
 
         /* Check FULL flag for FIFO1 */
@@ -547,6 +550,7 @@ static void _can_rx_isr(struct rt_can_device *can, rt_uint32_t fifo)
         }
         break;
     }
+    //rt_kprintf("can isr 1111111111111111111\n");
 }
 
 #ifdef BSP_USING_CAN0

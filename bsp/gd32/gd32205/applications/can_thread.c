@@ -48,22 +48,15 @@ static rt_device_t gs_can_dev;
   */
 static int _set_ccd_calibrate(rt_device_t dev, rt_can_msg_t msg)
 {
-    int ret = -1;
-
-    RT_ASSERT(dev);
     /* 限制最大校准次数为 10 */
-    if (msg->data[1] < 10)
-    {
-        set_abs_ccd_device_marktimes(msg->data[1]);
-        /* TODO 采样标定 */
-        LOG_D("times=%d", msg->data[1]);
-        /* 设置标定成功 */
-        msg->data[2] = 0;
-        LOG_HEX("ccdCal", 8, msg->data, 8);
-        ret = 0;
-    }
+    set_abs_ccd_device_marktimes(msg->data[1]);
+    /* TODO 采样标定 */
+    LOG_D("times=%d", msg->data[1]);
+    /* 设置标定成功 */
+    msg->data[2] = 0;
+    LOG_HEX("ccdCal", 8, msg->data, 8);
 
-    return ret;
+    return 0;
 }
 
 /**
@@ -78,17 +71,7 @@ static int _set_ccd_check(rt_device_t dev, rt_can_msg_t msg)
     int ret;
 
     RT_ASSERT(dev);
-#if 0
-    NVIC_EnableIRQ(TIMER3_IRQn);
-    /* test code need delete  */
-    static int times;
-    ret = times++ % 2;
-#else
-    set_abs_ccd_device_data(3);
-    ret = get_ccd_check_ans();
-    set_abs_ccd_device_data(1);
-    LOG_D("<<<<<<< ret=%d.", ret);
-#endif
+    ret = set_abs_ccd_device_data(msg->data[6]);
     /* 设置检测结果 */
     msg->data[5] = (unsigned char)ret;
     LOG_HEX("ccdCheck", 8, msg->data, 8);
@@ -222,6 +205,8 @@ static rt_err_t can_rx_call(rt_device_t dev, rt_size_t ret)
     /* CAN 接收到数据后产生中断，调用此回调函数，然后发送接收信号量 */
     rt_sem_release(&gs_can_rx_sem);
 
+    //rt_kprintf("can isr 222222222222222222\n");
+
     return RT_EOK;
 }
 
@@ -295,6 +280,7 @@ void can_backend_entry(void * arg)
     while (1)
     {
         rt_sem_take(&gs_can_rx_sem, RT_WAITING_FOREVER);
+    //rt_kprintf("can isr 333333333333333333\n");
         rt_memset(&msg, 0, sizeof msg);
         ret = rt_device_read(gs_can_dev, 0, &msg, sizeof(msg));
         if (ret)
@@ -303,13 +289,17 @@ void can_backend_entry(void * arg)
             LOG_HEX("can_fram", 8, msg.data, msg.len);
             switch(msg.data[0])
             {
+extern void ccd_scan_recovery(void);
                 case CCD_CHECK:
                     /* TODO calibrate */
-                    set_ccd_check(&msg);
-                    msg.id = REMOTE_CCD_MAIN_ADDR;
-                    msg.data[0] = CCD_CHECK_RESPON;
-                    /* TODO respon to remote */
-                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    if (-1 != set_ccd_check(&msg))
+                    {
+                        msg.id = REMOTE_CCD_MAIN_ADDR;
+                        msg.data[0] = CCD_CHECK_RESPON;
+                        /* TODO respon to remote */
+                        rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    }
+                    ccd_scan_recovery();
                     break;
                     /* 进行校准 */
                 case CCD_CALIBRATE:
@@ -368,7 +358,5 @@ void can_backend_entry(void * arg)
                     LOG_D("Invalid cmd:%x", msg.data[0]);
             }
         }
-        rt_kprintf("hello can\n");
-        rt_thread_mdelay(100);
     }
 }

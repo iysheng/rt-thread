@@ -18,6 +18,8 @@
 
 /* HEART PIN is GPIOB_15 */
 #define HEART_PIN    31
+/* PWM PIN is GPIOB_5 */
+#define PWM_PIN    21
 
 static rt_thread_t gs_can_thread;
 extern void can_backend_entry(void * arg);
@@ -36,6 +38,8 @@ int main(void)
         return -2;
     }
 
+    rt_pin_mode(PWM_PIN, PIN_MODE_OUTPUT);
+    rt_pin_write(PWM_PIN, PIN_LOW);
     while(1)
     {
         rt_pin_write(HEART_PIN, PIN_LOW);

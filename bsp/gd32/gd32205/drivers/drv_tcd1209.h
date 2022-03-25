@@ -11,6 +11,8 @@
 #ifndef __TCD_1209_H__
 #define __TCD_1209_H__
 
+#include <stdint.h>
+
 #define GD32_F1_PIN                    GET_PIN(B, 13)   /* TIMER0_CH0_ON R*/
 #define GD32_F2_PIN                    GET_PIN(A, 8)    /* TIMER0_CH0 R*/
 #define GD32_CP_PIN                    GET_PIN(B, 4)    /* TIMER2_CH0 R*/
@@ -44,17 +46,23 @@
 #define AD9945_DATA_COUNTS             2100
 
 typedef struct {
-    struct {
-        uint16_t left;
-        uint16_t middle;
-        uint16_t right;
-    } postion;
-    struct {
-        uint16_t left;
-        uint16_t middle;
-        uint16_t right;
-    } value;
+    int16_t left;
+    int16_t middle;
+    int16_t right;
+} ccd_data_t;
+
+typedef struct {
+    ccd_data_t position;
+    ccd_data_t value;
 } ccd_data_map_t;
+
+#define CHECK_START_TYPE    0xfe
+#define CHECK_END_TYPE      0xff
+
+typedef enum {
+    SCAN_TYPE_ONESHOT,
+    SCAN_TYPE_CONTINUOUS,
+} scan_type_E;
 
 int tcd1209_calibrate_triger(int times);
 

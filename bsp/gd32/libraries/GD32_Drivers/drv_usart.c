@@ -256,7 +256,7 @@ static rt_err_t _uart_configure(struct rt_serial_device *serial, struct serial_c
 
     rcu_periph_clock_enable(uart->per_clk);
 
-    NVIC_SetPriority(uart->irqn, 0);
+    NVIC_SetPriority(uart->irqn, 0x46);
     NVIC_EnableIRQ(uart->irqn);
 
     usart_baudrate_set(uart->uart_periph, cfg->baud_rate);

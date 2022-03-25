@@ -14,6 +14,7 @@
 #include "gd32f20x_dma.h"
 #include "drv_gpio.h"
 #include "drv_tcd1209.h"
+#include <rthw.h>
 
 #define DBG_LVL    DBG_INFO
 #define DBG_TAG    "tcd1209"
@@ -22,16 +23,28 @@
 static uint16_t _gs_ad9945_data[AD9945_DATA_COUNTS], _gs_ad9945_data4portc[AD9945_DATA_COUNTS];
 static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
 static uint16_t gs_index;
-static uint8_t gs_sync4dma_flag;
+static int16_t _gs_data_delta = 10;
+static uint8_t gs_sync4dma_flag = 0x80;
+static uint8_t gs_type4scan_mode = SCAN_TYPE_ONESHOT;
+static uint8_t _gs_catch_command = 0;
+
+static uint8_t gs_just_test_led;
+
+void mark_catch_command(uint8_t status)
+{
+    _gs_catch_command = status;
+}
 
 /*
  * CCD 标定位置以及参数配置
  * */
 static ccd_data_map_t gs_sample_test = {
-    .postion = {
+    .position = {
         600,900,600,
     },
 };
+
+static ccd_data_t gs_calibrate_data;
 
 static inline uint16_t get_ccd_value2index(uint16_t index)
 {
@@ -62,11 +75,31 @@ static inline uint16_t get_ccd_value2index(uint16_t index)
 static inline void raw_data_sync(void)
 {
     int i = 0;
+    uint16_t raw_value_tmp;
 
     for (; i < AD9945_DATA_COUNTS; i++)
     {
-        gs_ccd_raw_value[i] = get_ccd_value2index(i);
+        raw_value_tmp = get_ccd_value2index(i);
+        //if (i < 50)
+        //    rt_kprintf("%u]", raw_value_tmp);
+        //gs_ccd_raw_value[i] = raw_value_tmp > gs_ccd_raw_value[i] ? raw_value_tmp : gs_ccd_raw_value[i];
+        gs_ccd_raw_value[i] = raw_value_tmp;
     }
+    //rt_kprintf("\n");
+}
+
+static inline void raw_data_clear(void)
+{
+    int i = 0;
+    uint32_t * ptr = (uint32_t *)&gs_ccd_raw_value[0];
+
+    for (; i < AD9945_DATA_COUNTS / 2; i++)
+    {
+        *ptr++ = 0x00;
+    }
+    gs_sample_test.value.left = 0;
+    gs_sample_test.value.middle = 0;
+    gs_sample_test.value.right = 0;
 }
 
 static inline void ccd_scan_restart(void)
@@ -78,6 +111,15 @@ static inline void ccd_scan_restart(void)
     dma_channel_enable(DMA0, DMA_CH4);
     timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     timer_interrupt_enable(TIMER7, TIMER_INT_CH3);
+}
+
+void ccd_scan_recovery(void)
+{
+    if (likely(_gs_catch_command && SCAN_TYPE_CONTINUOUS == gs_type4scan_mode))
+    {
+        ccd_scan_restart();
+        _gs_catch_command = 0;
+    }
 }
 
 /*
@@ -206,71 +248,37 @@ void TIMER1_IRQHandler(void)
 }
 #endif
 
+
 void TIMER7_Channel_IRQHandler(void)
 {
+    rt_base_t level;
     /* enter interrupt */
     rt_interrupt_enter();
 
+#if 1
     if (SET == timer_flag_get(TIMER7, TIMER_FLAG_CH3))
     {
-        if (gs_index == 0)
+        if ((gs_index == 0) && (gs_sync4dma_flag & 0x80))
         {
+            //timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_0, 10);
+            //timer_channel_output_pulse_value_config(TIMER1, TIMER_CH_2, 10);
             /* DATACLK 定时器开启 */
             timer_enable(TIMER1);
             gs_index = 1;
         }
+        else if (!(gs_sync4dma_flag & 0x80))
+        {
+            gs_sync4dma_flag |= 0x80;
+        }
         timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
     }
-    /* leave interrupt */
-    rt_interrupt_leave();
-}
-
-void DMA0_Channel0_IRQHandler(void)
-{
-    rt_interrupt_enter();
-    if (SET == dma_flag_get(DMA0, DMA_CH0, DMA_FLAG_FTF))
+#else
+    if (SET == timer_flag_get(TIMER7, TIMER_FLAG_CH3))
     {
-        dma_flag_clear(DMA0, DMA_CH0, DMA_FLAG_FTF);
-        dma_channel_disable(DMA0, DMA_CH0);
-        if (gs_sync4dma_flag & 0x10)
-        {
-            /* mark DMA transmit done */
-            gs_index = AD9945_DATA_COUNTS;
-            timer_disable(TIMER1);
-            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
-            raw_data_sync();
-        }
-        else
-        {
-            /* mark DMA channel0 done */
-            gs_sync4dma_flag |= 1;
-        }
+        timer_interrupt_flag_clear(TIMER7, TIMER_INT_FLAG_CH3);
+        rt_pin_write(21, gs_just_test_led++%2);
     }
-    rt_interrupt_leave();
-}
-
-void DMA0_Channel4_IRQHandler(void)
-{
-    /* enter interrupt */
-    rt_interrupt_enter();
-    if (SET == dma_flag_get(DMA0, DMA_CH4, DMA_FLAG_FTF))
-    {
-        dma_flag_clear(DMA0, DMA_CH4, DMA_FLAG_FTF);
-        dma_channel_disable(DMA0, DMA_CH4);
-        if (gs_sync4dma_flag & 0x01)
-        {
-            /* mark DMA transmit done */
-            gs_index = AD9945_DATA_COUNTS;
-            timer_disable(TIMER1);
-            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
-            raw_data_sync();
-        }
-        else
-        {
-            /* mark DMA channel4 done */
-            gs_sync4dma_flag |= 0x10;
-        }
-    }
+#endif
     /* leave interrupt */
     rt_interrupt_leave();
 }
@@ -307,9 +315,9 @@ static void dma_init4ad9945(void)
 
     dma_init(DMA0, DMA_CH0, &dma_param4dataclk_portb);
     dma_init(DMA0, DMA_CH4, &dma_param4dataclk_portc);
-    NVIC_SetPriority(DMA0_Channel0_IRQn, 0);
+    NVIC_SetPriority(DMA0_Channel0_IRQn, 0x40);
     NVIC_EnableIRQ(DMA0_Channel0_IRQn);
-    NVIC_SetPriority(DMA0_Channel4_IRQn, 0);
+    NVIC_SetPriority(DMA0_Channel4_IRQn, 0x40);
     NVIC_EnableIRQ(DMA0_Channel4_IRQn);
     dma_interrupt_enable(DMA0, DMA_CH0, DMA_INT_FTF | DMA_INT_ERR);
     dma_interrupt_enable(DMA0, DMA_CH4, DMA_INT_FTF | DMA_INT_ERR);
@@ -469,8 +477,8 @@ static void ad9945_device_init(void)
     timer_dma_enable(TIMER1, TIMER_DMA_CH2D);
 #endif
 
-#if 1
-    NVIC_SetPriority(TIMER1_IRQn, 0);
+#if 0
+    NVIC_SetPriority(TIMER1_IRQn, 0x0a);
     NVIC_EnableIRQ(TIMER1_IRQn);
 #endif
 
@@ -544,7 +552,7 @@ int tcd1209_hw_init(void)
     timer_primary_output_config(TIMER7, ENABLE);
     timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
     timer_enable(TIMER7);
-    NVIC_SetPriority(TIMER7_Channel_IRQn, 70);
+    NVIC_SetPriority(TIMER7_Channel_IRQn, 0x0);
     NVIC_EnableIRQ(TIMER7_Channel_IRQn);
     //rt_thread_mdelay(1);
     rcu_periph_clock_enable(RCU_TIMER0);
@@ -587,6 +595,7 @@ int tcd1209_hw_init(void)
 INIT_PREV_EXPORT(tcd1209_hw_init);
 
 int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
+#if 1
 {
     uint32_t sum = 0;
     uint16_t i = 0;
@@ -596,21 +605,52 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
         sum += data[i];
     }
     sum /= data_len;
-    rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.postion.left);
+    //rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.position.left);
+    gs_sample_test.value.left = 0;
+    gs_sample_test.value.middle = 0;
+    gs_sample_test.value.right = 0;
+
+      for (i = 0; i < gs_sample_test.position.left; i++)
+      {
+          gs_sample_test.value.left += data[i] > sum ? 1 : 0;
+      }
+      for (; i < gs_sample_test.position.left + gs_sample_test.position.middle; i++)
+      {
+          gs_sample_test.value.middle += data[i] > sum ? 1 : 0;
+      }
+      for (; i < gs_sample_test.position.left + gs_sample_test.position.middle + gs_sample_test.position.right; i++)
+      {
+          gs_sample_test.value.right += data[i] > sum ? 1 : 0;
+      }
+
+    //rt_kprintf("scan ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
+    return 0;
+}
+#else
+{
+    uint32_t sum = 0;
+    uint16_t i = 0;
+
+    for (; i < data_len; i++)
+    {
+        sum += data[i];
+    }
+    sum /= data_len;
+    rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.position.left);
 
     if (likely(gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0))
     {
-        for (i = 0; i < gs_sample_test.postion.left; i++)
+        for (i = 0; i < gs_sample_test.position.left; i++)
         {
             gs_sample_test.value.left += data[i] > sum ? 1 : 0;
         }
-        for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle; i++)
+        for (; i < gs_sample_test.position.left + gs_sample_test.position.middle; i++)
         {
             gs_sample_test.value.middle += data[i] > sum ? 1 : 0;
         }
-        for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle + gs_sample_test.postion.right; i++)
+        for (; i < gs_sample_test.position.left + gs_sample_test.position.middle + gs_sample_test.position.right; i++)
         {
-            gs_sample_test.postion.right += data[i] > sum ? 1 : 0;
+            gs_sample_test.value.right += data[i] > sum ? 1 : 0;
         }
         gs_sample_test.value.left >>= 1;
         gs_sample_test.value.middle >>= 1;
@@ -618,41 +658,103 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     }
     else
     {
-        for (i = 0; i < gs_sample_test.postion.left; i++)
+        for (i = 0; i < gs_sample_test.position.left; i++)
         {
             gs_sample_test.value.left += data[i] > sum ? 1 : 0;
         }
-        for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle; i++)
+        for (; i < gs_sample_test.position.left + gs_sample_test.position.middle; i++)
         {
             gs_sample_test.value.middle += data[i] > sum ? 1 : 0;
         }
-        for (; i < gs_sample_test.postion.left + gs_sample_test.postion.middle + gs_sample_test.postion.right; i++)
+        for (; i < gs_sample_test.position.left + gs_sample_test.position.middle + gs_sample_test.position.right; i++)
         {
-            gs_sample_test.postion.right += data[i] > sum ? 1 : 0;
+            gs_sample_test.value.right += data[i] > sum ? 1 : 0;
         }
     }
 
-
-    rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
+    rt_kprintf("scan ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
     return 0;
 }
+#endif
 
-static inline void convert_data_sync(void)
+static inline void convert_raw2data_sync(void)
 {
     convert_calibrate_ans(gs_ccd_raw_value, AD9945_DATA_COUNTS);
 }
 
+static inline void save_calibrate_data(void)
+{
+    gs_calibrate_data = gs_sample_test.value;
+    rt_kprintf("calibrate%u.%u.%u\n", gs_calibrate_data.left, gs_calibrate_data.middle, gs_calibrate_data.right);
+}
+
+static inline int compare_with_calibrate(void)
+{
+    int16_t delta;
+
+    delta = gs_calibrate_data.left - gs_sample_test.value.left;
+    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    {
+        return 1;
+    }
+
+    delta = gs_calibrate_data.middle - gs_sample_test.value.middle;
+    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    {
+        return 1;
+    }
+
+    delta = gs_calibrate_data.right - gs_sample_test.value.right;
+    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
 long calibrate_ans(void)
 {
-    rt_kprintf("ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
+    rt_kprintf("int16_t=%u ans:%hu,%hu,%hu\n", sizeof(int16_t), gs_calibrate_data.left, gs_calibrate_data.middle, gs_calibrate_data.right);
 }
 MSH_CMD_EXPORT(calibrate_ans, show calibrate info now);
 
 int tcd1209_calibrate_triger(int times)
 {
-    ccd_scan_restart();
-    while(gs_index < AD9945_DATA_COUNTS);
-    convert_data_sync();
+    if (likely(SCAN_TYPE_CONTINUOUS == gs_type4scan_mode))
+    {
+        if (likely(CHECK_END_TYPE == times))
+        {
+            /* TODO get calibrate ans and save */
+            convert_raw2data_sync();
+            save_calibrate_data();
+            /* TODO clear original data */
+            raw_data_clear();
+        }
+        else if (CHECK_START_TYPE == times)
+        {
+
+        }
+        else
+        {
+            /* just ignore */
+        }
+    }
+    else
+    {
+        if (CHECK_START_TYPE == times)
+        {
+            gs_type4scan_mode = SCAN_TYPE_CONTINUOUS;
+        }
+        else if (unlikely(CHECK_END_TYPE == times))
+        {
+            /* just ignore */
+        }
+        ccd_scan_restart();
+        while(gs_index < AD9945_DATA_COUNTS);
+        convert_raw2data_sync();
+        save_calibrate_data();
+    }
 
     return 0;
 }
@@ -677,7 +779,112 @@ int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
 
 int tcd1209_check_triger(int times)
 {
+    int ans = -1;
+    if (likely(SCAN_TYPE_CONTINUOUS == gs_type4scan_mode))
+    {
+        if (likely(CHECK_END_TYPE == times))
+        {
+            /* TODO get check ans and compare */
+            convert_raw2data_sync();
+            ans = compare_with_calibrate();
+            /* TODO clear original data */
+            rt_kprintf("check(%d):%hd.%hd.%hd\n", ans, gs_sample_test.value.left,
+                gs_sample_test.value.middle, gs_sample_test.value.right);
+            rt_kprintf("calibrate check(%d):%hd.%hd.%hd\n", ans, gs_calibrate_data.left,
+                gs_calibrate_data.middle, gs_calibrate_data.right);
+            raw_data_clear();
 
+        }
+        else if (CHECK_START_TYPE == times)
+        {
+
+        }
+        else
+        {
+            /* just ignore */
+            //gs_type4scan_mode = SCAN_TYPE_ONESHOT;
+        }
+    }
+    else
+    {
+        if (CHECK_START_TYPE == times)
+        {
+            gs_type4scan_mode = SCAN_TYPE_CONTINUOUS;
+        }
+        else if (unlikely(CHECK_END_TYPE == times))
+        {
+            /* TODO no support just */
+        }
+        ccd_scan_restart();
+        while(gs_index < AD9945_DATA_COUNTS);
+        convert_raw2data_sync();
+    }
+
+    return ans;
+}
+
+void DMA0_Channel0_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    if (SET == dma_flag_get(DMA0, DMA_CH0, DMA_FLAG_FTF))
+    {
+        dma_flag_clear(DMA0, DMA_CH0, DMA_FLAG_FTF);
+        dma_channel_disable(DMA0, DMA_CH0);
+        if (gs_sync4dma_flag & 0x10)
+        {
+            /* mark DMA transmit done */
+            gs_index = AD9945_DATA_COUNTS;
+            timer_disable(TIMER1);
+            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
+            raw_data_sync();
+            rt_pin_write(21, gs_just_test_led++%2);
+            if ((SCAN_TYPE_CONTINUOUS == gs_type4scan_mode) && (!_gs_catch_command))
+            {
+                convert_raw2data_sync();
+                gs_sync4dma_flag = 0;
+                ccd_scan_restart();
+            }
+        }
+        else
+        {
+            /* mark DMA channel0 done */
+            gs_sync4dma_flag |= 1;
+        }
+    }
+    rt_interrupt_leave();
+}
+
+void DMA0_Channel4_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if (SET == dma_flag_get(DMA0, DMA_CH4, DMA_FLAG_FTF))
+    {
+        dma_flag_clear(DMA0, DMA_CH4, DMA_FLAG_FTF);
+        dma_channel_disable(DMA0, DMA_CH4);
+        if (gs_sync4dma_flag & 0x01)
+        {
+            /* mark DMA transmit done */
+            gs_index = AD9945_DATA_COUNTS;
+            timer_disable(TIMER1);
+            timer_interrupt_disable(TIMER7, TIMER_INT_CH3);
+            raw_data_sync();
+            rt_pin_write(21, gs_just_test_led++%2);
+            if ((SCAN_TYPE_CONTINUOUS == gs_type4scan_mode) && (!_gs_catch_command))
+            {
+                convert_raw2data_sync();
+                ccd_scan_restart();
+                gs_sync4dma_flag = 0;
+            }
+        }
+        else
+        {
+            /* mark DMA channel4 done */
+            gs_sync4dma_flag |= 0x10;
+        }
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
 }
 
 long show_ad9945(void)
