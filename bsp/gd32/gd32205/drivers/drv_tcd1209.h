@@ -70,5 +70,12 @@ int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len);
 
 int tcd1209_check_triger(int times);
 
+int tcd1209_get_duanluo_info(unsigned char *value, unsigned char len);
+
+int tcd1209_set_duanluo_info(unsigned char *value, unsigned char len);
+
+int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len);
+
+int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len);
 #endif /* ifndef __TCD_1209_H__ */
 

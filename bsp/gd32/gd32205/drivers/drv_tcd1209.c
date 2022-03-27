@@ -759,6 +759,55 @@ int tcd1209_calibrate_triger(int times)
     return 0;
 }
 
+int tcd1209_get_duanluo_info(unsigned char *value, unsigned char len)
+{
+    value[0] = gs_sample_test.position.left >> 8;
+    value[1] = gs_sample_test.position.left;
+    value[2] = gs_sample_test.position.middle >> 8;
+    value[3] = gs_sample_test.position.middle;
+    value[4] = gs_sample_test.position.right >> 8;
+    value[5] = gs_sample_test.position.right;
+
+    return 0;
+}
+
+int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check parameter valid */
+    if ((value[0] << 8 | value[1]) > 4095)
+    {
+        return -1;
+    }
+    _gs_data_delta = value[0] << 8 | value[1];
+
+    return 0;
+}
+
+int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check parameter valid */
+    value[0] = _gs_data_delta >> 8;
+    value[1] = _gs_data_delta;
+
+    return 0;
+}
+int tcd1209_set_duanluo_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check parameter valid */
+    if ((gs_sample_test.position.left > AD9945_DATA_COUNTS) ||
+        (gs_sample_test.position.middle > AD9945_DATA_COUNTS) ||
+        (gs_sample_test.position.right > AD9945_DATA_COUNTS) ||
+        (gs_sample_test.position.left + gs_sample_test.position.middle + \
+         gs_sample_test.position.right > AD9945_DATA_COUNTS))
+    {
+        return -1;
+    }
+
+    gs_sample_test.position.left   = value[0] << 8 | value[1];
+    gs_sample_test.position.middle = value[2] << 8 | value[3];
+    gs_sample_test.position.right  = value[4] << 8 | value[5];
+}
+
 int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
 {
     if (likely(gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0))

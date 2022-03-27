@@ -130,7 +130,6 @@ extern int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
   */
 int get_ccd_check_info(rt_can_msg_t msg)
 {
-extern int get_abs_ccd_check_info(unsigned char *value, unsigned char len);
     return get_abs_ccd_check_info(&msg->data[1], 6);
 }
 
@@ -142,7 +141,6 @@ extern int get_abs_ccd_check_info(unsigned char *value, unsigned char len);
   */
 int set_ccd_duanluo_info(rt_can_msg_t msg)
 {
-extern int set_abs_ccd_duanluo_info(unsigned char *value, unsigned char len);
     return set_abs_ccd_duanluo_info(&msg->data[1], 6);
 }
 
@@ -182,7 +180,6 @@ extern int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char 
   */
 int set_ccd_calibrate_delta_info(rt_can_msg_t msg)
 {
-extern int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len);
     return set_abs_ccd_calibrate_delta_info(&msg->data[1], 6);
 }
 /**
@@ -328,11 +325,14 @@ extern void ccd_scan_recovery(void);
                     break;
                 case CCD_DUANLUO_INFO:
                     /* TODO calibrate */
-                    set_ccd_duanluo_info(&msg);
+                    if (set_ccd_duanluo_info(&msg) < 0)
+                    {
+                        /* TODO parameters is invalid */
+                    }
                     get_ccd_check_info(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_DUANLUO_INFO_RESPON;
-                    /* TODO respon to remote */
+                    /* respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
                 case CCD_DUANLUO_CANKAO_INFO:

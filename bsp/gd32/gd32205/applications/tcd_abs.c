@@ -9,6 +9,7 @@
  */
 
 #include "drv_tcd1209.h"
+#include "tcd_abs.h"
 
 int set_abs_ccd_device_marktimes(int data)
 {
@@ -28,12 +29,27 @@ int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len)
 
 int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len){};
 
-int get_abs_ccd_check_info(unsigned char *value, unsigned char len){};
+int get_abs_ccd_check_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_get_duanluo_info(value, len);
+};
 
-int set_abs_ccd_duanluo_info(unsigned char *value, unsigned char len){};
+int set_abs_ccd_duanluo_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_set_duanluo_info(value, len);
+};
 
-int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len){};
+int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_get_duanluo_info(value, len);
+};
 
-int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len){};
+int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_get_calibrate_delta_info(value, len);
+}
 
-int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len){};
+int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_set_calibrate_delta_info(value, len);
+};
