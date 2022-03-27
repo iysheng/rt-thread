@@ -102,7 +102,6 @@ int set_ccd_calibrate(rt_can_msg_t msg)
   */
 int get_ccd_calibrate_info(rt_can_msg_t msg)
 {
-extern int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
     return get_abs_ccd_calibrate_info(&msg->data[1], 6);
 }
 
@@ -116,7 +115,6 @@ extern int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
   */
 int set_ccd_calibrate_info(rt_can_msg_t msg)
 {
-extern int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
     return set_abs_ccd_calibrate_info(&msg->data[1], 6);
 }
 
@@ -139,9 +137,9 @@ int get_ccd_check_info(rt_can_msg_t msg)
   * retval errno/Linux.
   *      0 表示获取到有效的检测结果
   */
-int set_ccd_duanluo_info(rt_can_msg_t msg)
+int set_ccd_delimiters_info(rt_can_msg_t msg)
 {
-    return set_abs_ccd_duanluo_info(&msg->data[1], 6);
+    return set_abs_ccd_delimiters_info(&msg->data[1], 6);
 }
 
 /**
@@ -150,10 +148,9 @@ int set_ccd_duanluo_info(rt_can_msg_t msg)
   * retval errno/Linux.
   *      0 表示获取到有效的检测结果
   */
-int get_ccd_duanluo_info(rt_can_msg_t msg)
+int get_ccd_delimiters_info(rt_can_msg_t msg)
 {
-extern int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len);
-    return get_abs_ccd_duanluo_info(&msg->data[1], 6);
+    return get_abs_ccd_delimiters_info(&msg->data[1], 6);
 }
 
 /**
@@ -166,7 +163,6 @@ extern int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len);
   */
 int get_ccd_calibrate_delta_info(rt_can_msg_t msg)
 {
-extern int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len);
     return get_abs_ccd_calibrate_delta_info(&msg->data[1], 6);
 }
 
@@ -325,7 +321,7 @@ extern void ccd_scan_recovery(void);
                     break;
                 case CCD_DUANLUO_INFO:
                     /* TODO calibrate */
-                    if (set_ccd_duanluo_info(&msg) < 0)
+                    if (set_ccd_delimiters_info(&msg) < 0)
                     {
                         /* TODO parameters is invalid */
                     }

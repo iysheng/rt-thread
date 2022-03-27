@@ -31,17 +31,17 @@ int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len){};
 
 int get_abs_ccd_check_info(unsigned char *value, unsigned char len)
 {
-    return tcd1209_get_duanluo_info(value, len);
+    return tcd1209_get_delimiters_info(value, len);
 };
 
-int set_abs_ccd_duanluo_info(unsigned char *value, unsigned char len)
+int set_abs_ccd_delimiters_info(unsigned char *value, unsigned char len)
 {
-    return tcd1209_set_duanluo_info(value, len);
+    return tcd1209_set_delimiters_info(value, len);
 };
 
-int get_abs_ccd_duanluo_info(unsigned char *value, unsigned char len)
+int get_abs_ccd_delimiters_info(unsigned char *value, unsigned char len)
 {
-    return tcd1209_get_duanluo_info(value, len);
+    return tcd1209_get_delimiters_info(value, len);
 };
 
 int get_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len)

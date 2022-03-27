@@ -759,7 +759,7 @@ int tcd1209_calibrate_triger(int times)
     return 0;
 }
 
-int tcd1209_get_duanluo_info(unsigned char *value, unsigned char len)
+int tcd1209_get_delimiters_info(unsigned char *value, unsigned char len)
 {
     value[0] = gs_sample_test.position.left >> 8;
     value[1] = gs_sample_test.position.left;
@@ -791,7 +791,7 @@ int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len)
 
     return 0;
 }
-int tcd1209_set_duanluo_info(unsigned char *value, unsigned char len)
+int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len)
 {
     /* TODO check parameter valid */
     if ((gs_sample_test.position.left > AD9945_DATA_COUNTS) ||
