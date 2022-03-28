@@ -45,17 +45,6 @@
 
 #define AD9945_DATA_COUNTS             2100
 
-typedef struct {
-    int16_t left;
-    int16_t middle;
-    int16_t right;
-} ccd_data_t;
-
-typedef struct {
-    ccd_data_t position;
-    ccd_data_t value;
-} ccd_data_map_t;
-
 #define CHECK_START_TYPE    0xfe
 #define CHECK_END_TYPE      0xff
 

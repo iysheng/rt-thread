@@ -14,6 +14,7 @@
 #include "gd32f20x_dma.h"
 #include "drv_gpio.h"
 #include "drv_tcd1209.h"
+#include "tcd_abs.h"
 #include <rthw.h>
 
 #define DBG_LVL    DBG_INFO
@@ -806,6 +807,7 @@ int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len)
     gs_sample_test.position.left   = value[0] << 8 | value[1];
     gs_sample_test.position.middle = value[2] << 8 | value[3];
     gs_sample_test.position.right  = value[4] << 8 | value[5];
+    ef_set_abs_ccd_info(&gs_sample_test);
 }
 
 int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)

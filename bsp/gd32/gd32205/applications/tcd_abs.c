@@ -10,6 +10,7 @@
 
 #include "drv_tcd1209.h"
 #include "tcd_abs.h"
+#include <easyflash.h>
 
 int set_abs_ccd_device_marktimes(int data)
 {
@@ -53,3 +54,15 @@ int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len)
 {
     return tcd1209_set_calibrate_delta_info(value, len);
 };
+
+int ef_set_abs_ccd_info(ccd_data_map_t *ccd_data)
+{
+    ef_set_env_blob(TCD_ABS_EF_NAME, ccd_data, sizeof(ccd_data_map_t));
+}
+
+int ef_get_abs_ccd_info(ccd_data_map_t *ccd_data)
+{
+    size_t read_len = 0;
+
+    return ef_get_env_blob(TCD_ABS_EF_NAME, ccd_data, sizeof(ccd_data_map_t), &read_len);
+}
