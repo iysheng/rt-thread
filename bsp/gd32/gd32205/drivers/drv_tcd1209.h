@@ -12,6 +12,7 @@
 #define __TCD_1209_H__
 
 #include <stdint.h>
+#include "tcd_abs.h"
 
 #define GD32_F1_PIN                    GET_PIN(B, 13)   /* TIMER0_CH0_ON R*/
 #define GD32_F2_PIN                    GET_PIN(A, 8)    /* TIMER0_CH0 R*/
@@ -66,5 +67,7 @@ int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len);
 int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len);
 
 int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len);
+
+void tcd1209_register_abs_tcd_info(ccd_data_map_t *data);
 #endif /* ifndef __TCD_1209_H__ */
 

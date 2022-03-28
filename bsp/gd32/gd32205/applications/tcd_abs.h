@@ -18,6 +18,7 @@ typedef struct {
 } ccd_data_t;
 
 typedef struct {
+    int16_t delta;
     ccd_data_t position;
     ccd_data_t value;
 } ccd_data_map_t;
@@ -36,5 +37,6 @@ int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
 int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len);
 int ef_get_abs_ccd_info(ccd_data_map_t *ccd_data);
 int ef_set_abs_ccd_info(ccd_data_map_t *ccd_data);
+void register_abs_tcd_info(ccd_data_map_t *data);
 
 #endif /* ifndef __TCD_ABS_H__ */

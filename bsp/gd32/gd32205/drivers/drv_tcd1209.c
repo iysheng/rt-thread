@@ -14,7 +14,6 @@
 #include "gd32f20x_dma.h"
 #include "drv_gpio.h"
 #include "drv_tcd1209.h"
-#include "tcd_abs.h"
 #include <rthw.h>
 
 #define DBG_LVL    DBG_INFO
@@ -24,7 +23,6 @@
 static uint16_t _gs_ad9945_data[AD9945_DATA_COUNTS], _gs_ad9945_data4portc[AD9945_DATA_COUNTS];
 static uint16_t gs_ccd_raw_value[AD9945_DATA_COUNTS];
 static uint16_t gs_index;
-static int16_t _gs_data_delta = 10;
 static uint8_t gs_sync4dma_flag = 0x80;
 static uint8_t gs_type4scan_mode = SCAN_TYPE_ONESHOT;
 static uint8_t _gs_catch_command = 0;
@@ -40,10 +38,21 @@ void mark_catch_command(uint8_t status)
  * CCD 标定位置以及参数配置
  * */
 static ccd_data_map_t gs_sample_test = {
+    .delta = 10,
     .position = {
         600,900,600,
     },
 };
+
+void tcd1209_register_abs_tcd_info(ccd_data_map_t *data)
+{
+    if (!data)
+    {
+        LOG_E("invalid ccd data info\n");
+        return;
+    }
+    gs_sample_test = *data;
+}
 
 static ccd_data_t gs_calibrate_data;
 
@@ -694,19 +703,19 @@ static inline int compare_with_calibrate(void)
     int16_t delta;
 
     delta = gs_calibrate_data.left - gs_sample_test.value.left;
-    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    if ((delta > gs_sample_test.delta) || delta + gs_sample_test.delta < 0)
     {
         return 1;
     }
 
     delta = gs_calibrate_data.middle - gs_sample_test.value.middle;
-    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    if ((delta > gs_sample_test.delta) || delta + gs_sample_test.delta < 0)
     {
         return 1;
     }
 
     delta = gs_calibrate_data.right - gs_sample_test.value.right;
-    if ((delta > _gs_data_delta) || delta + _gs_data_delta < 0)
+    if ((delta > gs_sample_test.delta) || delta + gs_sample_test.delta < 0)
     {
         return 1;
     }
@@ -779,7 +788,8 @@ int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len)
     {
         return -1;
     }
-    _gs_data_delta = value[0] << 8 | value[1];
+    gs_sample_test.delta = value[0] << 8 | value[1];
+    ef_set_abs_ccd_info(&gs_sample_test);
 
     return 0;
 }
@@ -787,8 +797,8 @@ int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len)
 int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len)
 {
     /* TODO check parameter valid */
-    value[0] = _gs_data_delta >> 8;
-    value[1] = _gs_data_delta;
+    value[0] = gs_sample_test.delta >> 8;
+    value[1] = gs_sample_test.delta;
 
     return 0;
 }

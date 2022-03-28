@@ -66,3 +66,8 @@ int ef_get_abs_ccd_info(ccd_data_map_t *ccd_data)
 
     return ef_get_env_blob(TCD_ABS_EF_NAME, ccd_data, sizeof(ccd_data_map_t), &read_len);
 }
+
+void register_abs_tcd_info(ccd_data_map_t *data)
+{
+    tcd1209_register_abs_tcd_info(data);
+}

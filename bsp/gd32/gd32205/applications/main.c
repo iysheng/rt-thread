@@ -77,12 +77,14 @@ int main(void)
     }
     else if (ef_get_abs_ccd_info(&ccd_data))
     {
-        LOG_I("tcd_abs:%u,%u,%u,%u,%u,%u.", ccd_data.position.left,\
+        LOG_I("tcd_abs:%u@%u,%u,%u,%u,%u,%u.", ccd_data.delta,\
+            ccd_data.position.left,\
             ccd_data.position.middle,\
             ccd_data.position.right,\
             ccd_data.value.left,\
             ccd_data.value.middle,\
             ccd_data.value.right);
+        register_abs_tcd_info(&ccd_data);
     }
 
     gs_can_thread = rt_thread_create("canBack", can_backend_entry, RT_NULL, 0x800, 5, 10);
