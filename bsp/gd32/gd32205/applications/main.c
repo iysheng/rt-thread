@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <rtthread.h>
 #include "rtdevice.h"
+#include <easyflash.h>
 
 #define DBG_LVL               DBG_INFO
 #define DBG_TAG               "app.MAIN"

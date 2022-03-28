@@ -4,7 +4,13 @@ from building import *
 
 cwd     = os.path.join(str(Dir('#')), 'applications')
 src	= Glob('*.c')
+src += Glob('easyflash/port/ef_port.c')
+src += Glob('easyflash/src/easyflash.c')
+src += Glob('easyflash/src/ef_env.c')
+src += Glob('easyflash/src/ef_utils.c')
+
 CPPPATH = [cwd, str(Dir('#'))]
+CPPPATH += [cwd + '/easyflash/inc']
 
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 
