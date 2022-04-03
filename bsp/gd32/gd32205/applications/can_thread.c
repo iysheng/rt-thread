@@ -325,7 +325,7 @@ extern void ccd_scan_recovery(void);
                     {
                         /* TODO parameters is invalid */
                     }
-                    get_ccd_check_info(&msg);
+                    get_ccd_delimiters_info(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_DUANLUO_INFO_RESPON;
                     /* respon to remote */

@@ -107,9 +107,6 @@ static inline void raw_data_clear(void)
     {
         *ptr++ = 0x00;
     }
-    gs_sample_test.value.left = 0;
-    gs_sample_test.value.middle = 0;
-    gs_sample_test.value.right = 0;
 }
 
 static inline void ccd_scan_restart(void)
@@ -781,6 +778,19 @@ int tcd1209_get_delimiters_info(unsigned char *value, unsigned char len)
     return 0;
 }
 
+int tcd1209_get_check_info(unsigned char *value, unsigned char len)
+{
+
+    value[0] = gs_sample_test.value.left >> 8;
+    value[1] = gs_sample_test.value.left;
+    value[2] = gs_sample_test.value.middle >> 8;
+    value[3] = gs_sample_test.value.middle;
+    value[4] = gs_sample_test.value.right >> 8;
+    value[5] = gs_sample_test.value.right;
+
+    return 0;
+}
+
 int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len)
 {
     /* TODO check parameter valid */
@@ -805,12 +815,13 @@ int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len)
 int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len)
 {
     /* TODO check parameter valid */
-    if ((gs_sample_test.position.left > AD9945_DATA_COUNTS) ||
-        (gs_sample_test.position.middle > AD9945_DATA_COUNTS) ||
-        (gs_sample_test.position.right > AD9945_DATA_COUNTS) ||
-        (gs_sample_test.position.left + gs_sample_test.position.middle + \
-         gs_sample_test.position.right > AD9945_DATA_COUNTS))
+    if (((value[0] << 8 | value[1]) > AD9945_DATA_COUNTS) ||
+        ((value[2] << 8 | value[3]) > AD9945_DATA_COUNTS) ||
+        ((value[4] << 8 | value[5]) > AD9945_DATA_COUNTS) ||
+        ((value[0] << 8 | value[1]) + (value[2] << 8 | value[3]) + \
+           (value[4] << 8 | value[5]) > AD9945_DATA_COUNTS))
     {
+		LOG_E("delimiters invalid");
         return -1;
     }
 
@@ -843,7 +854,7 @@ int tcd1209_check_triger(int times)
     int ans = -1;
     if (likely(SCAN_TYPE_CONTINUOUS == gs_type4scan_mode))
     {
-        if (likely(CHECK_END_TYPE == times))
+        if (likely(CHECK_END_TYPE == times || 0 == times))
         {
             /* TODO get check ans and compare */
             convert_raw2data_sync();
