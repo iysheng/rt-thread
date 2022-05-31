@@ -77,7 +77,8 @@ int main(void)
     }
     else if (ef_get_abs_ccd_info(&ccd_data))
     {
-        LOG_I("tcd_abs:%u@%u,%u,%u,%u,%u,%u.", ccd_data.delta,\
+        LOG_I("tcd_abs:%u:%u@%u,%u,%u,%u,%u,%u.", ccd_data.delta,\
+            ccd_data.threshold,\
             ccd_data.position.left,\
             ccd_data.position.middle,\
             ccd_data.position.right,\

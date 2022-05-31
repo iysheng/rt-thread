@@ -58,6 +58,16 @@ int set_abs_ccd_calibrate_delta_info(unsigned char *value, unsigned char len)
     return tcd1209_set_calibrate_delta_info(value, len);
 };
 
+int get_abs_ccd_calibrate_threshold_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_get_calibrate_threshold_info(value, len);
+}
+
+int set_abs_ccd_calibrate_threshold_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_set_calibrate_threshold_info(value, len);
+};
+
 int ef_set_abs_ccd_info(ccd_data_map_t *ccd_data)
 {
     ef_set_env_blob(TCD_ABS_EF_NAME, ccd_data, sizeof(ccd_data_map_t));

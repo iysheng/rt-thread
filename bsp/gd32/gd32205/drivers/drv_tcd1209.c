@@ -35,24 +35,15 @@ void mark_catch_command(uint8_t status)
 }
 
 /*
- * CCD 标定位置以及参数配置
+ * CCD 标定位置以及参数配置,包含实际的采样信息
  * */
 static ccd_data_map_t gs_sample_test = {
+    .threshold = 2000,
     .delta = 10,
     .position = {
         600,900,600,
     },
 };
-
-void tcd1209_register_abs_tcd_info(ccd_data_map_t *data)
-{
-    if (!data)
-    {
-        LOG_E("invalid ccd data info\n");
-        return;
-    }
-    gs_sample_test = *data;
-}
 
 static ccd_data_t gs_calibrate_data;
 
@@ -606,29 +597,33 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
 {
     uint32_t sum = 0;
     uint16_t i = 0;
-
+#if 0
     for (; i < data_len; i++)
     {
         sum += data[i];
     }
     sum /= data_len;
+#else
+	sum = gs_sample_test.threshold;
+#endif
     //rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.position.left);
     gs_sample_test.value.left = 0;
     gs_sample_test.value.middle = 0;
     gs_sample_test.value.right = 0;
 
-      for (i = 0; i < gs_sample_test.position.left; i++)
-      {
-          gs_sample_test.value.left += data[i] > sum ? 1 : 0;
-      }
-      for (; i < gs_sample_test.position.left + gs_sample_test.position.middle; i++)
-      {
-          gs_sample_test.value.middle += data[i] > sum ? 1 : 0;
-      }
-      for (; i < gs_sample_test.position.left + gs_sample_test.position.middle + gs_sample_test.position.right; i++)
-      {
-          gs_sample_test.value.right += data[i] > sum ? 1 : 0;
-      }
+    /* 暗电压是低电平 */
+    for (i = 0; i < gs_sample_test.position.left; i++)
+    {
+        gs_sample_test.value.left += data[i] < sum ? 1 : 0;
+    }
+    for (; i < gs_sample_test.position.left + gs_sample_test.position.middle; i++)
+    {
+        gs_sample_test.value.middle += data[i] < sum ? 1 : 0;
+    }
+    for (; i < gs_sample_test.position.left + gs_sample_test.position.middle + gs_sample_test.position.right; i++)
+    {
+        gs_sample_test.value.right += data[i] < sum ? 1 : 0;
+    }
 
     //rt_kprintf("scan ans:%hu,%hu,%hu\n", gs_sample_test.value.left, gs_sample_test.value.middle, gs_sample_test.value.right);
     return 0;
@@ -812,6 +807,7 @@ int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len)
 
     return 0;
 }
+
 int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len)
 {
     /* TODO check parameter valid */
@@ -836,6 +832,34 @@ int tcd1209_calibrate_set_info(unsigned char *value, unsigned char len)
     gs_sample_test.value.left = value[0] << 8 | value[1];
     gs_sample_test.value.middle = value[2] << 8 | value[3];
     gs_sample_test.value.right = value[4] << 8 | value[5];
+    /* 写入到 flash 中 */
+    save_calibrate_data();
+    return 0;
+}
+
+int tcd1209_set_calibrate_threshold_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check parameter valid */
+    if ((value[0] << 8 | value[1]) > 4095)
+    {
+        return -1;
+    }
+    /* 如果带有写标志 */
+    else if (value[6] == 1)
+    {
+        gs_sample_test.threshold = value[0] << 8 | value[1];
+        ef_set_abs_ccd_info(&gs_sample_test);
+    }
+
+    return 0;
+}
+
+int tcd1209_get_calibrate_threshold_info(unsigned char *value, unsigned char len)
+{
+    /* TODO check parameter valid */
+    value[0] = gs_sample_test.threshold >> 8;
+    value[1] = gs_sample_test.threshold;
+
     return 0;
 }
 
@@ -901,6 +925,18 @@ int tcd1209_check_triger(int times)
     }
 
     return ans;
+}
+
+void tcd1209_register_abs_tcd_info(ccd_data_map_t *data)
+{
+    if (!data)
+    {
+        LOG_E("invalid ccd data info\n");
+        return;
+    }
+    gs_sample_test = *data;
+	/* 同步校准信息 */
+    save_calibrate_data();
 }
 
 void DMA0_Channel0_IRQHandler(void)
@@ -993,3 +1029,24 @@ long adj_ob(int argc, char *argv[])
     return 0;
 }
 MSH_CMD_EXPORT(adj_ob, adjust ob clamp level);
+
+/* 设置阈值 */
+long adj_thresholod(int argc, char *argv[])
+{
+	int16_t threshold = 0;
+    if (argc > 1)
+    {
+        threshold = (int16_t)atoi(argv[1]);
+        if (threshold > 4095 || threshold < 0)
+        {
+            LOG_E("invalid threshold value:%d", threshold);
+            return -1;
+        }
+        gs_sample_test.threshold = threshold;
+        ef_set_abs_ccd_info(&gs_sample_test);
+        LOG_I("Set threshold to:%u", atoi(argv[1]));
+    }
+
+    return 0;
+}
+MSH_CMD_EXPORT(adj_thresholod, adjust threshold value);

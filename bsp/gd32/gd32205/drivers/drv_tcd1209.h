@@ -72,6 +72,14 @@ int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len);
 
 int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len);
 
+int tcd1209_set_calibrate_threshold_info(unsigned char *value, unsigned char len);
+
+int tcd1209_get_calibrate_threshold_info(unsigned char *value, unsigned char len);
+
+int tcd1209_set_calibrate_delta_info(unsigned char *value, unsigned char len);
+
+int tcd1209_get_calibrate_delta_info(unsigned char *value, unsigned char len);
+
 void tcd1209_register_abs_tcd_info(ccd_data_map_t *data);
 #endif /* ifndef __TCD_1209_H__ */
 

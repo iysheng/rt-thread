@@ -24,6 +24,8 @@ enum {
     CCD_DUANLUO_CANKAO_INFO = 0x0B,
     CCD_DUANLUO_CANKAO_DELTA_INFO = 0x0D,
     CCD_DUANLUO_CANKAO_DELTA_INFO_RESPON = 0x0E,
+    CCD_DUANLUO_CANKAO_THRESHOLD_INFO = 0x0F,
+    CCD_DUANLUO_CANKAO_THRESHOLD_INFO_RESPON = 0x10,
 } can_comm_cmd_E;
 
 #define RED_ENABLE_DEBUG_HEX
@@ -178,6 +180,32 @@ int set_ccd_calibrate_delta_info(rt_can_msg_t msg)
 {
     return set_abs_ccd_calibrate_delta_info(&msg->data[1], 6);
 }
+
+/**
+  * @brief 获取 CCD 对检测结果判断的阈值
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示成功
+  */
+int get_ccd_calibrate_threshold_info(rt_can_msg_t msg)
+{
+    return get_abs_ccd_calibrate_threshold_info(&msg->data[1], 6);
+}
+/**
+  * @brief 设置 CCD 对检测结果判断的阈值
+  *
+  * @param unsigned char addr:
+  * @param unsigned char times:
+  * retval errno/Linux.
+  *      0 表示成功
+  */
+int set_ccd_calibrate_threshold_info(rt_can_msg_t msg)
+{
+    return set_abs_ccd_calibrate_threshold_info(&msg->data[1], 6);
+}
+
 /**
   * @brief 控制 CCD 进行检测并返回检测结果
   *
@@ -346,6 +374,15 @@ extern void ccd_scan_recovery(void);
                     get_ccd_calibrate_delta_info(&msg);
                     msg.id = REMOTE_CCD_MAIN_ADDR;
                     msg.data[0] = CCD_DUANLUO_CANKAO_DELTA_INFO_RESPON;
+                    /* TODO respon to remote */
+                    rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
+                    break;
+                case CCD_DUANLUO_CANKAO_THRESHOLD_INFO:
+                    /* TODO calibrate */
+                    set_ccd_calibrate_threshold_info(&msg);
+                    get_ccd_calibrate_threshold_info(&msg);
+                    msg.id = REMOTE_CCD_MAIN_ADDR;
+                    msg.data[0] = CCD_DUANLUO_CANKAO_THRESHOLD_INFO_RESPON;
                     /* TODO respon to remote */
                     rt_device_write(gs_can_dev, 0, &msg, sizeof(msg));
                     break;
