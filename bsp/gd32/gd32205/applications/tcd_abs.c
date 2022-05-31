@@ -28,7 +28,10 @@ int get_abs_ccd_calibrate_info(unsigned char *value, unsigned char len)
     return tcd1209_calibrate_get_info(value, len);
 };
 
-int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len){};
+int set_abs_ccd_calibrate_info(unsigned char *value, unsigned char len)
+{
+    return tcd1209_calibrate_set_info(value, len);
+};
 
 int get_abs_ccd_check_info(unsigned char *value, unsigned char len)
 {

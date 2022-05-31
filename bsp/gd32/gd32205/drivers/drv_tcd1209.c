@@ -831,6 +831,14 @@ int tcd1209_set_delimiters_info(unsigned char *value, unsigned char len)
     ef_set_abs_ccd_info(&gs_sample_test);
 }
 
+int tcd1209_calibrate_set_info(unsigned char *value, unsigned char len)
+{
+    gs_sample_test.value.left = value[0] << 8 | value[1];
+    gs_sample_test.value.middle = value[2] << 8 | value[3];
+    gs_sample_test.value.right = value[4] << 8 | value[5];
+    return 0;
+}
+
 int tcd1209_calibrate_get_info(unsigned char *value, unsigned char len)
 {
     if (likely(gs_sample_test.value.left + gs_sample_test.value.middle + gs_sample_test.value.right != 0))
