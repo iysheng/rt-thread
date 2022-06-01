@@ -592,9 +592,33 @@ int tcd1209_hw_init(void)
 }
 INIT_PREV_EXPORT(tcd1209_hw_init);
 
+uint16_t get_middle_threshold(uint16_t *data, uint16_t data_len)
+{
+    uint16_t i = 1;
+    uint16_t min_data = data[0], max_data = data[0], middle_data = 0;
+
+    for (; i < data_len; i++)
+    {
+        if (min_data > data[i])
+        {
+            min_data = data[i];
+        }
+        if (max_data < data[i])
+        {
+            max_data = data[i];
+        }
+    }
+
+    middle_data = min_data / 2 + max_data / 2;
+    LOG_I("min:%u,middle:%u,max:%u", min_data, middle_data, max_data);
+
+    return middle_data;
+}
+
 int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
 #if 1
 {
+	static uint16_t s_onetime = 0;
     uint32_t sum = 0;
     uint16_t i = 0;
 #if 0
@@ -604,7 +628,13 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     }
     sum /= data_len;
 #else
-	sum = gs_sample_test.threshold;
+	if (!s_onetime)
+	{
+		/* get threshold from data with middle value */
+		gs_sample_test.threshold = get_middle_threshold(data, data_len);
+		s_onetime = 1;
+	}
+    sum = gs_sample_test.threshold;
 #endif
     //rt_kprintf("sum:%u, left=%u\n", sum, gs_sample_test.position.left);
     gs_sample_test.value.left = 0;
