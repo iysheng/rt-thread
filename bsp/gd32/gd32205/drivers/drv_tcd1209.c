@@ -628,6 +628,7 @@ int convert_calibrate_ans(uint16_t *data, uint16_t data_len)
     }
     sum /= data_len;
 #else
+	/* 第一次使用检测的均值 */
 	if (!s_onetime)
 	{
 		/* get threshold from data with middle value */
