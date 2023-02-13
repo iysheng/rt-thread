@@ -56,6 +56,17 @@ void sci_spi9_callback(spi_callback_args_t * p_args);
             #ifndef user_uart0_callback
             void user_uart0_callback(uart_callback_args_t * p_args);
             #endif
+/** UART on SCI Instance. */
+            extern const uart_instance_t      g_uart9;
+
+            /** Access the UART instance using these structures when calling API functions directly (::p_api is not used). */
+            extern sci_uart_instance_ctrl_t     g_uart9_ctrl;
+            extern const uart_cfg_t g_uart9_cfg;
+            extern const sci_uart_extended_cfg_t g_uart9_cfg_extend;
+
+            #ifndef user_uart9_callback
+            void user_uart9_callback(uart_callback_args_t * p_args);
+            #endif
 void hal_entry(void);
 void g_hal_init(void);
 FSP_FOOTER
