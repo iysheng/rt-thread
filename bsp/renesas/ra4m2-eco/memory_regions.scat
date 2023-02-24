@@ -1,6 +1,6 @@
 
             /* generated memory regions file - do not edit */
-                            #define RAM_START  0x20000000
+                #define RAM_START  0x20000000
                 #define RAM_LENGTH 0x20000
                 #define FLASH_START  0x00000000
                 #define FLASH_LENGTH 0x80000
