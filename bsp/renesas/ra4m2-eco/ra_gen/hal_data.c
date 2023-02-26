@@ -78,46 +78,6 @@ const sci_spi_extended_cfg_t g_sci_spi9_cfg_extend =
     }
 };
 
-const spi_cfg_t g_sci_spi9_cfg =
-{
-    .channel         = 9,
-    .operating_mode  = SPI_MODE_MASTER,
-    .clk_phase       = SPI_CLK_PHASE_EDGE_ODD,
-    .clk_polarity    = SPI_CLK_POLARITY_LOW,
-    .mode_fault      = SPI_MODE_FAULT_ERROR_DISABLE,
-    .bit_order       = SPI_BIT_ORDER_MSB_FIRST,
-#define RA_NOT_DEFINED (1)
-#if (RA_NOT_DEFINED == g_transfer0)
-    .p_transfer_tx   = NULL,
-#else
-    .p_transfer_tx   = &g_transfer0,
-#endif
-#if (RA_NOT_DEFINED == g_transfer1)
-    .p_transfer_rx   = NULL,
-#else
-    .p_transfer_rx   = &g_transfer1,
-#endif
-#undef RA_NOT_DEFINED
-    .p_callback      = sci_spi9_callback,
-    .p_context       = NULL,
-    .rxi_irq         = VECTOR_NUMBER_SCI9_RXI,
-    .txi_irq         = VECTOR_NUMBER_SCI9_TXI,
-    .tei_irq         = VECTOR_NUMBER_SCI9_TEI,
-    .eri_irq         = VECTOR_NUMBER_SCI9_ERI,
-    .rxi_ipl         = (12),
-    .txi_ipl         = (12),
-    .tei_ipl         = (12),
-    .eri_ipl         = (12),
-    .p_extend        = &g_sci_spi9_cfg_extend,
-};
-/* Instance structure to use this module. */
-const spi_instance_t g_sci_spi9 =
-{
-    .p_ctrl          = &g_sci_spi9_ctrl,
-    .p_cfg           = &g_sci_spi9_cfg,
-    .p_api           = &g_spi_on_sci
-};
-
 sci_uart_instance_ctrl_t     g_uart9_ctrl;
 
             baud_setting_t               g_uart9_baud_setting =
@@ -176,23 +136,23 @@ sci_uart_instance_ctrl_t     g_uart9_ctrl;
                 .txi_ipl             = (12),
                 .tei_ipl             = (12),
                 .eri_ipl             = (12),
-#if defined(VECTOR_NUMBER_SCI4_RXI)
-                .rxi_irq             = VECTOR_NUMBER_SCI4_RXI,
+#if defined(VECTOR_NUMBER_SCI9_RXI)
+                .rxi_irq             = VECTOR_NUMBER_SCI9_RXI,
 #else
                 .rxi_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI4_TXI)
-                .txi_irq             = VECTOR_NUMBER_SCI4_TXI,
+#if defined(VECTOR_NUMBER_SCI9_TXI)
+                .txi_irq             = VECTOR_NUMBER_SCI9_TXI,
 #else
                 .txi_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI4_TEI)
-                .tei_irq             = VECTOR_NUMBER_SCI4_TEI,
+#if defined(VECTOR_NUMBER_SCI9_TEI)
+                .tei_irq             = VECTOR_NUMBER_SCI9_TEI,
 #else
                 .tei_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI4_ERI)
-                .eri_irq             = VECTOR_NUMBER_SCI4_ERI,
+#if defined(VECTOR_NUMBER_SCI9_ERI)
+                .eri_irq             = VECTOR_NUMBER_SCI9_ERI,
 #else
                 .eri_irq             = FSP_INVALID_VECTOR,
 #endif

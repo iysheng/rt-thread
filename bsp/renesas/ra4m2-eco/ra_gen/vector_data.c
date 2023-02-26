@@ -4,7 +4,7 @@
         #if VECTOR_DATA_IRQ_COUNT > 0
         BSP_DONT_REMOVE const fsp_vector_t g_vector_table[BSP_ICU_VECTOR_MAX_ENTRIES] BSP_PLACE_IN_SECTION(BSP_SECTION_APPLICATION_VECTORS) =
         {
-                        [0] = sci_uart_rxi_isr, /* SCI0 RXI (Receive data full) */
+            [0] = sci_uart_rxi_isr, /* SCI0 RXI (Receive data full) */
             [1] = sci_uart_txi_isr, /* SCI0 TXI (Transmit data empty) */
             [2] = sci_uart_tei_isr, /* SCI0 TEI (Transmit end) */
             [3] = sci_uart_eri_isr, /* SCI0 ERI (Receive error) */
@@ -12,10 +12,10 @@
             [5] = sci_uart_txi_isr, /* SCI4 TXI (Transmit data empty) */
             [6] = sci_uart_tei_isr, /* SCI4 TEI (Transmit end) */
             [7] = sci_uart_eri_isr, /* SCI4 ERI (Receive error) */
-            [8] = sci_spi_rxi_isr, /* SCI9 RXI (Received data full) */
-            [9] = sci_spi_txi_isr, /* SCI9 TXI (Transmit data empty) */
-            [10] = sci_spi_tei_isr, /* SCI9 TEI (Transmit end) */
-            [11] = sci_spi_eri_isr, /* SCI9 ERI (Receive error) */
+            [8] = sci_uart_rxi_isr, /* SCI9 RXI (Received data full) */
+            [9] = sci_uart_txi_isr, /* SCI9 TXI (Transmit data empty) */
+            [10] = sci_uart_tei_isr, /* SCI9 TEI (Transmit end) */
+            [11] = sci_uart_eri_isr, /* SCI9 ERI (Receive error) */
         };
         const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_MAX_ENTRIES] =
         {

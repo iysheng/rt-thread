@@ -13,10 +13,6 @@
         void sci_uart_txi_isr(void);
         void sci_uart_tei_isr(void);
         void sci_uart_eri_isr(void);
-        void sci_spi_rxi_isr(void);
-        void sci_spi_txi_isr(void);
-        void sci_spi_tei_isr(void);
-        void sci_spi_eri_isr(void);
 
         /* Vector table allocations */
         #define VECTOR_NUMBER_SCI0_RXI ((IRQn_Type) 0) /* SCI0 RXI (Receive data full) */
