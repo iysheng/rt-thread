@@ -64,7 +64,7 @@ void Reset_Handler (void)
     SystemInit();
 
     /* Call user application. */
-    main();
+    entry();
 
     while (1)
     {
