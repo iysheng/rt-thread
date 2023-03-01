@@ -2,4 +2,4 @@
 
 # 启动 openocd 加载配置文件
 
-openocd -s openocd_scripts -f renesas.cfg -d3
+openocd -s openocd_scripts -f renesas.cfg -d3 -l /tmp/dbg_openocd_renesas.txt

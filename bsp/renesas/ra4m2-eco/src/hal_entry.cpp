@@ -26,20 +26,13 @@ void hal_entry(void)
 {
     rt_kprintf("hal_entry run.\r\n");
     rt_pin_mode(BSP_IO_PORT_04_PIN_04, PIN_MODE_OUTPUT);
-    rt_kprintf("init spi sdcard.\r\n");
-    rt_pin_mode(BSP_IO_PORT_06_PIN_03, PIN_MODE_OUTPUT);
-    if(RT_EOK == rt_spi_bus_attach_device(&sd_device, "scpi9-0", "scpi9", (void *)BSP_IO_PORT_06_PIN_03)) {
-        if(RT_EOK != msd_init("sd0", "scpi9-0")) {
-            rt_kprintf("msd init failed!\r\n");
-        }
-    } else {
-        rt_kprintf("spi bus attach failed!\r\n");
-    }
-    
+    rt_pin_mode(BSP_IO_PORT_04_PIN_05, PIN_MODE_OUTPUT);
+    rt_pin_write(BSP_IO_PORT_04_PIN_05, PIN_HIGH);
     while (1)
     {
         rt_pin_write(BSP_IO_PORT_04_PIN_04, !rt_pin_read(BSP_IO_PORT_04_PIN_04));
-        rt_thread_mdelay(1000);
+        rt_thread_mdelay(100);
+        rt_kprintf("hello renesas!\r\n");
     }
 }
 
