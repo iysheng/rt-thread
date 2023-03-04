@@ -26,13 +26,10 @@ void hal_entry(void)
 {
     rt_kprintf("hal_entry run.\r\n");
     rt_pin_mode(BSP_IO_PORT_04_PIN_04, PIN_MODE_OUTPUT);
-    rt_pin_mode(BSP_IO_PORT_04_PIN_05, PIN_MODE_OUTPUT);
-    rt_pin_write(BSP_IO_PORT_04_PIN_05, PIN_HIGH);
     while (1)
     {
         rt_pin_write(BSP_IO_PORT_04_PIN_04, !rt_pin_read(BSP_IO_PORT_04_PIN_04));
         rt_thread_mdelay(100);
-        rt_kprintf("hello renesas!\r\n");
     }
 }
 
