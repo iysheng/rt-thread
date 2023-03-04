@@ -218,6 +218,7 @@ void SystemInit (void)
     /* Call pre clock initialization hook. */
     R_BSP_WarmStart(BSP_WARM_START_RESET);
 
+    /* 未定义 */
 #if BSP_TZ_CFG_SKIP_INIT
 
     /* Initialize clock variables to be used with R_BSP_SoftwareDelay. */

@@ -41,6 +41,7 @@ FSP_HEADER
 #define BSP_CLOCKS_SOURCE_CLOCK_LOCO        (2)  // The low speed on chip oscillator.
 #define BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC    (3)  // The main oscillator.
 #define BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK    (4)  // The subclock oscillator.
+/* 走到是这里 */
 #if 0 == BSP_FEATURE_NUM_PLL1_OUTPUT_CLOCKS && 0 == BSP_FEATURE_NUM_PLL2_OUTPUT_CLOCKS
  #define BSP_CLOCKS_SOURCE_CLOCK_PLL        (5)  // The PLL oscillator.
  #define BSP_CLOCKS_SOURCE_CLOCK_PLL2       (6)  // The PLL2 oscillator.
@@ -62,6 +63,7 @@ FSP_HEADER
  */
 #if BSP_FEATURE_CGC_HAS_PLL && !BSP_CFG_USE_LOW_VOLTAGE_MODE && \
     !((1U != BSP_FEATURE_CGC_PLLCCR_TYPE) && (3U != BSP_FEATURE_CGC_PLLCCR_TYPE) && !BSP_CLOCK_CFG_MAIN_OSC_POPULATED)
+/* 走这里 */
  #define BSP_PRV_PLL_SUPPORTED              (1)
  #if BSP_FEATURE_CGC_HAS_PLL2
   #define BSP_PRV_PLL2_SUPPORTED            (1)

@@ -221,6 +221,7 @@
   #define BSP_PRV_PLLCCR_PLLMUL_MASK               (0x3F) // PLLMUL in PLLCCR is 6 bits wide
   #define BSP_PRV_PLLCCR_PLLMUL_BIT                (8)    // PLLMUL in PLLCCR starts at bit 8
   #define BSP_PRV_PLLCCR_PLSRCSEL_BIT              (4)    // PLSRCSEL in PLLCCR starts at bit 4
+                                                          // 这里
   #define BSP_PRV_PLLCCR                           ((((BSP_CFG_PLL_MUL & BSP_PRV_PLLCCR_PLLMUL_MASK) <<   \
                                                       BSP_PRV_PLLCCR_PLLMUL_BIT) |                        \
                                                      (BSP_PRV_PLSRCSEL << BSP_PRV_PLLCCR_PLSRCSEL_BIT)) | \
@@ -537,6 +538,13 @@ void prv_clock_dividers_set(uint32_t sckdivcr, uint8_t sckdivcr2);
  * runtime environment. This is initialized and used in bsp_clock_init, which is called before the C runtime
  * environment is initialized. */
 static uint32_t g_clock_freq[BSP_PRV_NUM_CLOCKS]  BSP_PLACE_IN_SECTION(BSP_SECTION_NOINIT);
+
+void dbg_clock(void)
+{
+    int i = 0;
+    for (; i < BSP_PRV_NUM_CLOCKS; i++)
+        rt_kprintf("%d@%u \n", i, g_clock_freq[i]);
+}
 
 #if BSP_TZ_SECURE_BUILD
 
@@ -1160,6 +1168,7 @@ static void bsp_clock_freq_var_init (void)
 /*******************************************************************************************************************//**
  * Initializes system clocks.  Makes no assumptions about current register settings.
  **********************************************************************************************************************/
+/* 时钟初始化 */
 void bsp_clock_init (void)
 {
     /* Unlock CGC and LPM protection registers. */
@@ -1184,6 +1193,7 @@ void bsp_clock_init (void)
     R_FACI_LP->PFBER = 0;
 #endif
 
+    /* 时钟频率变量初始化 */
     bsp_clock_freq_var_init();
 
 #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
