@@ -139,7 +139,9 @@ void app_init(void)
 
 
 extern void dbg_clock(void);
+extern void ssd1309_init();
             int main(void) {
+              ssd1309_init();
               app_init();
               dbg_clock();
               hal_entry();
