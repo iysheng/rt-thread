@@ -195,7 +195,7 @@ int ra_can_sendmsg(struct rt_can_device *can_dev, const void *buf, rt_uint32_t b
 int ra_can_recvmsg(struct rt_can_device *can_dev, void *buf, rt_uint32_t boxno)
 {
     struct rt_can_msg *msg_rt = (struct rt_can_msg *)buf;
-    can_frame_t *msg_ra;
+    can_frame_t msg_ra;
     struct ra_can *can;
 
     RT_ASSERT(can_dev != RT_NULL);
@@ -204,16 +204,16 @@ int ra_can_recvmsg(struct rt_can_device *can_dev, void *buf, rt_uint32_t boxno)
     RT_ASSERT(boxno < can->config->num_of_mailboxs);
     if (can->callback_args->mailbox != boxno)
         return 0;
-    msg_ra = can->callback_args->p_frame;
+    msg_ra = can->callback_args->frame;
 
-    msg_rt->id = msg_ra->id;
-    msg_rt->ide = msg_ra->id_mode;
-    msg_rt->rtr = msg_ra->type;
+    msg_rt->id = msg_ra.id;
+    msg_rt->ide = msg_ra.id_mode;
+    msg_rt->rtr = msg_ra.type;
     msg_rt->rsv = RT_NULL;
-    msg_rt->len = msg_ra->data_length_code;
+    msg_rt->len = msg_ra.data_length_code;
     msg_rt->priv = boxno;
     msg_rt->hdr_index = RT_NULL;
-    memcpy(msg_rt->data, msg_ra->data, msg_ra->data_length_code);
+    memcpy(msg_rt->data, msg_ra.data, msg_ra.data_length_code);
     return sizeof(struct rt_can_msg);
 }
 const struct rt_can_ops ra_can_ops =

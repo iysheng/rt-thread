@@ -87,6 +87,7 @@
 #define RT_USING_SERIAL
 #define RT_USING_SERIAL_V2
 #define RT_SERIAL_USING_DMA
+#define RT_USING_CAN
 #define RT_USING_PIN
 #define RT_USING_SPI
 #define RT_USING_SPI_MSD
@@ -243,6 +244,8 @@
 /* On-chip Peripheral Drivers */
 
 #define BSP_USING_GPIO
+#define BSP_USING_CAN
+#define BSP_USING_CAN0
 #define BSP_USING_UART
 #define BSP_USING_UART9
 #define BSP_UART9_RX_BUFSIZE 256

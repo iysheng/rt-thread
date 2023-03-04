@@ -6,13 +6,16 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (12)
+        #define VECTOR_DATA_IRQ_COUNT    (17)
         #endif
         /* ISR prototypes */
         void sci_uart_rxi_isr(void);
         void sci_uart_txi_isr(void);
         void sci_uart_tei_isr(void);
         void sci_uart_eri_isr(void);
+        void can_error_isr(void);
+        void can_rx_isr(void);
+        void can_tx_isr(void);
 
         /* Vector table allocations */
         #define VECTOR_NUMBER_SCI0_RXI ((IRQn_Type) 0) /* SCI0 RXI (Receive data full) */
@@ -39,6 +42,16 @@
         #define SCI9_TEI_IRQn          ((IRQn_Type) 10) /* SCI9 TEI (Transmit end) */
         #define VECTOR_NUMBER_SCI9_ERI ((IRQn_Type) 11) /* SCI9 ERI (Receive error) */
         #define SCI9_ERI_IRQn          ((IRQn_Type) 11) /* SCI9 ERI (Receive error) */
+        #define VECTOR_NUMBER_CAN0_ERROR ((IRQn_Type) 12) /* CAN0 ERROR (Error interrupt) */
+        #define CAN0_ERROR_IRQn          ((IRQn_Type) 12) /* CAN0 ERROR (Error interrupt) */
+        #define VECTOR_NUMBER_CAN0_MAILBOX_RX ((IRQn_Type) 13) /* CAN0 MAILBOX RX (Reception complete interrupt) */
+        #define CAN0_MAILBOX_RX_IRQn          ((IRQn_Type) 13) /* CAN0 MAILBOX RX (Reception complete interrupt) */
+        #define VECTOR_NUMBER_CAN0_MAILBOX_TX ((IRQn_Type) 14) /* CAN0 MAILBOX TX (Transmission complete interrupt) */
+        #define CAN0_MAILBOX_TX_IRQn          ((IRQn_Type) 14) /* CAN0 MAILBOX TX (Transmission complete interrupt) */
+        #define VECTOR_NUMBER_CAN0_FIFO_RX ((IRQn_Type) 15) /* CAN0 FIFO RX (Receive FIFO interrupt) */
+        #define CAN0_FIFO_RX_IRQn          ((IRQn_Type) 15) /* CAN0 FIFO RX (Receive FIFO interrupt) */
+        #define VECTOR_NUMBER_CAN0_FIFO_TX ((IRQn_Type) 16) /* CAN0 FIFO TX (Transmit FIFO interrupt) */
+        #define CAN1_FIFO_TX_IRQn          ((IRQn_Type) 16) /* CAN0 FIFO TX (Transmit FIFO interrupt) */
         #ifdef __cplusplus
         }
         #endif
