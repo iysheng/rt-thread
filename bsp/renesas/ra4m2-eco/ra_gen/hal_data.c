@@ -22,26 +22,26 @@ can_bit_timing_cfg_t g_can_bit_timing_cfg =
           .synchronization_jump_width = 4, };
 #endif
 
-uint32_t g_can_mailbox_mask[CAN_NO_OF_MAILBOXES_g_can / 4] =
+uint32_t g_can_mailbox_mask[CAN_NO_OF_MAILBOXES_g_can0 / 4] =
 { 0x1FFFFFFF,
-#if CAN_NO_OF_MAILBOXES_g_can > 4
+#if CAN_NO_OF_MAILBOXES_g_can0 > 4
 0x1FFFFFFF,
 #endif
-#if CAN_NO_OF_MAILBOXES_g_can > 8
-0x1FFFFFFF,
-0x1FFFFFFF,
-#endif
-#if CAN_NO_OF_MAILBOXES_g_can > 16
+#if CAN_NO_OF_MAILBOXES_g_can0 > 8
 0x1FFFFFFF,
 0x1FFFFFFF,
 #endif
-#if CAN_NO_OF_MAILBOXES_g_can > 24
+#if CAN_NO_OF_MAILBOXES_g_can0 > 16
+0x1FFFFFFF,
+0x1FFFFFFF,
+#endif
+#if CAN_NO_OF_MAILBOXES_g_can0 > 24
 0x1FFFFFFF,
 0x1FFFFFFF,
 #endif
         };
 
-can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can] =
+can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can0] =
 {
 { .mailbox_id = 0, .id_mode = CAN_ID_MODE_STANDARD, .mailbox_type = CAN_MAILBOX_TRANSMIT, .frame_type =
           CAN_FRAME_TYPE_REMOTE },
@@ -51,7 +51,7 @@ can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can] =
             CAN_FRAME_TYPE_DATA, },
   { .mailbox_id = 3, .id_mode = CAN_ID_MODE_STANDARD, .mailbox_type = CAN_MAILBOX_RECEIVE, .frame_type =
             CAN_FRAME_TYPE_DATA },
-#if CAN_NO_OF_MAILBOXES_g_can > 4
+#if CAN_NO_OF_MAILBOXES_g_can0 > 4
     {
         .mailbox_id              =  4,
         .id_mode                 =  CAN_ID_MODE_STANDARD,
@@ -77,7 +77,7 @@ can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can] =
         .frame_type              =  CAN_FRAME_TYPE_DATA
     },
 #endif
-#if CAN_NO_OF_MAILBOXES_g_can > 8
+#if CAN_NO_OF_MAILBOXES_g_can0 > 8
     {
         .mailbox_id              =  8,
         .id_mode                 =  CAN_ID_MODE_STANDARD,
@@ -127,7 +127,7 @@ can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can] =
         .frame_type              =  CAN_FRAME_TYPE_DATA
     },
 #endif
-#if CAN_NO_OF_MAILBOXES_g_can > 16
+#if CAN_NO_OF_MAILBOXES_g_can0 > 16
     {
         .mailbox_id              =  16,
         .id_mode                 =  CAN_ID_MODE_STANDARD,
@@ -178,7 +178,7 @@ can_mailbox_t g_can_mailbox[CAN_NO_OF_MAILBOXES_g_can] =
         .frame_type              =  CAN_FRAME_TYPE_DATA
     },
 #endif
-#if CAN_NO_OF_MAILBOXES_g_can > 24
+#if CAN_NO_OF_MAILBOXES_g_can0 > 24
     {
         .mailbox_id              =  24,
         .id_mode                 =  CAN_ID_MODE_STANDARD,
@@ -266,7 +266,7 @@ const can_extended_cfg_t g_can_extended_cfg =
   .p_mailbox_mask = g_can_mailbox_mask,
   .p_mailbox = g_can_mailbox,
   .global_id_mode = CAN_GLOBAL_ID_MODE_STANDARD,
-  .mailbox_count = CAN_NO_OF_MAILBOXES_g_can,
+  .mailbox_count = CAN_NO_OF_MAILBOXES_g_can0,
   .message_mode = CAN_MESSAGE_MODE_OVERWRITE,
 #if CAN_CFG_FIFO_SUPPORT
     .p_fifo_int_cfg         = &g_can_fifo_int_cfg,
@@ -277,11 +277,11 @@ const can_extended_cfg_t g_can_extended_cfg =
 #endif
         };
 
-can_instance_ctrl_t g_can_ctrl;
-const can_cfg_t g_can_cfg =
+can_instance_ctrl_t g_can0_ctrl;
+const can_cfg_t g_can0_cfg =
 { .channel = 0,
   .p_bit_timing = &g_can_bit_timing_cfg,
-  .p_callback = can_callback,
+  .p_callback = can0_callback,
   .p_extend = &g_can_extended_cfg,
   .p_context = NULL,
   .ipl = (2),
@@ -302,8 +302,8 @@ const can_cfg_t g_can_cfg =
 #endif
         };
 /* Instance structure to use this module. */
-const can_instance_t g_can =
-{ .p_ctrl = &g_can_ctrl, .p_cfg = &g_can_cfg, .p_api = &g_can_on_can };
+const can_instance_t g_can0 =
+{ .p_ctrl = &g_can0_ctrl, .p_cfg = &g_can0_cfg, .p_api = &g_can_on_can };
 
 transfer_info_t g_transfer1_info =
 {

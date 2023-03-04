@@ -9,7 +9,9 @@
 #include "r_sci_spi.h"
 #include "r_spi_api.h"
 #include "r_sci_uart.h"
-            #include "r_uart_api.h"
+#include "r_uart_api.h"
+#include "r_can.h"
+#include "r_can_api.h"
 FSP_HEADER
 /* Transfer on DTC Instance. */
 extern const transfer_instance_t g_transfer1;
@@ -23,6 +25,20 @@ extern const transfer_instance_t g_transfer0;
 /** Access the DTC instance using these structures when calling API functions directly (::p_api is not used). */
 extern dtc_instance_ctrl_t g_transfer0_ctrl;
 extern const transfer_cfg_t g_transfer0_cfg;
+
+/** CAN on CAN Instance. */
+extern const can_instance_t g_can0;
+/** Access the CAN instance using these structures when calling API functions directly (::p_api is not used). */
+extern can_instance_ctrl_t g_can0_ctrl;
+extern const can_cfg_t g_can0_cfg;
+extern const can_extended_cfg_t g_can0_extended_cfg;
+
+#ifndef can0_callback
+void can0_callback(can_callback_args_t *p_args);
+#endif
+
+
+
 /** SPI on SCI Instance. */
 extern const spi_instance_t g_sci_spi9;
 
