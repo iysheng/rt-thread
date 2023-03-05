@@ -25,19 +25,19 @@ can_bit_timing_cfg_t g_can_bit_timing_cfg =
 uint32_t g_can_mailbox_mask[CAN_NO_OF_MAILBOXES_g_can0 / 4] =
 { 0x1FFFFFFF,
 #if CAN_NO_OF_MAILBOXES_g_can0 > 4
-0x1FFFFFFF,
+0x0,
 #endif
 #if CAN_NO_OF_MAILBOXES_g_can0 > 8
-0x1FFFFFFF,
-0x1FFFFFFF,
+0x0,
+0x0,
 #endif
 #if CAN_NO_OF_MAILBOXES_g_can0 > 16
-0x1FFFFFFF,
-0x1FFFFFFF,
+0x0,
+0x0,
 #endif
 #if CAN_NO_OF_MAILBOXES_g_can0 > 24
-0x1FFFFFFF,
-0x1FFFFFFF,
+0x0,
+0x0,
 #endif
         };
 

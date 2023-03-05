@@ -8,6 +8,7 @@
 static struct rt_semaphore rx_sem;     /* 用于接收消息的信号量 */
 static rt_device_t can_dev;            /* CAN 设备句柄 */
 
+extern void display_can_frame(unsigned char *data, int len, unsigned int id);
 /* 接收数据回调函数 */
 static rt_err_t can_rx_call(rt_device_t dev, rt_size_t size)
 {
@@ -41,22 +42,25 @@ static void can_rx_thread(void *parameter)
     RT_ASSERT(res == RT_EOK);
 #endif
 
+    int ret = 0;
     while (1)
     {
         /* hdr值为-1，表示直接从uselist链表读取数据 */
         rxmsg.hdr_index = -1;
         /* 阻塞等待接收信号量 */
-        rt_sem_take(&rx_sem, RT_WAITING_FOREVER);
+        //rt_sem_take(&rx_sem, RT_WAITING_FOREVER);
         /* 从CAN读取一帧数据 */
-        rt_device_read(can_dev, 0, &rxmsg, sizeof(rxmsg));
+        ret = rt_device_read(can_dev, 0, &rxmsg, sizeof(rxmsg));
         /* 打印数据ID及内容 */
+        if (ret <= 0)
+          continue;
         rt_kprintf("ID:%x  ", rxmsg.id);
         for (i = 0; i < 8; i++)
         {
             rt_kprintf("%2x ", rxmsg.data[i]);
         }
-
         rt_kprintf("\n");
+        display_can_frame(rxmsg.data, 8, rxmsg.id);
     }
 }
 
@@ -120,6 +124,27 @@ static void can_thread_entry(void *parameter)
     return res;
 }
 
+extern void startHelloStar(void* phy_fb, int width, int height, int color_bytes, struct DISPLAY_DRIVER* driver);
+void gfx_draw_pixel(int x, int y, unsigned int rgb)
+{
+	oled_draw_point(x, y, !!(rgb));
+}
+
+//UI entry
+struct DISPLAY_DRIVER
+{
+    void (*draw_pixel)(int x, int y, unsigned int rgb);
+    void (*fill_rect)(int x0, int y0, int x1, int y1, unsigned int rgb);
+} my_driver = {
+    .draw_pixel = gfx_draw_pixel,
+};
+
+static void gui_thread_entry(void *parameter)
+{
+    ssd1309_init();
+    startHelloStar(RT_NULL, 128, 64, 2, &my_driver);
+}
+
 /*
  * pinmux init
  *
@@ -134,6 +159,10 @@ void app_init(void)
                            RT_MAIN_THREAD_STACK_SIZE, RT_MAIN_THREAD_PRIORITY-1, 20);
     RT_ASSERT(tid != RT_NULL);
     rt_thread_startup(tid);
+    tid = rt_thread_create("gui", gui_thread_entry, RT_NULL,
+                           RT_MAIN_THREAD_STACK_SIZE, RT_MAIN_THREAD_PRIORITY-2, 20);
+    RT_ASSERT(tid != RT_NULL);
+    rt_thread_startup(tid);
 #endif
 }
 
@@ -141,7 +170,6 @@ void app_init(void)
 extern void dbg_clock(void);
 extern void ssd1309_init();
             int main(void) {
-              ssd1309_init();
               app_init();
               dbg_clock();
               hal_entry();

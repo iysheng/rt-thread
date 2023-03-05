@@ -359,7 +359,7 @@ static void oled_initialize()
     Set_Display_On_Off(0xAF); // Display On (0xAE/0xAF)
 }
 
-uint8_t g_bm_rv[64][128] = {{0x55,0X55,0X55}};
+uint8_t g_bm_rv[64][128] = {{0x55}};
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //  Main Program
@@ -371,11 +371,6 @@ void ssd1309_init()
     /* oled 初始化 */
     oled_initialize();
 
-    int i,j;
-    /* 显示欢迎界面 */
-    for (i = 0; i < 64; i++)
-        for (j = 0; j < 128; j++)
-            g_bm_rv[i][j] = (i+j) % 2;
     /* 将数据写到缓存 */
     oled_draw_frame(g_bm_rv);
     /* 刷新屏幕显示 */

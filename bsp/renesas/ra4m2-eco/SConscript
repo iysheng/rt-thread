@@ -15,6 +15,7 @@ if rtconfig.PLATFORM in ['iccarm']:
 elif rtconfig.PLATFORM in ['gcc', 'armclang']:
     if GetOption('target') != 'mdk5':
         CPPPATH = [cwd]
+        CPPPATH += [cwd+'/src']
         CPPPATH += [cwd+'/board']
         src = Glob('./src/*.c')
         src += Glob('./src/*.cpp')
