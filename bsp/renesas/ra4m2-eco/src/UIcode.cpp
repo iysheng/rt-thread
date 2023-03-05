@@ -26,13 +26,13 @@ extern "C" {
             return;
         s_surface->fill_rect(0, 0, UI_WIDTH - 1, UI_HEIGHT - 1, 0, Z_ORDER_LEVEL_0);
         snprintf(data_display, 16, "%#02X %#02X %#02X", data[0], data[1], data[2]);
-        c_word::draw_string(s_surface, Z_ORDER_LEVEL_0, "0X120X340X560X78", 0, 0, c_theme::get_font(FONT_DEFAULT), GL_RGB(1, 0, 0), GL_ARGB(0, 0, 0, 0));
+        c_word::draw_string(s_surface, Z_ORDER_LEVEL_0, data_display, 0, 0, c_theme::get_font(FONT_DEFAULT), GL_RGB(1, 0, 0), GL_ARGB(0, 0, 0, 0));
         memset(data_display, 0, sizeof data);
         snprintf(data_display, 16, "%#02X %#02X %#02X", data[3], data[4], data[5]);
         c_word::draw_string(s_surface, Z_ORDER_LEVEL_0, data_display, 0, 18, c_theme::get_font(FONT_DEFAULT), GL_RGB(1, 0, 0), GL_ARGB(0, 0, 0, 0));
         memset(data_display, 0, sizeof data);
         snprintf(data_display, 16, "%#02X %#02X :%#04X", data[6], data[7], id);
-        c_word::draw_string(s_surface, Z_ORDER_LEVEL_0, "0X120X340X560X78", 0, 36, c_theme::get_font(FONT_DEFAULT), GL_RGB(1, 0, 0), GL_ARGB(0, 0, 0, 0));
+        c_word::draw_string(s_surface, Z_ORDER_LEVEL_0, data_display, 0, 36, c_theme::get_font(FONT_DEFAULT), GL_RGB(1, 0, 0), GL_ARGB(0, 0, 0, 0));
     }
 }
 
