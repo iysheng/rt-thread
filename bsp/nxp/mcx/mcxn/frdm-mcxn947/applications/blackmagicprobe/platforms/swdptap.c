@@ -216,7 +216,7 @@ static void swdptap_seq_out_clk_delay(const uint32_t tms_states, const size_t cl
 	}
 }
 
-static void swdptap_seq_out_no_delay(uint32_t tms_states, size_t clock_cycles) ;//__attribute__((optimize(3)));
+static void swdptap_seq_out_no_delay(uint32_t tms_states, size_t clock_cycles); // __attribute__((optimize(3)));
 
 static void swdptap_seq_out_no_delay(const uint32_t tms_states, const size_t clock_cycles)
 {

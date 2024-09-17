@@ -24,6 +24,8 @@
 #define PLATFORMS_NXP_PLATFORM_H
 
 #include "platform_support.h"
+#include <rtthread.h>
+#include "drv_pin.h"
 
 #define PLATFORM_IDENT   "NXP"
 
@@ -58,22 +60,27 @@
 #define SWDIO_PIN      TMS_PIN  // P3_19
 #define SWCLK_PIN      TCK_PIN  // P3_20
 
+
+#define MK_NXP_PIN(p, i) (p * 32 +  i)
+#define NXP_SWDIO_PIN      MK_NXP_PIN(TMS_PORT, TMS_PIN)
+#define NXP_SWCLK_PIN      MK_NXP_PIN(TCK_PORT, TCK_PIN)
+
 unsigned int swdptap_bit_in(void);
 void swdptap_bit_out(unsigned char pin);
 
 // 设置 TMS 为输出模式
 // rt_pin_mode(LEDB_PIN, PIN_MODE_OUTPUT);  /* Set GPIO as Output */
-#define TMS_SET_MODE() do {} while(0)
+#define TMS_SET_MODE() do {rt_pin_mode(NXP_SWDIO_PIN, PIN_MODE_INPUT);} while(0)
 	// 改为输入模式
-#define SWDIO_MODE_FLOAT() do {} while(0)
+#define SWDIO_MODE_FLOAT() do {rt_pin_mode(NXP_SWDIO_PIN, PIN_MODE_INPUT);} while(0)
 	//  改为输出模式
-	#define SWDIO_MODE_DRIVE() do {} while(0)
+	#define SWDIO_MODE_DRIVE() do {rt_pin_mode(NXP_SWDIO_PIN, PIN_MODE_OUTPUT);} while(0)
 	
-	#define gpio_clear(x, y) (void)x
-	#define gpio_set(x, y) (void)x
-		#define gpio_set_val(x, y, z) (void)x
+	#define gpio_clear(x, y) rt_pin_write(MK_NXP_PIN(x, y), PIN_LOW)
+	#define gpio_set(x, y) rt_pin_write(MK_NXP_PIN(x, y), PIN_HIGH)
+	#define gpio_set_val(x, y, z) rt_pin_write(MK_NXP_PIN(x, y), z ? PIN_HIGH : PIN_LOW)
 			
 		
-		#define gpio_get(x,y) (unsigned short int)x
+		#define gpio_get(x,y) rt_pin_read(MK_NXP_PIN(x, y))
 		
 #endif /* PLATFORMS_NATIVE_PLATFORM_H */

@@ -22,7 +22,6 @@
 
 #include "general.h"
 #include "platform.h"
-#include <rtthread.h>
 
 uint32_t target_clk_divider = 0;
 
@@ -75,18 +74,32 @@ int platform_hwversion(void)
 unsigned int swdptap_bit_in(void)
 {
 	unsigned int ret = 0;
+	ret = rt_pin_read(NXP_SWDIO_PIN) == PIN_HIGH ? 1 : 0;
     return ret;
 }
 
 // TODO insert this func
 void swdptap_bit_out(unsigned char value)
 {
-
+    if (value)
+			rt_pin_write(NXP_SWDIO_PIN, PIN_HIGH);
+		else
+			rt_pin_write(NXP_SWDIO_PIN, PIN_LOW);
 }
 
 void nxp4bmp_platform_init(void)
 {
-	//rt_pin_mode(LEDB_PIN, PIN_MODE_OUTPUT);
+	rt_pin_mode(NXP_SWDIO_PIN, PIN_MODE_OUTPUT);
+	rt_pin_mode(NXP_SWCLK_PIN, PIN_MODE_OUTPUT);
+	rt_pin_write(NXP_SWCLK_PIN, PIN_LOW);
+	rt_pin_write(NXP_SWDIO_PIN, PIN_LOW);
+	rt_thread_mdelay(100);
+				rt_pin_write(NXP_SWCLK_PIN, PIN_HIGH);
+	rt_pin_write(NXP_SWDIO_PIN, PIN_HIGH);
+		rt_thread_mdelay(100);
+	rt_pin_write(NXP_SWDIO_PIN, PIN_LOW);
+			rt_pin_write(NXP_SWCLK_PIN, PIN_LOW);
+	rt_thread_mdelay(100);
 }
 
 extern void vcom_putchar(const char c, const int flush);

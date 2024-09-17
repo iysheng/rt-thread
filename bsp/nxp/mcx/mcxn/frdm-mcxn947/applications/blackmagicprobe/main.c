@@ -70,7 +70,7 @@ static void bmp_poll_loop(void)
 }
 
 #include <rtthread.h>
-
+extern void nxp4bmp_platform_init(void);
 #if PC_HOSTED == 1
 int main(int argc, char **argv)
 {
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 #else
 int bmp_main(void)
 {
-	platform_init();
+	nxp4bmp_platform_init();
 #endif
 
 	while (true) {

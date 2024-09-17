@@ -24,6 +24,7 @@
 
 #include "usb_device_descriptor.h"
 #include "virtual_com.h"
+#include <rtthread.h>
 #if (defined(FSL_FEATURE_SOC_SYSMPU_COUNT) && (FSL_FEATURE_SOC_SYSMPU_COUNT > 0U))
 #include "fsl_sysmpu.h"
 #endif /* FSL_FEATURE_SOC_SYSMPU_COUNT */
@@ -757,6 +758,11 @@ void vcom_putchar(const char c, const int flush)
             {
                 /* Failure to send Data Handling code here */
             }
+						else
+						{
+						memset(s_currSendBuf, 0, s_sendSize);
+							s_sendSize = 0;
+						}
 	}
 }
 
@@ -778,9 +784,12 @@ char vcom_getchar(void)
             {
                 /* Copy Buffer to Send Buff */
                 value = s_currRecvBuf[s_recvIndex++];
-							s_recvSize--;
+							  s_recvSize--;
             }
-						if (!s_recvSize) s_recvIndex = 0;
+						if (!s_recvSize) {
+							USB_DeviceCdcAcmSend(s_cdcVcom.cdcAcmHandle, USB_CDC_VCOM_BULK_IN_ENDPOINT,  NULL, 0);
+							s_recvIndex = 0;
+						};
             CDC_VCOM_BMExitCritical(usbOsaCurrentSr);
 						break;
         }
@@ -808,7 +817,10 @@ char vcom_getchar_to(const uint32_t timeout)
                 /* Copy Buffer to Send Buff */
                 value = s_currRecvBuf[s_recvIndex++];
                 s_recvSize--;
-						if (!s_recvSize) s_recvIndex = 0;
+												if (!s_recvSize) {
+							USB_DeviceCdcAcmSend(s_cdcVcom.cdcAcmHandle, USB_CDC_VCOM_BULK_IN_ENDPOINT,  NULL, 0);
+							s_recvIndex = 0;
+						};
             CDC_VCOM_BMExitCritical(usbOsaCurrentSr);
         }
 
@@ -854,10 +866,10 @@ int bmp_thread_entry(void *parg)
 	{
 		#if 0
 		APPTask();
+	  rt_thread_mdelay(1);
 		#else
 		bmp_main();
 		#endif
-		rt_thread_mdelay(1);
 	}
 	
 	return 0;
