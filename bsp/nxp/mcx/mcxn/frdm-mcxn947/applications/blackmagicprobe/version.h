@@ -1,0 +1,1 @@
+#define FIRMWARE_VERSION "v1.10.0-1224-gf1212c88"
