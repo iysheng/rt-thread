@@ -20,9 +20,28 @@
 #define BUTTON_PIN      ((0*32)+23)
 
 static void sw_pin_cb(void *args);
+extern void usb_vcom_main(void);
+
+#define MK_THREAD_ASSETS(name, stack_size) \
+	static rt_uint8_t name##_stack[stack_size]; \
+	static struct rt_thread gs_##name##_thread; \
+	extern void name##_thread_entry(void *);
+
+#define CREATE_THREAD(name, parg, pri, tick) \
+	rt_thread_init(&gs_##name##_thread, #name, name##_thread_entry, parg, \
+		name##_stack, sizeof(name##_stack), pri, tick)
+
+#define DEFINE_THREAD_ENTRY(name) \
+		void name##_thread_entry(void * parg)
+
+#define MAKE_THREAD_START(name) \
+	rt_thread_startup(&gs_##name##_thread)
+
+MK_THREAD_ASSETS(bmp, 0X1000)
 
 int main(void)
 {
+	rt_err_t result;
 #if defined(__CC_ARM)
     rt_kprintf("using armcc, version: %d\n", __ARMCC_VERSION);
 #elif defined(__clang__)
@@ -40,8 +59,12 @@ int main(void)
     rt_pin_irq_enable(BUTTON_PIN, 1);
 
     rt_kprintf("MCXN947 HelloWorld\r\n");
+    usb_vcom_main();
 
-
+	  result = CREATE_THREAD(bmp, RT_NULL, RT_THREAD_PRIORITY_MAX / 5, 20);
+    RT_ASSERT(result == RT_EOK);
+    MAKE_THREAD_START(bmp);
+	
 #ifdef RT_USING_SDIO
     rt_thread_mdelay(2000);
     if (dfs_mount("sd", "/", "elm", 0, NULL) == 0)
