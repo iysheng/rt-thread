@@ -54,7 +54,7 @@ static void bmp_poll_loop(void)
 		char c = gdb_if_getchar_to(0);
 		if (c == '\x03' || c == '\x04')
 			target_halt_request(cur_target);
-		platform_pace_poll();
+		//platform_pace_poll();
 #ifdef ENABLE_RTT
 		if (rtt_enabled)
 			poll_rtt(cur_target);
@@ -69,12 +69,14 @@ static void bmp_poll_loop(void)
 	gdb_main(pbuf, GDB_PACKET_BUFFER_SIZE, size);
 }
 
+#include <rtthread.h>
+
 #if PC_HOSTED == 1
 int main(int argc, char **argv)
 {
 	platform_init(argc, argv);
 #else
-int main(void)
+int bmp_main(void)
 {
 	platform_init();
 #endif

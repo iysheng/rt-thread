@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "general.h"
+#include "platform.h"
 
 uint32_t swdptap_seq_in(int ticks)
 {

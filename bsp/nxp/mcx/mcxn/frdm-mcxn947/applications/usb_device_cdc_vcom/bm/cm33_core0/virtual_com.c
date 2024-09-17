@@ -97,6 +97,7 @@ USB_DMA_NONINIT_DATA_ALIGN(USB_DATA_ALIGN_SIZE) static usb_cdc_acm_info_t s_usbC
 USB_DMA_NONINIT_DATA_ALIGN(USB_DATA_ALIGN_SIZE) static uint8_t s_currRecvBuf[DATA_BUFF_SIZE];
 USB_DMA_NONINIT_DATA_ALIGN(USB_DATA_ALIGN_SIZE) static uint8_t s_currSendBuf[DATA_BUFF_SIZE];
 volatile static uint32_t s_recvSize = 0;
+volatile static uint32_t s_recvIndex = 0;
 volatile static uint32_t s_sendSize = 0;
 
 /* USB device class information */
@@ -665,7 +666,7 @@ static void APPInit(void)
     SDK_DelayAtLeastUs(5000, SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
     USB_DeviceRun(s_cdcVcom.deviceHandle);
 }
-
+#if 1
 /*!
  * @brief Application task function.
  *
@@ -742,6 +743,79 @@ static void APPTask(void)
 #endif
     }
 }
+#endif
+void vcom_putchar(const char c, const int flush)
+{
+	usb_status_t error = kStatus_USB_Error;
+	
+	s_currSendBuf[s_sendSize++] = c;
+	if (flush || s_sendSize == DATA_BUFF_SIZE)
+	{
+		error = USB_DeviceCdcAcmSend(s_cdcVcom.cdcAcmHandle, USB_CDC_VCOM_BULK_IN_ENDPOINT, s_currSendBuf, s_sendSize);
+
+            if (error != kStatus_USB_Success)
+            {
+                /* Failure to send Data Handling code here */
+            }
+	}
+}
+
+char vcom_getchar(void)
+{
+	char value = '\x04';
+	
+	uint32_t usbOsaCurrentSr;
+	      while(1)
+				{
+        if ((0 != s_recvSize) && (USB_CANCELLED_TRANSFER_LENGTH != s_recvSize))
+        {
+            /* The operating timing sequence has guaranteed there is no conflict to access the s_recvSize between USB
+               ISR and this task. Therefore, the following code of Enter/Exit ctitical mode is useless,
+               only to mention users the exclusive access of s_recvSize if users implement their own
+               application referred to this SDK demo */
+            CDC_VCOM_BMEnterCritical(&usbOsaCurrentSr);
+            if ((0U != s_recvSize) && (USB_CANCELLED_TRANSFER_LENGTH != s_recvSize))
+            {
+                /* Copy Buffer to Send Buff */
+                value = s_currRecvBuf[s_recvIndex++];
+							s_recvSize--;
+            }
+						if (!s_recvSize) s_recvIndex = 0;
+            CDC_VCOM_BMExitCritical(usbOsaCurrentSr);
+						break;
+        }
+			}
+				
+			return value;
+}
+
+extern uint32_t platform_time_ms(void);
+char vcom_getchar_to(const uint32_t timeout)
+{
+	char value = -1;
+	uint32_t end_time = platform_time_ms() + timeout;
+	
+	uint32_t usbOsaCurrentSr;
+	while (platform_time_ms() < end_time)
+	{
+        if ((0 != s_recvSize) && (USB_CANCELLED_TRANSFER_LENGTH != s_recvSize))
+        {
+            /* The operating timing sequence has guaranteed there is no conflict to access the s_recvSize between USB
+               ISR and this task. Therefore, the following code of Enter/Exit ctitical mode is useless,
+               only to mention users the exclusive access of s_recvSize if users implement their own
+               application referred to this SDK demo */
+            CDC_VCOM_BMEnterCritical(&usbOsaCurrentSr);
+                /* Copy Buffer to Send Buff */
+                value = s_currRecvBuf[s_recvIndex++];
+                s_recvSize--;
+						if (!s_recvSize) s_recvIndex = 0;
+            CDC_VCOM_BMExitCritical(usbOsaCurrentSr);
+        }
+
+	}
+				
+   return value;
+}
 
 extern void RED_BOARD_InitBootPins(void);
 #if defined(__CC_ARM) || (defined(__ARMCC_VERSION)) || defined(__GNUC__)
@@ -758,7 +832,7 @@ void main(void)
 
     APPInit();
     usb_echo("BMP will based on this pro@Red\r\n");
-	#if 0
+#if 0
     while (1)
     {
         APPTask();
@@ -771,14 +845,18 @@ void main(void)
 }
 
 #include <rtthread.h>
-
+extern int bmp_main(void);
 int bmp_thread_entry(void *parg)
 {
   (void)parg;
 	
 	while(1)
 	{
+		#if 0
 		APPTask();
+		#else
+		bmp_main();
+		#endif
 		rt_thread_mdelay(1);
 	}
 	

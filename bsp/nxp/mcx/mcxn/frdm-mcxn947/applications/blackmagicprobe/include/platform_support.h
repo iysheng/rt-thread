@@ -25,7 +25,7 @@
 #endif
 
 #if PC_HOSTED == 0
-//#include "stdio_newlib.h"
+#include "stdio.h"
 #endif
 #include "target.h"
 #include "spi_types.h"

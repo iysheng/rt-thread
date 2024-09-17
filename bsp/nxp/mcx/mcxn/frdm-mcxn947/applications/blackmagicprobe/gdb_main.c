@@ -357,6 +357,7 @@ int32_t gdb_main_loop(target_controller_s *tc, char *pbuf, size_t pbuf_size, siz
 	}
 
 	case 'Q': /* General set packet */
+		// 要走到这里
 	case 'q': /* General query packet */
 		handle_q_packet(pbuf, size);
 		break;

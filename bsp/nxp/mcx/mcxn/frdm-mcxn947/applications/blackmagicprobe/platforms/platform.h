@@ -23,6 +23,8 @@
 #ifndef PLATFORMS_NXP_PLATFORM_H
 #define PLATFORMS_NXP_PLATFORM_H
 
+#include "platform_support.h"
+
 #define PLATFORM_IDENT   "NXP"
 
 //running_status = (state)
@@ -56,4 +58,22 @@
 #define SWDIO_PIN      TMS_PIN  // P3_19
 #define SWCLK_PIN      TCK_PIN  // P3_20
 
+unsigned int swdptap_bit_in(void);
+void swdptap_bit_out(unsigned char pin);
+
+// 设置 TMS 为输出模式
+// rt_pin_mode(LEDB_PIN, PIN_MODE_OUTPUT);  /* Set GPIO as Output */
+#define TMS_SET_MODE() do {} while(0)
+	// 改为输入模式
+#define SWDIO_MODE_FLOAT() do {} while(0)
+	//  改为输出模式
+	#define SWDIO_MODE_DRIVE() do {} while(0)
+	
+	#define gpio_clear(x, y) (void)x
+	#define gpio_set(x, y) (void)x
+		#define gpio_set_val(x, y, z) (void)x
+			
+		
+		#define gpio_get(x,y) (unsigned short int)x
+		
 #endif /* PLATFORMS_NATIVE_PLATFORM_H */
